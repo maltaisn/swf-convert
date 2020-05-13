@@ -1,0 +1,3 @@
+rootProject.name = "swf-convert"
+
+include ":core"
