@@ -1,0 +1,78 @@
+plugins {
+    id "kotlin"
+}
+
+dependencies {
+    implementation project(":core")
+
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+
+    implementation "com.beust:jcommander:$jcommanderVersion"
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    kotlinOptions.freeCompilerArgs += [
+            "-Xuse-experimental=kotlin.Experimental",
+            "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes",
+            "-Xuse-experimental=kotlin.contracts.ExperimentalContracts",
+            "-XXLanguage:+InlineClasses"
+    ]
+}
+
+sourceSets {
+    main {
+        java.srcDirs += "src/main/kotlin"
+        resources.srcDirs += "src/main/res"
+    }
+    test {
+        java.srcDirs += "src/test/kotlin"
+    }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+def mainClassName = "com.maltaisn.swfconvert.app.MainKt"
+task run(type: JavaExec) {
+    dependsOn "updateVersionRes"
+
+    main = mainClassName
+    classpath = files(sourceSets.main.runtimeClasspath, sourceSets.main.resources)
+    standardInput = System.in
+    setIgnoreExitValue(true)
+
+    // Get program test arguments defined in local.properties.
+    def propFile = project.rootProject.file("local.properties")
+    if (propFile.exists()) {
+        def properties = new Properties()
+        properties.load(propFile.newInputStream())
+        workingDir properties.getProperty("app-test-working-dir")
+        argsString properties.getProperty("app-test-args")
+    }
+
+    if ("mac" in System.getProperty("os.name").toLowerCase()) {
+        jvmArgs "-XstartOnFirstThread"
+    }
+}
+
+task dist(type: Jar) {
+    dependsOn "updateVersionRes"
+
+    from(files(sourceSets.main.output.classesDirs))
+    from(files(sourceSets.main.resources.srcDirs))
+    from(configurations.runtimeClasspath.collect { if (it.directory) it else zipTree(it) })
+    archiveBaseName.set("swf-convert")
+
+    manifest {
+        attributes["Main-Class"] = mainClassName
+    }
+}
+
+tasks.register("updateVersionRes") {
+    doLast {
+        def versionResFile = file("src/main/res/version.txt")
+        versionResFile.write(appVersion)
+    }
+}
