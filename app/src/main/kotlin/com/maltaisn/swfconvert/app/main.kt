@@ -40,8 +40,7 @@ fun main(rawArgs: Array<String>) {
             // Get version from resources and print it.
             val versionRes = Args::class.java.classLoader.getResourceAsStream("version.txt")!!
             val version = String(versionRes.readBytes())
-            println("swf-convert v$version")
-            exitProcess(0)
+            println("swf-convert v$version\n")
         }
 
         if (args.help) {
@@ -53,12 +52,35 @@ fun main(rawArgs: Array<String>) {
         // Create configurations
         val configs = args.createConfigurations()
 
-        // Display general options
+        // Display options
         val options = configs.first()
         println("""
             |Output format: ${options.outputFormat.name}
-            |
+            |OCR detect glyphs: ${options.ocrDetectGlyphs}
+            |Group fonts: ${options.groupFonts}
+            |Remove duplicate images: ${options.removeDuplicateImages}
+            |Downsample images: ${options.downsampleImages}
+            """.trimMargin())
+        if (options.downsampleImages) {
+            println("""
+                |Downsample filter: ${args.downsampleFilterName}
+                |Downsample min size: ${options.downsampleMinSize}
+            """.trimMargin())
+        }
+        println("""
+            |Max DPI: ${NUMBER_FMT.format(options.maxDpi)}
+            |JPEG quality: ${args.jpegQuality} %
+            |Image format: ${args.imageFormatName}
+            |Rasterization enabled: ${options.rasterizationEnabled}
         """.trimMargin())
+        if (options.rasterizationEnabled) {
+            println("""
+            |Rasterization threshold: ${NUMBER_FMT.format(options.rasterizationThreshold)}
+            |Rasterization DPI: ${NUMBER_FMT.format(options.rasterizationDpi)}
+            |Rasterizer: ${options.rasterizer}
+            """.trimMargin())
+        }
+        println()
 
         val converter = SwfsConverter()
         for ((i, config) in configs.withIndex()) {
@@ -66,7 +88,7 @@ fun main(rawArgs: Array<String>) {
             val duration = measureTimeMillis {
                 converter.convertSwfs(config)
             }
-            println("Done in ${NUMBER_FMT.format(duration / 1000.0)} s\n")
+            println("Done in ${DURATION_FMT.format(duration / 1000.0)} s\n")
         }
 
         exitProcess(0)
@@ -77,4 +99,5 @@ fun main(rawArgs: Array<String>) {
     }
 }
 
-private val NUMBER_FMT = DecimalFormat("0.00")
+private val DURATION_FMT = DecimalFormat("0.00")
+private val NUMBER_FMT = DecimalFormat()

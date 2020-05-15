@@ -8,6 +8,8 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
 
     implementation "com.beust:jcommander:$jcommanderVersion"
+
+    implementation "com.mortennobel:java-image-scaling:$scalingLibVersion"
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
