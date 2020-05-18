@@ -16,6 +16,8 @@
 
 package com.maltaisn.swfconvert.core
 
+import com.maltaisn.swfconvert.core.frame.FrameRenderer
+import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.mortennobel.imagescaling.ResampleFilter
 import java.io.File
 
@@ -35,8 +37,8 @@ data class Configuration(
         /** Directory to which temp and debug files are written. */
         val tempDir: File,
 
-        /** Output files format. */
-        val outputFormat: OutputFormat,
+        // Output format factories.
+        val rendererFactory: () -> FrameRenderer,
 
 
         // TEXT & FONT CONFIGURATION
@@ -56,7 +58,7 @@ data class Configuration(
         var downsampleImages: Boolean,
 
         /** Filter used to downsample images, or `null` to use default Java API. */
-        var downsamplingFilter: ResampleFilter?,
+        var downsampleFilter: ResampleFilter?,
 
         /**
          * Size in pixels under which images are never downsampled. For example if minimum is 10 px,

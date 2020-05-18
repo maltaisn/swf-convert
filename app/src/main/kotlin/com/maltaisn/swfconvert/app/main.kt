@@ -17,7 +17,7 @@
 package com.maltaisn.swfconvert.app
 
 import com.beust.jcommander.JCommander
-import com.maltaisn.swfconvert.core.SwfsConverter
+import com.maltaisn.swfconvert.core.SwfCollectionConverter
 import java.text.DecimalFormat
 import kotlin.system.exitProcess
 import kotlin.system.measureTimeMillis
@@ -55,7 +55,7 @@ fun main(rawArgs: Array<String>) {
         // Display options
         val options = configs.first()
         println("""
-            |Output format: ${options.outputFormat.name}
+            |Output format: ${args.outputFormatName.toUpperCase()}
             |OCR detect glyphs: ${options.ocrDetectGlyphs}
             |Group fonts: ${options.groupFonts}
             |Remove duplicate images: ${options.removeDuplicateImages}
@@ -63,14 +63,14 @@ fun main(rawArgs: Array<String>) {
             """.trimMargin())
         if (options.downsampleImages) {
             println("""
-                |Downsample filter: ${args.downsampleFilterName}
+                |Downsample filter: ${args.downsampleFilterName.toLowerCase()}
                 |Downsample min size: ${options.downsampleMinSize}
             """.trimMargin())
         }
         println("""
             |Max DPI: ${NUMBER_FMT.format(options.maxDpi)}
             |JPEG quality: ${args.jpegQuality} %
-            |Image format: ${args.imageFormatName}
+            |Image format: ${args.imageFormatName.toUpperCase()}
             |Rasterization enabled: ${options.rasterizationEnabled}
         """.trimMargin())
         if (options.rasterizationEnabled) {
@@ -82,11 +82,11 @@ fun main(rawArgs: Array<String>) {
         }
         println()
 
-        val converter = SwfsConverter()
+        val converter = SwfCollectionConverter()
         for ((i, config) in configs.withIndex()) {
             println("Converting collection ${i + 1} / ${configs.size}")
             val duration = measureTimeMillis {
-                converter.convertSwfs(config)
+                converter.convertSwfCollection(config)
             }
             println("Done in ${DURATION_FMT.format(duration / 1000.0)} s\n")
         }

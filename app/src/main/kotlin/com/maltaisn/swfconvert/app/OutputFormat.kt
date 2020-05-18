@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.core
+package com.maltaisn.swfconvert.app
+
+import com.maltaisn.swfconvert.core.frame.FrameRasterizer
+import com.maltaisn.swfconvert.core.frame.FrameRenderer
 
 
-enum class ImageFormat(val extension: String) {
-    PNG("png"),
-    JPG("jpg")
+enum class OutputFormat(val singleFileOutput: Boolean,
+                        val rendererFactory: () -> FrameRenderer,
+                        val rasterizerFactory: () -> FrameRasterizer) {
+    PDF(true, { TODO() }, { TODO() })
 }

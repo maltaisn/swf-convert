@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.core
+package com.maltaisn.swfconvert.core.font.data
 
-
-enum class OutputFormat(val singleFileOutput: Boolean) {
-    PDF(true)
-}
+/**
+ * The ID class to uniquely identity a font tag across a SWF file collection.
+ * The ID has the index of the file in the colleciton and the ID of the font tag.
+ */
+data class FontId(val fileIndex: Int, val fontId: Int)

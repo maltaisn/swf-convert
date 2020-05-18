@@ -19,8 +19,7 @@ package com.maltaisn.swfconvert.app
 import com.beust.jcommander.Parameter
 import com.beust.jcommander.Parameters
 import com.maltaisn.swfconvert.core.Configuration
-import com.maltaisn.swfconvert.core.ImageFormat
-import com.maltaisn.swfconvert.core.OutputFormat
+import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.mortennobel.imagescaling.ResampleFilter
 import com.mortennobel.imagescaling.ResampleFilters
 import java.io.File
@@ -40,7 +39,7 @@ class Args {
     @Parameter(names = ["-t", "--tempdir"], description = "Temp directory used for debugging and intermediate files.", order = 10)
     var tempDir: String? = null
 
-    @Parameter(names = ["-f", "--format"], description = "Output format: pdf.", order = 20)
+    @Parameter(names = ["-f", "--format"], description = "Output format: ir | pdf", order = 20)
     var outputFormatName: String = "pdf"
 
     // Text & font configuration
@@ -216,7 +215,7 @@ class Args {
     private val imageFormat: ImageFormat?
         get() = when (imageFormatName) {
             "default" -> null
-            "jpg" -> ImageFormat.JPG
+            "jpg", "jpeg" -> ImageFormat.JPG
             "png" -> ImageFormat.PNG
             else -> argError("Invalid image format '$imageFormatName'.")
         }
@@ -232,15 +231,30 @@ class Args {
         argError(rasterizationThreshold >= 0) { "Rasterization threshold complexity must be greater or equal to 0." }
 
         val outputFormat = outputFormat
-        val downsamplingFilter = downsampleFilter
+        val downsampleFilter = downsampleFilter
         val jpegQuality = jpegQualityFloat
         val imageFormat = imageFormat
         return inputFileCollections.mapIndexed { i, input ->
             val tempDir = File(tempDir ?: input.first().parent)
-            Configuration(input, outputFiles[i], tempDir, outputFormat, ocrDetectGlyphs, groupFonts,
-                    removeDuplicateImages, downsampleImages, downsamplingFilter, downsampleMinSize,
-                    maxDpi, jpegQuality, imageFormat, rasterizationEnabled, rasterizationThreshold,
-                    rasterizationDpi, rasterizer, rasterizerArgs)
+            Configuration(
+                    input,
+                    outputFiles[i],
+                    tempDir,
+                    outputFormat.rendererFactory,
+                    ocrDetectGlyphs,
+                    groupFonts,
+                    removeDuplicateImages,
+                    downsampleImages,
+                    downsampleFilter,
+                    downsampleMinSize,
+                    maxDpi,
+                    jpegQuality,
+                    imageFormat,
+                    rasterizationEnabled,
+                    rasterizationThreshold,
+                    rasterizationDpi,
+                    rasterizer,
+                    rasterizerArgs)
         }
     }
 

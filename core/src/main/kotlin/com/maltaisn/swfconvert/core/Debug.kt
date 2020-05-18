@@ -16,6 +16,10 @@
 
 package com.maltaisn.swfconvert.core
 
+import com.maltaisn.swfconvert.core.image.data.Color
+import com.maltaisn.swfconvert.core.shape.path.PathLineStyle
+import java.awt.BasicStroke
+
 
 /**
  * Debug options
@@ -28,13 +32,13 @@ object Debug {
     var parallelSwfDecoding = true
 
     /** Whether to convert input files to intermediate format in parallel. */
-    var parallelPageConversion = true
+    var parallelSwfConversion = true
 
     /** Whether to rasterize output files in parallel. */
-    var parallelPageRasterization = true
+    var parallelFrameRasterization = true
 
     /** Whether to convert input files from intermediate format to output format in parallel. */
-    var parallelPageRendering = true
+    var parallelFrameRendering = true
 
     /** Whether to create and optimize output images in parallel. */
     var parallelImageCreation = true
@@ -70,10 +74,10 @@ object Debug {
     var disableMasking = false
 
     /** Padding added around output, in inches. */
-    var pagePadding = 0f
+    var framePadding = 0f
 
     /** Linestyle used to draw debug bounds. */
-//    val debugLinestyle = PathLineStyle(Color(0, 255, 0), 20f,
-//            BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 0f)
+    val linestyle = PathLineStyle(Color(0, 255, 0), 20f,
+            BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 0f)
 
 }

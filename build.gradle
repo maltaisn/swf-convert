@@ -17,6 +17,15 @@ allprojects {
         jcenter()
         mavenCentral()
     }
+
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+        kotlinOptions.freeCompilerArgs += [
+                "-Xuse-experimental=kotlin.Experimental",
+                "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes",
+                "-Xuse-experimental=kotlin.contracts.ExperimentalContracts",
+                "-XXLanguage:+InlineClasses"
+        ]
+    }
 }
 
 tasks.clean {

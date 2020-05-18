@@ -12,15 +12,6 @@ dependencies {
     implementation "com.mortennobel:java-image-scaling:$scalingLibVersion"
 }
 
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-    kotlinOptions.freeCompilerArgs += [
-            "-Xuse-experimental=kotlin.Experimental",
-            "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes",
-            "-Xuse-experimental=kotlin.contracts.ExperimentalContracts",
-            "-XXLanguage:+InlineClasses"
-    ]
-}
-
 sourceSets {
     main {
         java.srcDirs += "src/main/kotlin"

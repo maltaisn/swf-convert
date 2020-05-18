@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.core
+package com.maltaisn.swfconvert.core.shape.path
+
+import com.maltaisn.swfconvert.core.image.data.Color
 
 
-class SwfsConverter {
-
-    fun convertSwfs(config: Configuration) {
-        println("TODO")
-    }
-
-}
+data class PathLineStyle(val color: Color,
+                         val width: Float,
+                         val cap: Int,
+                         val join: Int,
+                         val miterLimit: Float)
