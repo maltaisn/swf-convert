@@ -17,7 +17,6 @@
 package com.maltaisn.swfconvert.render.pdf
 
 import com.maltaisn.swfconvert.core.config.Configuration
-import com.maltaisn.swfconvert.core.config.Debug
 import com.maltaisn.swfconvert.core.frame.data.*
 import com.maltaisn.swfconvert.core.image.ImageDecoder
 import com.maltaisn.swfconvert.core.image.ImageFormat
@@ -25,11 +24,10 @@ import com.maltaisn.swfconvert.core.image.data.Color
 import com.maltaisn.swfconvert.core.shape.path.Path
 import com.maltaisn.swfconvert.core.shape.path.PathElement.*
 import com.maltaisn.swfconvert.core.shape.path.PathFillStyle
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
 import java.awt.geom.AffineTransform
 import java.awt.image.BufferedImage
 import java.io.File
-import java.util.concurrent.atomic.AtomicInteger
 
 
 /**
@@ -38,60 +36,61 @@ import java.util.concurrent.atomic.AtomicInteger
 class FramesRasterizer(private val coroutineScope: CoroutineScope,
                        private val config: Configuration) {
 
-    private val imageDecoder = ImageDecoder(config.main)
+    private val imageDecoder = ImageDecoder(config)
 
 
     fun rasterizeFrames(frameGroups: List<FrameGroup>,
                         imagesDir: File): List<FrameGroup> {
-        val pdfConfig = config.format as PdfConfiguration
-        if (!pdfConfig.rasterizationEnabled) {
-            return frameGroups
-        }
-
-        // Find which frames to optimize
-        print("Rasterizing frames: evaluating which frames need rasterization\r")
-
-        val framesToRasterize = mutableListOf<Int>()
-        for ((i, frameGroup) in frameGroups.withIndex()) {
-            val complexity = evaluateShapeComplexity(frameGroup)
-            if (complexity >= pdfConfig.rasterizationThreshold) {
-                // Frame is too complex, rasterize.
-                framesToRasterize += i
-            }
-        }
-
-        if (framesToRasterize.isEmpty()) {
-            println("Rasterizing frames: found no frames to rasterize")
-            return frameGroups
-        }
-
-        println("Found frames to rasterize: ${framesToRasterize}")
-
-        val newFrameGroups = frameGroups.toTypedArray()
-        val progress = AtomicInteger()
-
-        print("Rasterizing frames: rasterized frame 0 / ${framesToRasterize.size}\r")
-        val jobs = framesToRasterize.map { i ->
-            val job = coroutineScope.async(Dispatchers.Default) {
-                val frameGroup = frameGroups[i]
-                val frameImagesDir = File(imagesDir, i.toString())
-                newFrameGroups[i] = rasterizeFrame(frameGroup, frameImagesDir)
-
-                val done = progress.incrementAndGet()
-                print("Rasterizing frames: rasterized frame $done / ${framesToRasterize.size}\r")
-            }
-            if (!Debug.parallelFrameRasterization) {
-                runBlocking { job.await() }
-            }
-            job
-        }
-        if (Debug.parallelFrameRasterization) {
-            runBlocking { jobs.awaitAll() }
-        }
-
-        println()
-
-        return newFrameGroups.toList()
+//        val pdfConfig = config.format as PdfConfiguration
+//        if (!pdfConfig.rasterizationEnabled) {
+//            return frameGroups
+//        }
+//
+//        // Find which frames to optimize
+//        print("Rasterizing frames: evaluating which frames need rasterization\r")
+//
+//        val framesToRasterize = mutableListOf<Int>()
+//        for ((i, frameGroup) in frameGroups.withIndex()) {
+//            val complexity = evaluateShapeComplexity(frameGroup)
+//            if (complexity >= pdfConfig.rasterizationThreshold) {
+//                // Frame is too complex, rasterize.
+//                framesToRasterize += i
+//            }
+//        }
+//
+//        if (framesToRasterize.isEmpty()) {
+//            println("Rasterizing frames: found no frames to rasterize")
+//            return frameGroups
+//        }
+//
+//        println("Found frames to rasterize: ${framesToRasterize}")
+//
+//        val newFrameGroups = frameGroups.toTypedArray()
+//        val progress = AtomicInteger()
+//
+//        print("Rasterizing frames: rasterized frame 0 / ${framesToRasterize.size}\r")
+//        val jobs = framesToRasterize.map { i ->
+//            val job = coroutineScope.async(Dispatchers.Default) {
+//                val frameGroup = frameGroups[i]
+//                val frameImagesDir = File(imagesDir, i.toString())
+//                newFrameGroups[i] = rasterizeFrame(frameGroup, frameImagesDir)
+//
+//                val done = progress.incrementAndGet()
+//                print("Rasterizing frames: rasterized frame $done / ${framesToRasterize.size}\r")
+//            }
+//            if (!config.main.parallelFrameRasterization) {
+//                runBlocking { job.await() }
+//            }
+//            job
+//        }
+//        if (config.main.parallelFrameRasterization) {
+//            runBlocking { jobs.awaitAll() }
+//        }
+//
+//        println()
+//
+//        return newFrameGroups.toList()
+        TODO()
     }
 
     /**

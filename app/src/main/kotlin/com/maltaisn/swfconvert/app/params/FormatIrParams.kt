@@ -26,7 +26,11 @@ import com.maltaisn.swfconvert.render.ir.IrConfiguration
 class FormatIrParams : FormatParams<IrConfiguration> {
 
     @ParametersDelegate
-    override var params = BaseParams(false, "json")
+    override var params = BaseParams(false, "json").apply {
+        // Keep fonts and images by default for IR output.
+        this.params[BaseParams.OPT_KEEP_FONTS] = true.toString()
+        this.params[BaseParams.OPT_KEEP_IMAGES] = true.toString()
+    }
 
     @Parameter(names = ["--pretty"], description = "Whether to pretty print JSON or not.", order = 1000)
     var prettyPrint: Boolean = false

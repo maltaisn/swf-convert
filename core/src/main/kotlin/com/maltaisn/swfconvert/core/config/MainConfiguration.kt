@@ -17,7 +17,10 @@
 package com.maltaisn.swfconvert.core.config
 
 import com.maltaisn.swfconvert.core.image.ImageFormat
+import com.maltaisn.swfconvert.core.image.data.Color
+import com.maltaisn.swfconvert.core.shape.path.PathLineStyle
 import com.mortennobel.imagescaling.ResampleFilter
+import java.awt.BasicStroke
 import java.io.File
 
 
@@ -31,8 +34,8 @@ data class MainConfiguration(
         /** Input files. */
         val input: List<File>,
 
-        /** Output file or directory. */
-        val output: File,
+        /** Output files, size should be 1 or `input.size`. */
+        val output: List<File>,
 
         /** Directory to which temp and debug files are written. */
         val tempDir: File,
@@ -74,6 +77,61 @@ data class MainConfiguration(
          * tags and JPG for DefineBitsJPEG tags. Otherwise, a specific format can be forced to be
          * used for all images. JPEG images with an alpha channel will use a soft mask.
          */
-        val imageFormat: ImageFormat? = ImageFormat.JPG
-)
+        val imageFormat: ImageFormat? = ImageFormat.JPG,
+
+        // PARALLELIZATION OPTIONS
+
+        /** Whether to decode SWF files in parallel. */
+        val parallelSwfDecoding: Boolean,
+
+        /** Whether to convert input files to intermediate format in parallel. */
+        val parallelSwfConversion: Boolean,
+
+        /** Whether to convert input files from intermediate format to output format in parallel. */
+        val parallelFrameRendering: Boolean,
+
+        /** Whether to create and optimize output images in parallel. */
+        val parallelImageCreation: Boolean,
+
+
+        // DEBUG OPTIONS
+
+        /** Whether to keep the `fonts/` sub-directory after conversion. */
+        val keepFonts: Boolean,
+
+        /** Whether to keep the `images/` sub-directory after conversion. */
+        val keepImages: Boolean,
+
+        /** Whether to output glyph images used to run OCR to the `fonts/glyphs/` directory. */
+        val outputOcrGlyphs: Boolean,
+
+        /** Whether to draw shape bounds to output. */
+        val drawShapeBounds: Boolean,
+
+        /** Whether to draw text bounds to output. */
+        val drawTextBounds: Boolean,
+
+        /** Whether to draw clip bounds to output. */
+        val drawClipBounds: Boolean,
+
+        /** Whether to disable clipping in output. */
+        val disableClipping: Boolean,
+
+        /** Whether to disable blending (except alpha). */
+        val disableBlending: Boolean,
+
+        /** Whether to disable masking (alpha blend mode). */
+        val disableMasking: Boolean,
+
+        /** Padding added around output, in inches. */
+        val framePadding: Float,
+
+        // Debug line style options
+        val debugLineWidth: Float,
+        val debugLineColor: Color
+) {
+
+        val debugLineStyle = PathLineStyle(debugLineColor, debugLineWidth,
+                BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0f)
+}
 

@@ -17,7 +17,6 @@
 package com.maltaisn.swfconvert.core
 
 import com.maltaisn.swfconvert.core.config.Configuration
-import com.maltaisn.swfconvert.core.config.Debug
 import com.maltaisn.swfconvert.core.font.FontConverter
 import com.maltaisn.swfconvert.core.frame.FramesRenderer
 import com.maltaisn.swfconvert.core.frame.SwfsConverter
@@ -40,10 +39,10 @@ class SwfCollectionConverter {
         val imagesDir = File(config.main.tempDir, "images")
 
         // Decode SWFs files
-        val swfs = SwfsDecoder(coroutineScope).decodeFiles(config.main.input)
+        val swfs = SwfsDecoder(coroutineScope).decodeFiles(config.main.input, config)
 
         // Create font groups
-        val fontConverter = FontConverter(fontsDir, config.main)
+        val fontConverter = FontConverter(fontsDir, config)
         val fontGroups = fontConverter.createFontGroups(swfs)
 
         // Create font files and ungroup them.
@@ -52,21 +51,21 @@ class SwfCollectionConverter {
 
         // Convert SWF to intermediate representation.
         val swfsConverter = SwfsConverter(coroutineScope, fontsMap)
-        val frameGroups = swfsConverter.createFrameGroups(swfs, config.main)
+        val frameGroups = swfsConverter.createFrameGroups(swfs, config)
 
         // Create images and remove duplicates if needed.
         imagesDir.deleteRecursively()
-        val imageCreator = ImageCreator(coroutineScope, config.main)
+        val imageCreator = ImageCreator(coroutineScope, config)
         imageCreator.createAndOptimizeImages(frameGroups, imagesDir)
 
         // Render frames (from intermediate format to output format)
         FramesRenderer(coroutineScope, config).renderFrames(frameGroups)
 
         // Remove files not to keep
-        if (!Debug.keepImages) {
+        if (!config.main.keepImages) {
             imagesDir.deleteRecursively()
         }
-        if (!Debug.keepFonts) {
+        if (!config.main.keepFonts) {
             fontsDir.deleteRecursively()
         }
     }

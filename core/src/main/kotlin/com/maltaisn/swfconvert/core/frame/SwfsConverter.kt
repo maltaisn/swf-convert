@@ -17,8 +17,7 @@
 package com.maltaisn.swfconvert.core.frame
 
 import com.flagstone.transform.Movie
-import com.maltaisn.swfconvert.core.config.Debug
-import com.maltaisn.swfconvert.core.config.MainConfiguration
+import com.maltaisn.swfconvert.core.config.Configuration
 import com.maltaisn.swfconvert.core.font.data.Font
 import com.maltaisn.swfconvert.core.font.data.FontId
 import com.maltaisn.swfconvert.core.frame.data.FrameGroup
@@ -35,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class SwfsConverter(private val coroutineScope: CoroutineScope,
                     private val fontsMap: Map<FontId, Font>) {
 
-    fun createFrameGroups(swfs: List<Movie>, config: MainConfiguration): List<FrameGroup> {
+    fun createFrameGroups(swfs: List<Movie>, config: Configuration): List<FrameGroup> {
         val frameGroups = arrayOfNulls<FrameGroup>(swfs.size)
         val progress = AtomicInteger()
 
@@ -48,12 +47,12 @@ class SwfsConverter(private val coroutineScope: CoroutineScope,
                 val done = progress.incrementAndGet()
                 print("Converted SWF $done / ${swfs.size}\r")
             }
-            if (!Debug.parallelSwfConversion) {
+            if (!config.main.parallelSwfConversion) {
                 runBlocking { job.await() }
             }
             job
         }
-        if (Debug.parallelSwfConversion) {
+        if (config.main.parallelSwfConversion) {
             runBlocking { jobs.awaitAll() }
         }
 

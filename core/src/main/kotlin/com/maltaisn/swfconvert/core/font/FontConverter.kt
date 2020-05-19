@@ -21,7 +21,7 @@ import com.flagstone.transform.font.DefineFont
 import com.flagstone.transform.font.DefineFont2
 import com.flagstone.transform.font.DefineFont3
 import com.flagstone.transform.font.DefineFont4
-import com.maltaisn.swfconvert.core.config.MainConfiguration
+import com.maltaisn.swfconvert.core.config.Configuration
 import com.maltaisn.swfconvert.core.conversionError
 import com.maltaisn.swfconvert.core.font.data.*
 import com.maltaisn.swfconvert.core.old.font.GlyphPathParser
@@ -32,9 +32,9 @@ import java.util.*
 
 
 class FontConverter(private val fontsDir: File,
-                    private val config: MainConfiguration) {
+                    private val config: Configuration) {
 
-    private val glyphOcr = GlyphOcr(File(fontsDir, "ocr"))
+    private val glyphOcr = GlyphOcr(config, File(fontsDir, "ocr"))
 
     private val unknownCharsMap = mutableMapOf<GlyphData, Char>()
     private var nextUnknownCharCode = 0
@@ -56,7 +56,7 @@ class FontConverter(private val fontsDir: File,
         // Merge fonts with the same name if they are compatible.
         print("Creating fonts: merging fonts\r")
         val groups = mergeFonts(allFonts)
-        if (config.groupFonts) {
+        if (config.main.groupFonts) {
             val ratio = (allFonts.size - groups.size) / allFonts.size.toFloat()
             println("Created ${groups.size} font groups from ${allFonts.size} " +
                     "fonts (-${PERCENT_FMT.format(ratio)})")
@@ -184,7 +184,7 @@ class FontConverter(private val fontsDir: File,
                     }
 
                 } else {
-                    val ocrChar = if (config.ocrDetectGlyphs) {
+                    val ocrChar = if (config.main.ocrDetectGlyphs) {
                         // Try to recognize char with OCR
                         glyphOcr.recognizeGlyphData(data)
                     } else {
@@ -229,7 +229,7 @@ class FontConverter(private val fontsDir: File,
 
     private fun mergeFontGroups(groups: List<FontGroup>,
                                 requireCommon: Boolean): List<FontGroup> {
-        if (!config.groupFonts) {
+        if (!config.main.groupFonts) {
             return groups
         }
 

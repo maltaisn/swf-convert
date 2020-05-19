@@ -23,7 +23,7 @@ import com.maltaisn.swfconvert.core.frame.data.FrameGroup
 
 class PdfFrameRenderer(private val config: Configuration) : FrameRenderer {
 
-    override fun renderFrame(frame: FrameGroup) {
+    override suspend fun renderFrame(index: Int, frame: FrameGroup) {
         TODO("not implemented")
     }
 

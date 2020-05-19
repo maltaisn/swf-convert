@@ -16,11 +16,13 @@
 
 package com.maltaisn.swfconvert.app.params
 
+import com.beust.jcommander.DynamicParameter
 import com.beust.jcommander.Parameter
 import com.maltaisn.swfconvert.app.checkNoOptionsInArgs
 import com.maltaisn.swfconvert.app.configError
 import com.maltaisn.swfconvert.core.config.MainConfiguration
 import com.maltaisn.swfconvert.core.image.ImageFormat
+import com.maltaisn.swfconvert.core.image.data.Color
 import com.mortennobel.imagescaling.ResampleFilter
 import com.mortennobel.imagescaling.ResampleFilters
 import java.io.File
@@ -33,48 +35,51 @@ class BaseParams(private val singleFileOutput: Boolean,
     // Files configuration
 
     @Parameter(description = "Input files or directories")
-    var input: List<String> = mutableListOf()
+    private var input: List<String> = mutableListOf()
 
     @Parameter(names = ["-o", "--output"], variableArity = true, description = "Output files or directories.", order = 0)
-    var output: List<String> = mutableListOf()
+    private var output: List<String> = mutableListOf()
 
     @Parameter(names = ["-t", "--tempdir"], description = "Temp directory used for debugging and intermediate files.", order = 10)
-    var tempDir: String? = null
+    private var tempDir: String? = null
 
     // Text & font configuration
 
     @Parameter(names = ["--enable-glyph-ocr"], description = "Whether to enable OCR to detect glyphs with unknown code.", order = 30)
-    var ocrDetectGlyphs: Boolean = false
+    private var ocrDetectGlyphs: Boolean = false
 
     /** Whether to group fonts that can be merged into a single one. */
     @Parameter(names = ["--group-fonts"], description = "Whether to group fonts that can be merged into a single one.", order = 40)
-    var groupFonts: Boolean = true
+    private var groupFonts: Boolean = true
 
     // Images configuration
 
     @Parameter(names = ["--remove-duplicate-images"], description = "Whether to use the same image for all images with the same binary data.", order = 50)
-    var removeDuplicateImages: Boolean = true
+    private var removeDuplicateImages: Boolean = true
 
     @Parameter(names = ["--downsample-images"], description = "Whether to downsample big images to reduce output size.", order = 60)
-    var downsampleImages: Boolean = false
+    private var downsampleImages: Boolean = false
 
     @Parameter(names = ["--downsample-filter"], description = "Filter used to downsample images: fast | bell | bicubic | bicubichf | box | bspline | hermite | lanczos3 | mitchell | triangle.", order = 70)
-    var downsampleFilterName: String = "lanczos3"
+    private var downsampleFilterName: String = "lanczos3"
 
     @Parameter(names = ["--downsample-min-size"], description = "Minimum size in pixels that images are downsampled to or from. Must be at least 3 px.", order = 80)
-    var downsampleMinSize: Int = 10
+    private var downsampleMinSize: Int = 10
 
     /** If downsampling images, the maximum allowed image density. */
     @Parameter(names = ["--max-dpi"], description = "Maximum image density in DPI.", order = 90)
-    var maxDpi: Float = 200f
+    private var maxDpi: Float = 200f
 
     @Parameter(names = ["--jpeg-quality"], description = "JPEG image quality between 0 and 100.", order = 100)
-    var jpegQuality: Int = 75
+    private var jpegQuality: Int = 75
 
     @Parameter(names = ["--image-format"], description = "Format to use for images: default | jpg | png", order = 110)
-    var imageFormatName: String = "default"
+    private var imageFormatName: String = "default"
 
     // Other
+
+    @DynamicParameter(names = ["-D"], description = "Additional parameters")
+    var params = mutableMapOf<String, String>()
 
     @Parameter(names = ["-h", "--help"], description = "Show help message for this command.", help = true, order = 10000)
     var help = false
@@ -91,8 +96,8 @@ class BaseParams(private val singleFileOutput: Boolean,
 
             collections += if (file.isDirectory) {
                 // File is directory, create collection for its content
-                val collection = file.listFiles()!!.filter { it.isSwfFile() }
-                collection.sortedBy { it.nameWithoutExtension }
+                val collection = file.listFiles()!!.filterTo(mutableListOf()) { it.isSwfFile() }
+                collection.sortByFileName()
                 configError(collection.isNotEmpty()) { "Input folder '$filename' has no SWF files." }
                 collection
 
@@ -106,43 +111,53 @@ class BaseParams(private val singleFileOutput: Boolean,
         collections
     }
 
-    private val outputFiles: List<File> by lazy {
+    private val outputFiles: List<List<File>> by lazy {
         checkNoOptionsInArgs(output)
 
         val input = inputFileCollections
-        if (output.isEmpty()) {
+        val outputFilenames = if (output.isEmpty()) {
             // Use same directory as input collections
-            input.map { it.first().parentFile }
-
+            input.map { it.first().parent }
         } else {
             configError(output.size == input.size) {
                 "Expected as many output files or directories as input."
             }
+            output
+        }
 
-            val outputFiles = mutableListOf<File>()
-            for ((i, filename) in output.withIndex()) {
-                val file = File(filename)
-                outputFiles += file
-                if (file.name.matches("""^.+\..+$""".toRegex())
-                        && (!file.exists() || file.isFile)) {
-                    // If file doesn't exist, guess whether it's a file or a directory from the filename.
-                    // If file already exist, this can be checked.
-                    configError(singleFileOutput || input[i].size == 1) {
-                        "Cannot output to single file '$filename' because input has multiple files."
-                    }
+        val outputFiles = mutableListOf<List<File>>()
+        for ((i, filename) in outputFilenames.withIndex()) {
+            val file = File(filename)
+            if (file.name.matches("""^.+\..+$""".toRegex()) && (!file.exists() || file.isFile)) {
+                // If file doesn't exist, guess whether it's a file or a directory from the filename.
+                // If file already exist, this can be checked.
+                configError(singleFileOutput || input[i].size == 1) {
+                    "Cannot output to single file '$filename' because input has multiple files."
+                }
 
-                    // Treat as a file, check extension.
-                    configError(file.extension.equals(outputExtension, ignoreCase = true)) {
-                        "Output file '$filename' should have .${outputExtension.toLowerCase()} extension."
-                    }
+                // Treat as a file, check extension.
+                configError(file.extension.equals(outputExtension, ignoreCase = true)) {
+                    "Output file '$filename' should have .$outputExtension extension."
+                }
 
+                outputFiles += listOf(file)
+
+            } else {
+                // Treat as directory, create it.
+                file.mkdirs()
+                if (singleFileOutput) {
+                    // Output to single file in directory.
+                    outputFiles += listOf(File(file, "output.$outputExtension"))
                 } else {
-                    // Treat as directory, create it.
-                    file.mkdirs()
+                    // Output to one file per input file in directory.
+                    outputFiles += input[i].map {  inputFile ->
+                        val name = inputFile.nameWithoutExtension
+                        File(file, "$name.$outputExtension")
+                    }
                 }
             }
-            outputFiles
         }
+        outputFiles
     }
 
     private val downsampleFilter: ResampleFilter?
@@ -178,6 +193,24 @@ class BaseParams(private val singleFileOutput: Boolean,
         configError(downsampleMinSize >= 3) { "Minimum downsampling size must be at least 3 px." }
         configError(maxDpi in 10f..2000f) { "Maximum image density must be between 10 and 2000 DPI." }
 
+        // Additional options
+        val parallelSwfDecoding = params[OPT_PARALLEL_SWF_DECODING]?.toBoolean() ?: true
+        val parallelSwfConversion = params[OPT_PARALLEL_SWF_CONVERSION]?.toBoolean() ?: true
+        val parallelFrameRendering = params[OPT_PARALLEL_FRAME_RENDERING]?.toBoolean() ?: true
+        val parallelImageCreation = params[OPT_PARALLEL_IMAGE_CREATION]?.toBoolean() ?: true
+        val keepFonts = params[OPT_KEEP_FONTS]?.toBoolean() ?: false
+        val keepImages = params[OPT_KEEP_IMAGES]?.toBoolean() ?: false
+        val outputOcrGlyphs = params[OPT_OUTPUT_OCR_GLYPHS]?.toBoolean() ?: false
+        val drawShapeBounds = params[OPT_DRAW_SHAPE_BOUNDS]?.toBoolean() ?: false
+        val drawTextBounds = params[OPT_DRAW_TEXT_BOUNDS]?.toBoolean() ?: false
+        val drawClipBounds = params[OPT_DRAW_CLIP_BOUNDS]?.toBoolean() ?: false
+        val disableClipping = params[OPT_DISABLE_CLIPPING]?.toBoolean() ?: false
+        val disableBlending = params[OPT_DISABLE_BLENDING]?.toBoolean() ?: false
+        val disableMasking = params[OPT_DISABLE_MASKING]?.toBoolean() ?: false
+        val framePadding = params[OPT_FRAME_PADDING]?.toFloatOrNull() ?: 0f
+        val debugLineWidth = params[OPT_DEBUG_LINE_WIDTH]?.toFloatOrNull() ?: 20f
+        val debugLineColor = params[OPT_DEBUG_LINE_COLOR]?.toColorOrNull() ?: Color(0, 255, 0)
+
         return inputFileCollections.mapIndexed { i, input ->
             val tempDir = File(tempDir ?: input.first().parent)
             MainConfiguration(
@@ -192,7 +225,23 @@ class BaseParams(private val singleFileOutput: Boolean,
                     downsampleMinSize,
                     maxDpi,
                     jpegQualityFloat,
-                    imageFormat)
+                    imageFormat,
+                    parallelSwfDecoding,
+                    parallelSwfConversion,
+                    parallelFrameRendering,
+                    parallelImageCreation,
+                    keepFonts,
+                    keepImages,
+                    outputOcrGlyphs,
+                    drawShapeBounds,
+                    drawTextBounds,
+                    drawClipBounds,
+                    disableClipping,
+                    disableBlending,
+                    disableMasking,
+                    framePadding,
+                    debugLineWidth,
+                    debugLineColor)
         }
     }
 
@@ -216,10 +265,46 @@ class BaseParams(private val singleFileOutput: Boolean,
         """.trimMargin())
     }
 
+    /**
+     * Sort alphabetically if name is alphanumeric, and sort by
+     * number if all files have numeric names.
+     */
+    private fun MutableList<File>.sortByFileName() {
+        if (this.all { it.nameWithoutExtension.toIntOrNull() != null }) {
+            // All file names are numeric, sort by number
+            this.sortBy { it.nameWithoutExtension.toInt() }
+        } else {
+            this.sortBy { it.name }
+        }
+    }
+
     private fun File.isSwfFile() = this.extension.toLowerCase() == "swf"
+
+    private fun String.toColorOrNull(): Color? = when (this.length) {
+        7 -> this.substring(1).toIntOrNull(16)?.let { Color(it).withAlpha(0xFF) }
+        9 -> this.substring(1).toIntOrNull(16)?.let { Color(it) }
+        else -> null
+    }
 
     companion object {
         private val NUMBER_FMT = DecimalFormat()
+
+        const val OPT_PARALLEL_SWF_DECODING = "parallelSwfDecoding"
+        const val OPT_PARALLEL_SWF_CONVERSION = "parallelSwfConversion"
+        const val OPT_PARALLEL_FRAME_RENDERING = "parallelFrameRendering"
+        const val OPT_PARALLEL_IMAGE_CREATION = "parallelImageCreation"
+        const val OPT_KEEP_FONTS = "keepFonts"
+        const val OPT_KEEP_IMAGES = "keepImages"
+        const val OPT_OUTPUT_OCR_GLYPHS = "outputOcrGlyphs"
+        const val OPT_DRAW_SHAPE_BOUNDS = "drawShapeBounds"
+        const val OPT_DRAW_TEXT_BOUNDS = "drawTextBounds"
+        const val OPT_DRAW_CLIP_BOUNDS = "drawClipBounds"
+        const val OPT_DISABLE_CLIPPING = "disableClipping"
+        const val OPT_DISABLE_BLENDING = "disableBlending"
+        const val OPT_DISABLE_MASKING = "disableMasking"
+        const val OPT_FRAME_PADDING = "framePadding"
+        const val OPT_DEBUG_LINE_WIDTH = "debugLineWidth"
+        const val OPT_DEBUG_LINE_COLOR = "debugLineColor"
     }
 
 }

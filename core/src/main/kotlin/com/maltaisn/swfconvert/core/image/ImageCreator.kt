@@ -16,7 +16,7 @@
 
 package com.maltaisn.swfconvert.core.image
 
-import com.maltaisn.swfconvert.core.config.Debug
+import com.maltaisn.swfconvert.core.config.Configuration
 import com.maltaisn.swfconvert.core.config.MainConfiguration
 import com.maltaisn.swfconvert.core.frame.data.FrameGroup
 import com.maltaisn.swfconvert.core.frame.data.GroupObject
@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 
 class ImageCreator(private val coroutineScope: CoroutineScope,
-                   private val config: MainConfiguration) {
+                   private val config: Configuration) {
 
     /**
      * Create image files for a [frameGroup], written to [imagesDir].
@@ -73,7 +73,7 @@ class ImageCreator(private val coroutineScope: CoroutineScope,
                     val data = imageFill.imageData
 
                     var createImage = false
-                    if (!config.removeDuplicateImages) {
+                    if (!config.main.removeDuplicateImages) {
                         createImage = true
 
                     } else {
@@ -100,16 +100,16 @@ class ImageCreator(private val coroutineScope: CoroutineScope,
                     print("Created image $done / $total\r")
                 }
             }
-            if (!Debug.parallelImageCreation) {
+            if (!config.main.parallelImageCreation) {
                 runBlocking { job.await() }
             }
             job
         }
-        if (Debug.parallelImageCreation) {
+        if (config.main.parallelImageCreation) {
             runBlocking { jobs.awaitAll() }
         }
 
-        if (config.removeDuplicateImages) {
+        if (config.main.removeDuplicateImages) {
             val count = imagesCount.get()
             print("Created images: $count from $total")
             val ratio = (total - count).toFloat() / total

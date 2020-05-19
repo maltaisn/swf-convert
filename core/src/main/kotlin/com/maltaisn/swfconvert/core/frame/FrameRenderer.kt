@@ -21,6 +21,6 @@ import com.maltaisn.swfconvert.core.frame.data.FrameGroup
 
 interface FrameRenderer {
 
-    fun renderFrame(frame: FrameGroup)
+    suspend fun renderFrame(index: Int, frame: FrameGroup)
 
 }
