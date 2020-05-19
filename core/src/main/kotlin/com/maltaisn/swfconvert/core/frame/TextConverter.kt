@@ -18,7 +18,7 @@ package com.maltaisn.swfconvert.core.frame
 
 import com.flagstone.transform.text.StaticTextTag
 import com.flagstone.transform.text.TextSpan
-import com.maltaisn.swfconvert.core.Debug
+import com.maltaisn.swfconvert.core.config.Debug
 import com.maltaisn.swfconvert.core.conversionError
 import com.maltaisn.swfconvert.core.font.data.Font
 import com.maltaisn.swfconvert.core.font.data.FontId

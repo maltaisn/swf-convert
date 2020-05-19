@@ -14,23 +14,20 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.app
+package com.maltaisn.swfconvert.core.config
 
-import kotlin.contracts.contract
+import com.maltaisn.swfconvert.core.frame.FrameRenderer
 
 
 /**
- * To be thrown when a program argument is wrong.
+ * Marker interface for configuration used to convert from the
+ * intermediate representation to an output format.
  */
-class ArgumentException(message: String) : IllegalArgumentException(message)
+interface FormatConfiguration<T : FormatConfiguration<T>> {
 
-fun argError(message: Any?): Nothing = throw ArgumentException(message.toString())
+    /**
+     * Create a new [FrameRenderer] for this format.
+     */
+    fun createRenderer(config: Configuration): FrameRenderer
 
-inline fun argError(condition: Boolean, message: () -> String) {
-    contract {
-        returns() implies condition
-    }
-    if (!condition) {
-        throw ArgumentException(message())
-    }
 }

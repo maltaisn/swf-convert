@@ -16,8 +16,8 @@
 
 package com.maltaisn.swfconvert.core.image
 
-import com.maltaisn.swfconvert.core.Configuration
-import com.maltaisn.swfconvert.core.Debug
+import com.maltaisn.swfconvert.core.config.Debug
+import com.maltaisn.swfconvert.core.config.MainConfiguration
 import com.maltaisn.swfconvert.core.frame.data.FrameGroup
 import com.maltaisn.swfconvert.core.frame.data.GroupObject
 import com.maltaisn.swfconvert.core.frame.data.ShapeObject
@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 
 class ImageCreator(private val coroutineScope: CoroutineScope,
-                   private val config: Configuration) {
+                   private val config: MainConfiguration) {
 
     /**
      * Create image files for a [frameGroup], written to [imagesDir].
@@ -51,7 +51,7 @@ class ImageCreator(private val coroutineScope: CoroutineScope,
 
     /**
      * Create all image files for a [frameGroups], written to [imagesDir].
-     * If [Configuration.removeDuplicateImages] is `true`, duplicate image
+     * If [MainConfiguration.removeDuplicateImages] is `true`, duplicate image
      * data is removed to optimize output size.
      */
     fun createAndOptimizeImages(frameGroups: List<FrameGroup>, imagesDir: File) {

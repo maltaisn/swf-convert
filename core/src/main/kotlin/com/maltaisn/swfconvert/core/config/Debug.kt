@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.core
+package com.maltaisn.swfconvert.core.config
 
 import com.maltaisn.swfconvert.core.image.data.Color
 import com.maltaisn.swfconvert.core.shape.path.PathLineStyle

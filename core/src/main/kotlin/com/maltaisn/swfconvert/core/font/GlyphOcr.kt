@@ -16,7 +16,7 @@
 
 package com.maltaisn.swfconvert.core.font
 
-import com.maltaisn.swfconvert.core.Debug
+import com.maltaisn.swfconvert.core.config.Debug
 import com.maltaisn.swfconvert.core.font.data.GlyphData
 import com.maltaisn.swfconvert.core.shape.path.PathElement.*
 import net.sourceforge.tess4j.ITessAPI
@@ -81,7 +81,7 @@ class GlyphOcr(private val tempDir: File) {
         val path = convertGlyphDataToPath(data)
 
         // Draw the glyph, scaled to the image size, padded, and with Y axis inverted.
-        val scale = (size - 2 * pad) / FontBuilder.EM_SQUARE_SIZE
+        val scale = (size - 2 * pad) / GlyphData.EM_SQUARE_SIZE.toDouble()
         graphics.clearRect(0, 0, size, size)
         graphics.translate(pad, size - pad)
         graphics.scale(scale, -scale)

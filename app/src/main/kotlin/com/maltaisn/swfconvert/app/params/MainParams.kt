@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.core.frame
+package com.maltaisn.swfconvert.app.params
 
-import com.maltaisn.swfconvert.core.frame.data.FrameGroup
-import java.awt.image.BufferedImage
-import java.io.File
+import com.beust.jcommander.Parameter
 
 
-interface FrameRasterizer {
+class MainParams {
 
-    fun rasterizeFrame(frame: FrameGroup, imagesDir: File): BufferedImage
+    @Parameter(names = ["-h", "--help"], description = "Show help message.", help = true, order = 1000)
+    var help = false
 
-    fun dispose()
+    @Parameter(names = ["-v", "--version"], description = "Show version.", order = 1010)
+    var version = false
 
 }

@@ -16,8 +16,8 @@
 
 package com.maltaisn.swfconvert.core.frame
 
-import com.maltaisn.swfconvert.core.Configuration
-import com.maltaisn.swfconvert.core.Debug
+import com.maltaisn.swfconvert.core.config.Configuration
+import com.maltaisn.swfconvert.core.config.Debug
 import com.maltaisn.swfconvert.core.frame.data.FrameGroup
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
@@ -36,7 +36,7 @@ class FramesRenderer(private val coroutineScope: CoroutineScope,
         val progress = AtomicInteger()
         val jobs = frameGroups.map { frameGroup ->
             val job = coroutineScope.async {
-                val renderer = config.rendererFactory()
+                val renderer = config.format.createRenderer(config)
                 renderer.renderFrame(frameGroup)
 
                 val done = progress.incrementAndGet()

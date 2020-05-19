@@ -4,13 +4,11 @@ plugins {
 }
 
 dependencies {
-    implementation fileTree(dir: "src/main/libs", include: ["*.jar"])
+    implementation project(":core")
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
-
-    implementation "net.sourceforge.tess4j:tess4j:$tess4jVersion"
-    implementation "com.mortennobel:java-image-scaling:$scalingLibVersion"
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serializationVersion")
 
     testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
@@ -19,7 +17,6 @@ dependencies {
 sourceSets {
     main {
         java.srcDirs += "src/main/kotlin"
-        resources.srcDirs += "src/main/res"
     }
     test {
         java.srcDirs += "src/test/kotlin"

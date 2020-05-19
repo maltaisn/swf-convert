@@ -16,72 +16,20 @@
 
 package com.maltaisn.swfconvert.app
 
-import com.beust.jcommander.JCommander
+import com.maltaisn.swfconvert.app.params.ParamsParser
+import com.maltaisn.swfconvert.core.ConversionError
 import com.maltaisn.swfconvert.core.SwfCollectionConverter
 import java.text.DecimalFormat
-import kotlin.system.exitProcess
 import kotlin.system.measureTimeMillis
 
 
-fun main(rawArgs: Array<String>) {
-    val args = Args()
-    val commander = JCommander.newBuilder().addObject(args).build()
-    commander.programName = "swf-convert"
+fun main(args: Array<String>) {
+    // Parse program arguments into configurations.
+    // This also prints configuration values.
+    val configs = ParamsParser().parse(args)
 
+    // Do each conversion
     try {
-        // Parse arguments
-        try {
-            commander.parse(*rawArgs)
-        } catch (e: com.beust.jcommander.ParameterException) {
-            argError(e.message)
-        }
-
-        if (args.version) {
-            // Get version from resources and print it.
-            val versionRes = Args::class.java.classLoader.getResourceAsStream("version.txt")!!
-            val version = String(versionRes.readBytes())
-            println("swf-convert v$version\n")
-        }
-
-        if (args.help) {
-            // Show help message
-            commander.usage()
-            exitProcess(0)
-        }
-
-        // Create configurations
-        val configs = args.createConfigurations()
-
-        // Display options
-        val options = configs.first()
-        println("""
-            |Output format: ${args.outputFormatName.toUpperCase()}
-            |OCR detect glyphs: ${options.ocrDetectGlyphs}
-            |Group fonts: ${options.groupFonts}
-            |Remove duplicate images: ${options.removeDuplicateImages}
-            |Downsample images: ${options.downsampleImages}
-            """.trimMargin())
-        if (options.downsampleImages) {
-            println("""
-                |Downsample filter: ${args.downsampleFilterName.toLowerCase()}
-                |Downsample min size: ${options.downsampleMinSize}
-            """.trimMargin())
-        }
-        println("""
-            |Max DPI: ${NUMBER_FMT.format(options.maxDpi)}
-            |JPEG quality: ${args.jpegQuality} %
-            |Image format: ${args.imageFormatName.toUpperCase()}
-            |Rasterization enabled: ${options.rasterizationEnabled}
-        """.trimMargin())
-        if (options.rasterizationEnabled) {
-            println("""
-            |Rasterization threshold: ${NUMBER_FMT.format(options.rasterizationThreshold)}
-            |Rasterization DPI: ${NUMBER_FMT.format(options.rasterizationDpi)}
-            |Rasterizer: ${options.rasterizer}
-            """.trimMargin())
-        }
-        println()
-
         val converter = SwfCollectionConverter()
         for ((i, config) in configs.withIndex()) {
             println("Converting collection ${i + 1} / ${configs.size}")
@@ -90,14 +38,9 @@ fun main(rawArgs: Array<String>) {
             }
             println("Done in ${DURATION_FMT.format(duration / 1000.0)} s\n")
         }
-
-        exitProcess(0)
-
-    } catch (e: ArgumentException) {
-        println("ERROR: ${e.message}\n")
-        exitProcess(1)
+    } catch (e: ConversionError) {
+        println()
     }
 }
 
 private val DURATION_FMT = DecimalFormat("0.00")
-private val NUMBER_FMT = DecimalFormat()

@@ -17,6 +17,7 @@
 package com.maltaisn.swfconvert.core
 
 import com.flagstone.transform.Movie
+import com.maltaisn.swfconvert.core.config.Debug
 import kotlinx.coroutines.*
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger

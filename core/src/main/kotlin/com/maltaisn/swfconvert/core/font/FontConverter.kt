@@ -21,7 +21,7 @@ import com.flagstone.transform.font.DefineFont
 import com.flagstone.transform.font.DefineFont2
 import com.flagstone.transform.font.DefineFont3
 import com.flagstone.transform.font.DefineFont4
-import com.maltaisn.swfconvert.core.Configuration
+import com.maltaisn.swfconvert.core.config.MainConfiguration
 import com.maltaisn.swfconvert.core.conversionError
 import com.maltaisn.swfconvert.core.font.data.*
 import com.maltaisn.swfconvert.core.old.font.GlyphPathParser
@@ -32,7 +32,7 @@ import java.util.*
 
 
 class FontConverter(private val fontsDir: File,
-                    private val config: Configuration) {
+                    private val config: MainConfiguration) {
 
     private val glyphOcr = GlyphOcr(File(fontsDir, "ocr"))
 

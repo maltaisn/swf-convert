@@ -5,7 +5,11 @@ plugins {
 dependencies {
     implementation project(":core")
 
+    implementation project(":render:ir")
+    implementation project(":render:pdf")
+
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serializationVersion")
 
     implementation "com.beust:jcommander:$jcommanderVersion"
 

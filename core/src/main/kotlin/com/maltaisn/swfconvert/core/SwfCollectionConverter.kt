@@ -16,8 +16,9 @@
 
 package com.maltaisn.swfconvert.core
 
+import com.maltaisn.swfconvert.core.config.Configuration
+import com.maltaisn.swfconvert.core.config.Debug
 import com.maltaisn.swfconvert.core.font.FontConverter
-import com.maltaisn.swfconvert.core.frame.FramesRasterizer
 import com.maltaisn.swfconvert.core.frame.FramesRenderer
 import com.maltaisn.swfconvert.core.frame.SwfsConverter
 import com.maltaisn.swfconvert.core.image.ImageCreator
@@ -35,12 +36,14 @@ class SwfCollectionConverter {
 
 
     fun convertSwfCollection(config: Configuration) {
+        val fontsDir = File(config.main.tempDir, "fonts")
+        val imagesDir = File(config.main.tempDir, "images")
+
         // Decode SWFs files
-        val swfs = SwfsDecoder(coroutineScope).decodeFiles(config.input)
+        val swfs = SwfsDecoder(coroutineScope).decodeFiles(config.main.input)
 
         // Create font groups
-        val fontsDir = File(config.tempDir, "fonts")
-        val fontConverter = FontConverter(fontsDir, config)
+        val fontConverter = FontConverter(fontsDir, config.main)
         val fontGroups = fontConverter.createFontGroups(swfs)
 
         // Create font files and ungroup them.
@@ -49,19 +52,11 @@ class SwfCollectionConverter {
 
         // Convert SWF to intermediate representation.
         val swfsConverter = SwfsConverter(coroutineScope, fontsMap)
-        var frameGroups = swfsConverter.createFrameGroups(swfs, config)
-
-        // Create and clean images dir
-        val imagesDir = File(config.tempDir, "images")
-        imagesDir.deleteRecursively()
-
-        // Rasterize frames
-        val rasterizer = FramesRasterizer(coroutineScope, config)
-        frameGroups = rasterizer.rasterizeFrames(frameGroups, imagesDir)
-        rasterizer.dispose()
+        val frameGroups = swfsConverter.createFrameGroups(swfs, config.main)
 
         // Create images and remove duplicates if needed.
-        val imageCreator = ImageCreator(coroutineScope, config)
+        imagesDir.deleteRecursively()
+        val imageCreator = ImageCreator(coroutineScope, config.main)
         imageCreator.createAndOptimizeImages(frameGroups, imagesDir)
 
         // Render frames (from intermediate format to output format)

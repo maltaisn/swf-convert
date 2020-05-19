@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.core.frame
+package com.maltaisn.swfconvert.render.pdf
 
-import com.maltaisn.swfconvert.core.Configuration
-import com.maltaisn.swfconvert.core.Debug
+import com.maltaisn.swfconvert.core.config.Configuration
+import com.maltaisn.swfconvert.core.config.Debug
 import com.maltaisn.swfconvert.core.frame.data.*
 import com.maltaisn.swfconvert.core.image.ImageDecoder
 import com.maltaisn.swfconvert.core.image.ImageFormat
@@ -38,12 +38,13 @@ import java.util.concurrent.atomic.AtomicInteger
 class FramesRasterizer(private val coroutineScope: CoroutineScope,
                        private val config: Configuration) {
 
-    private val imageDecoder = ImageDecoder(config)
+    private val imageDecoder = ImageDecoder(config.main)
 
 
     fun rasterizeFrames(frameGroups: List<FrameGroup>,
                         imagesDir: File): List<FrameGroup> {
-        if (!config.rasterizationEnabled) {
+        val pdfConfig = config.format as PdfConfiguration
+        if (!pdfConfig.rasterizationEnabled) {
             return frameGroups
         }
 
@@ -53,7 +54,7 @@ class FramesRasterizer(private val coroutineScope: CoroutineScope,
         val framesToRasterize = mutableListOf<Int>()
         for ((i, frameGroup) in frameGroups.withIndex()) {
             val complexity = evaluateShapeComplexity(frameGroup)
-            if (complexity >= config.rasterizationThreshold) {
+            if (complexity >= pdfConfig.rasterizationThreshold) {
                 // Frame is too complex, rasterize.
                 framesToRasterize += i
             }
@@ -139,7 +140,7 @@ class FramesRasterizer(private val coroutineScope: CoroutineScope,
         }
 
         // Rasterize the frame
-        val rasterizer = config.rasterizerFactory()
+        val rasterizer = FrameRasterizer()
         val frameImage = rasterizer.rasterizeFrame(croppedFrame, imagesDir)
         rasterizer.dispose()
 

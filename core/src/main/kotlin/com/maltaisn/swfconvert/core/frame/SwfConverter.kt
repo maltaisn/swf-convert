@@ -28,7 +28,10 @@ import com.flagstone.transform.shape.DefineShape2
 import com.flagstone.transform.shape.DefineShape3
 import com.flagstone.transform.shape.DefineShape4
 import com.flagstone.transform.text.StaticTextTag
-import com.maltaisn.swfconvert.core.*
+import com.maltaisn.swfconvert.core.Units
+import com.maltaisn.swfconvert.core.config.Debug
+import com.maltaisn.swfconvert.core.config.MainConfiguration
+import com.maltaisn.swfconvert.core.conversionError
 import com.maltaisn.swfconvert.core.font.data.Font
 import com.maltaisn.swfconvert.core.font.data.FontId
 import com.maltaisn.swfconvert.core.frame.data.FrameGroup
@@ -40,6 +43,8 @@ import com.maltaisn.swfconvert.core.shape.StyledShapeConverter
 import com.maltaisn.swfconvert.core.shape.data.WDefineShape
 import com.maltaisn.swfconvert.core.shape.path.Path
 import com.maltaisn.swfconvert.core.shape.path.PathElement
+import com.maltaisn.swfconvert.core.toAffineTransformOrIdentity
+import com.maltaisn.swfconvert.core.toPlaceTagOrNull
 import java.awt.Rectangle
 import java.awt.geom.AffineTransform
 import java.util.*
@@ -49,7 +54,7 @@ import java.util.*
  * Converts a single SWF file to the [FrameGroup] intermediate representation.
  */
 class SwfConverter(private val fontsMap: Map<FontId, Font>,
-                   private val config: Configuration) {
+                   private val config: MainConfiguration) {
 
     private lateinit var textConverter: TextConverter
     private lateinit var shapeParser: StyledShapeConverter

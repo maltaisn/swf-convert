@@ -14,14 +14,21 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.app
+package com.maltaisn.swfconvert.render.pdf
 
-import com.maltaisn.swfconvert.core.frame.FrameRasterizer
-import com.maltaisn.swfconvert.core.frame.FrameRenderer
+import com.maltaisn.swfconvert.core.frame.data.FrameGroup
+import java.awt.image.BufferedImage
+import java.io.File
 
 
-enum class OutputFormat(val singleFileOutput: Boolean,
-                        val rendererFactory: () -> FrameRenderer,
-                        val rasterizerFactory: () -> FrameRasterizer) {
-    PDF(true, { TODO() }, { TODO() })
+class FrameRasterizer {
+
+    fun rasterizeFrame(frameGroup: FrameGroup, imagesDir: File): BufferedImage {
+        TODO()
+    }
+
+    fun dispose() {
+
+    }
+
 }
