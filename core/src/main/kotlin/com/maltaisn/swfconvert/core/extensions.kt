@@ -29,34 +29,34 @@ import java.util.zip.InflaterInputStream
 import com.flagstone.transform.datatype.Color as FColor
 
 
-fun FColor.toColor() = Color(this.red, this.green, this.blue, this.alpha)
+internal fun FColor.toColor() = Color(this.red, this.green, this.blue, this.alpha)
 
 /**
  * Convert [this] transform to an [AffineTransform].
  * The skewing parameters are reversed to reverse rotation direction since
  * everything is flipped vertically.
  */
-fun CoordTransform.toAffineTransform() = AffineTransform(
+internal fun CoordTransform.toAffineTransform() = AffineTransform(
         this.scaleX, this.shearX, this.shearY, this.scaleY,
         this.translateX.toFloat(), this.translateY.toFloat())
 
-fun CoordTransform?.toAffineTransformOrIdentity() = this?.toAffineTransform() ?: AffineTransform()
+internal fun CoordTransform?.toAffineTransformOrIdentity() = this?.toAffineTransform() ?: AffineTransform()
 
-fun MovieTag.toPlaceTagOrNull() = when (this) {
+internal fun MovieTag.toPlaceTagOrNull() = when (this) {
     is Place -> WPlace(this)
     is Place2 -> WPlace(this)
     is Place3 -> WPlace(this)
     else -> null
 }
 
-fun ByteArray.zlibDecompress(): ByteArray {
+internal fun ByteArray.zlibDecompress(): ByteArray {
     val inflaterStream = InflaterInputStream(ByteArrayInputStream(this))
     val decompressed = inflaterStream.readBytes()
     inflaterStream.close()
     return decompressed
 }
 
-fun validateFilename(filename: String) =
+internal fun validateFilename(filename: String) =
         filename.replace(INVALID_FILENAME_CHARS_PATTERN, "")
 
 private val INVALID_FILENAME_CHARS_PATTERN = """[/\\:*?"<>|]""".toRegex()

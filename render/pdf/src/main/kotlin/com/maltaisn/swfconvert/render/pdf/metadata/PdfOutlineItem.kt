@@ -36,7 +36,7 @@ sealed class PdfOutlineItem {
             @SerialName("title") override val title: String,
             @SerialName("page") override val page: Int,
             @SerialName("children") override val children: List<PdfOutlineItem> = emptyList(),
-            @SerialName("y") val y: Float = 0f
+            @SerialName("y") val y: Int = 0
     ) : PdfOutlineItem()
 
     @Serializable
@@ -45,7 +45,7 @@ sealed class PdfOutlineItem {
             @SerialName("title") override val title: String,
             @SerialName("page") override val page: Int,
             @SerialName("children") override val children: List<PdfOutlineItem> = emptyList(),
-            @SerialName("x") val x: Float = 0f
+            @SerialName("x") val x: Int = 0
     ) : PdfOutlineItem()
 
     @Serializable
@@ -54,10 +54,10 @@ sealed class PdfOutlineItem {
             @SerialName("title") override val title: String,
             @SerialName("page") override val page: Int,
             @SerialName("children") override val children: List<PdfOutlineItem> = emptyList(),
-            @SerialName("top") val top: Float = 0f,
-            @SerialName("left") val left: Float = 0f,
-            @SerialName("bottom") val bottom: Float = 0f,
-            @SerialName("right") val right: Float = 0f
+            @SerialName("top") val top: Int = 0,
+            @SerialName("left") val left: Int = 0,
+            @SerialName("bottom") val bottom: Int = 0,
+            @SerialName("right") val right: Int = 0
     ) : PdfOutlineItem()
 
     @Serializable
@@ -66,8 +66,8 @@ sealed class PdfOutlineItem {
             @SerialName("title") override val title: String,
             @SerialName("page") override val page: Int,
             @SerialName("children") override val children: List<PdfOutlineItem> = emptyList(),
-            @SerialName("x") val x: Float = 0f,
-            @SerialName("y") val y: Float = 0f,
+            @SerialName("x") val x: Int = 0,
+            @SerialName("y") val y: Int = 0,
             @SerialName("zoom") val zoom: Float = 0f
     ) : PdfOutlineItem()
 

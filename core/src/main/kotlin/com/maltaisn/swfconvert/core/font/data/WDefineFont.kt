@@ -22,15 +22,15 @@ import com.flagstone.transform.font.Kerning
 import com.flagstone.transform.shape.Shape
 
 
-data class WDefineFont(val identifier: Int,
-                       val name: String,
-                       val ascent: Int,
-                       val descent: Int,
-                       val codes: List<Int>,
-                       val shapes: List<Shape>,
-                       val advances: List<Int>,
-                       val kernings: List<Kerning>,
-                       val scale: FontScale) {
+internal data class WDefineFont(val identifier: Int,
+                                val name: String,
+                                val ascent: Int,
+                                val descent: Int,
+                                val codes: List<Int>,
+                                val shapes: List<Shape>,
+                                val advances: List<Int>,
+                                val kernings: List<Kerning>,
+                                val scale: FontScale) {
 
     // Note that according to specification all scale values should be `1` for DefineFont2.
     // However, the files converted here were not created correctly, so scale fixes it.

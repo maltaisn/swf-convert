@@ -131,7 +131,7 @@ data class MainConfiguration(
         val debugLineColor: Color
 ) {
 
-        val debugLineStyle = PathLineStyle(debugLineColor, debugLineWidth,
-                BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0f)
+    val debugLineStyle = PathLineStyle(debugLineColor, debugLineWidth,
+            BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0f)
 }
 

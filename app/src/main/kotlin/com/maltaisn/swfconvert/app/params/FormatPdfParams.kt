@@ -39,15 +39,15 @@ class FormatPdfParams : FormatParams<PdfConfiguration> {
 
     // General
 
-    @Parameter(names = ["--compress"], description = "Whether to enable rasterization of complex input files or not.", order = 1000)
-    var compress: Boolean = false
+    @Parameter(names = ["--compress"], arity = 1, description = "Whether to compress output PDF or not.", order = 1000)
+    var compress: Boolean = true
 
     // Metadata
 
     @Parameter(names = ["--metadata"], variableArity = true, description = "JSON files containing metadata to set on PDF files.", order = 1100)
     var metadata: List<String> = emptyList()
 
-    @Parameter(names = ["--optimize-page-labels"], description = "Whether to optimize page labels or not.", order = 1110)
+    @Parameter(names = ["--optimize-page-labels"], arity = 1, description = "Whether to optimize page labels or not.", order = 1110)
     var optimizePageLabels: Boolean = true
 
     // Rasterization
@@ -62,11 +62,11 @@ class FormatPdfParams : FormatParams<PdfConfiguration> {
     var rasterizationDpi = 200f
 
     @Parameter(names = ["--rasterizer"], description = "External program used to rasterize output files.", order = 1230)
-    var rasterizer: String = "pdfbox"
+    var rasterizer: String = PdfConfiguration.INTERNAL_RASTERIZER
 
     @Parameter(names = ["--rasterizer-args"], description = "Arguments to use with rasterizer to rasterize files of specified output format.", order = 1240)
     var rasterizerArgs: String = "--input=%1\$s --dpi=%2\$s --output=%3\$s"
-    // Note: default arguments are just to show interpolation parameters in help, they aren't really used.
+    // Note: default arguments are just to show format parameters in help, they aren't really used.
 
 
     private val pdfMetadata: List<PdfMetadata> by lazy {
@@ -98,6 +98,8 @@ class FormatPdfParams : FormatParams<PdfConfiguration> {
         configError(rasterizationDpi in 10f..2000f) { "Rasterization density must be between 10 and 2000 DPI." }
         configError(rasterizationThreshold >= 0) { "Rasterization threshold complexity must be greater or equal to 0." }
 
+        val parallelRasterization = params.params[OPT_PARALLEL_RASTERIZATION]?.toBoolean() ?: true
+
         val config = PdfConfiguration(
                 compress,
                 null,
@@ -106,7 +108,8 @@ class FormatPdfParams : FormatParams<PdfConfiguration> {
                 rasterizationThreshold,
                 rasterizationDpi,
                 rasterizer,
-                rasterizerArgs)
+                rasterizerArgs,
+                parallelRasterization)
 
         return if (pdfMetadata.isEmpty()) {
             List(count) { config }
@@ -132,6 +135,8 @@ class FormatPdfParams : FormatParams<PdfConfiguration> {
 
     companion object {
         private val NUMBER_FMT = DecimalFormat()
+
+        const val OPT_PARALLEL_RASTERIZATION = "parallelRasterization"
     }
 
 }

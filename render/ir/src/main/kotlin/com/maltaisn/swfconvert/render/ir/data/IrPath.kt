@@ -21,12 +21,12 @@ import kotlinx.serialization.Serializable
 
 
 @Serializable
-data class IrPath(val data: String,
-                  val fillStyle: IrPathFillStyle? = null,
-                  val lineStyle: IrPathLineStyle? = null)
+internal data class IrPath(val data: String,
+                           val fillStyle: IrPathFillStyle? = null,
+                           val lineStyle: IrPathLineStyle? = null)
 
 @Serializable
-sealed class IrPathFillStyle {
+internal sealed class IrPathFillStyle {
 
     @Serializable
     @SerialName("solid")
@@ -45,16 +45,16 @@ sealed class IrPathFillStyle {
 }
 
 @Serializable
-data class IrImageData(val dataFile: String,
-                       val alphaDataFile: String? = null)
+internal data class IrImageData(val dataFile: String,
+                                val alphaDataFile: String? = null)
 
 @Serializable
-data class IrGradientColor(val color: String,
-                           val ratio: Float)
+internal data class IrGradientColor(val color: String,
+                                    val ratio: Float)
 
 @Serializable
-data class IrPathLineStyle(val color: String,
-                           val width: Float,
-                           val cap: Int,
-                           val join: Int,
-                           val miterLimit: Float)
+internal data class IrPathLineStyle(val color: String,
+                                    val width: Float,
+                                    val cap: Int,
+                                    val join: Int,
+                                    val miterLimit: Float)

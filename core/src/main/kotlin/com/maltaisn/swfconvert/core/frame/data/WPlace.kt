@@ -26,15 +26,15 @@ import com.flagstone.transform.datatype.CoordTransform
 import com.flagstone.transform.filter.Filter
 
 
-data class WPlace(val type: PlaceType,
-                  val transform: CoordTransform?,
-                  var colorTransform: ColorTransform?,
-                  val filters: List<Filter>,
-                  val identifier: Int,
-                  val depth: Int,
-                  val clipDepth: Int,
-                  val blendMode: Blend?,
-                  val ratio: Int?) {
+internal data class WPlace(val type: PlaceType,
+                           val transform: CoordTransform?,
+                           var colorTransform: ColorTransform?,
+                           val filters: List<Filter>,
+                           val identifier: Int,
+                           val depth: Int,
+                           val clipDepth: Int,
+                           val blendMode: Blend?,
+                           val ratio: Int?) {
 
     val hasClip: Boolean
         get() = clipDepth != NO_CLIP_DEPTH

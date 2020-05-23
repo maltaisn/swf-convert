@@ -20,6 +20,8 @@ import com.beust.jcommander.DynamicParameter
 import com.beust.jcommander.Parameter
 import com.maltaisn.swfconvert.app.checkNoOptionsInArgs
 import com.maltaisn.swfconvert.app.configError
+import com.maltaisn.swfconvert.app.isSwfFile
+import com.maltaisn.swfconvert.app.toColorOrNull
 import com.maltaisn.swfconvert.core.config.MainConfiguration
 import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.maltaisn.swfconvert.core.image.data.Color
@@ -49,12 +51,12 @@ class BaseParams(private val singleFileOutput: Boolean,
     private var ocrDetectGlyphs: Boolean = false
 
     /** Whether to group fonts that can be merged into a single one. */
-    @Parameter(names = ["--group-fonts"], description = "Whether to group fonts that can be merged into a single one.", order = 40)
+    @Parameter(names = ["--group-fonts"], arity = 1, description = "Whether to group fonts that can be merged into a single one.", order = 40)
     private var groupFonts: Boolean = true
 
     // Images configuration
 
-    @Parameter(names = ["--remove-duplicate-images"], description = "Whether to use the same image for all images with the same binary data.", order = 50)
+    @Parameter(names = ["--remove-duplicate-images"], arity = 1, description = "Whether to use the same image for all images with the same binary data.", order = 50)
     private var removeDuplicateImages: Boolean = true
 
     @Parameter(names = ["--downsample-images"], description = "Whether to downsample big images to reduce output size.", order = 60)
@@ -150,7 +152,7 @@ class BaseParams(private val singleFileOutput: Boolean,
                     outputFiles += listOf(File(file, "output.$outputExtension"))
                 } else {
                     // Output to one file per input file in directory.
-                    outputFiles += input[i].map {  inputFile ->
+                    outputFiles += input[i].map { inputFile ->
                         val name = inputFile.nameWithoutExtension
                         File(file, "$name.$outputExtension")
                     }
@@ -276,14 +278,6 @@ class BaseParams(private val singleFileOutput: Boolean,
         } else {
             this.sortBy { it.name }
         }
-    }
-
-    private fun File.isSwfFile() = this.extension.toLowerCase() == "swf"
-
-    private fun String.toColorOrNull(): Color? = when (this.length) {
-        7 -> this.substring(1).toIntOrNull(16)?.let { Color(it).withAlpha(0xFF) }
-        9 -> this.substring(1).toIntOrNull(16)?.let { Color(it) }
-        else -> null
     }
 
     companion object {

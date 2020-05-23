@@ -43,7 +43,14 @@ data class PdfMetadata(
          * An empty list will result in no outline.
          */
         @SerialName("outline")
-        val outline: List<PdfOutlineItem> = emptyList()
+        val outline: List<PdfOutlineItem> = emptyList(),
+
+        /**
+         * Level up to which outline items should be expanded by default.
+         * A level of `0` won't expand any.
+         */
+        @SerialName("outline_open_level")
+        val outlineOpenLevel: Int = 1
 )
 
 

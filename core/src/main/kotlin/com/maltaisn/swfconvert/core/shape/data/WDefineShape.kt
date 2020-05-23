@@ -22,11 +22,11 @@ import com.flagstone.transform.linestyle.LineStyle
 import com.flagstone.transform.shape.*
 
 
-data class WDefineShape(val identifier: Int,
-                        val shape: Shape,
-                        val bounds: Bounds,
-                        val fillStyles: List<FillStyle>,
-                        val lineStyles: List<LineStyle>) {
+internal data class WDefineShape(val identifier: Int,
+                                 val shape: Shape,
+                                 val bounds: Bounds,
+                                 val fillStyles: List<FillStyle>,
+                                 val lineStyles: List<LineStyle>) {
 
     constructor(s: DefineShape) : this(s.identifier, s.shape, s.bounds, s.fillStyles, s.lineStyles)
     constructor(s: DefineShape2) : this(s.identifier, s.shape, s.bounds, s.fillStyles, s.lineStyles)

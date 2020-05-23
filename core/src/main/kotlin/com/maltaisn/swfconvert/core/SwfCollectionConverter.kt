@@ -18,7 +18,6 @@ package com.maltaisn.swfconvert.core
 
 import com.maltaisn.swfconvert.core.config.Configuration
 import com.maltaisn.swfconvert.core.font.FontConverter
-import com.maltaisn.swfconvert.core.frame.FramesRenderer
 import com.maltaisn.swfconvert.core.frame.SwfsConverter
 import com.maltaisn.swfconvert.core.image.ImageCreator
 import kotlinx.coroutines.CoroutineScope
@@ -59,7 +58,8 @@ class SwfCollectionConverter {
         imageCreator.createAndOptimizeImages(frameGroups, imagesDir)
 
         // Render frames (from intermediate format to output format)
-        FramesRenderer(coroutineScope, config).renderFrames(frameGroups)
+        val renderer = config.format.createRenderer(coroutineScope, config)
+        renderer.renderFrames(frameGroups)
 
         // Remove files not to keep
         if (!config.main.keepImages) {

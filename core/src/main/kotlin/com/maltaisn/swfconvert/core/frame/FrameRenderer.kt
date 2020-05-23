@@ -19,8 +19,11 @@ package com.maltaisn.swfconvert.core.frame
 import com.maltaisn.swfconvert.core.frame.data.FrameGroup
 
 
-interface FrameRenderer {
+interface FramesRenderer {
 
-    suspend fun renderFrame(index: Int, frame: FrameGroup)
+    /**
+     * Render a list of [frameGroups] to the output files specified by the configuration.
+     */
+    fun renderFrames(frameGroups: List<FrameGroup>)
 
 }

@@ -271,7 +271,7 @@ class ImageDecoder(private val config: Configuration) {
      * If density is already below or downsampling is disabled, the same image is returned.
      */
     private fun BufferedImage.downsampled(currentDensity: Float,
-                                maxDensity: Float): BufferedImage {
+                                          maxDensity: Float): BufferedImage {
         val min = config.main.downsampleMinSize.toFloat()
         if (!config.main.downsampleImages || currentDensity < maxDensity ||
                 this.width < min || this.height < min) {

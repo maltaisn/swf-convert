@@ -16,7 +16,8 @@
 
 package com.maltaisn.swfconvert.core.config
 
-import com.maltaisn.swfconvert.core.frame.FrameRenderer
+import com.maltaisn.swfconvert.core.frame.FramesRenderer
+import kotlinx.coroutines.CoroutineScope
 
 
 /**
@@ -26,8 +27,9 @@ import com.maltaisn.swfconvert.core.frame.FrameRenderer
 interface FormatConfiguration<T : FormatConfiguration<T>> {
 
     /**
-     * Create a new [FrameRenderer] for this format.
+     * Create a new [FramesRenderer] for this format.
      */
-    fun createRenderer(config: Configuration): FrameRenderer
+    fun createRenderer(coroutineScope: CoroutineScope,
+                       config: Configuration): FramesRenderer
 
 }

@@ -31,8 +31,8 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * Converts a collection of SWF files to the [FrameGroup] intermediate representation.
  */
-class SwfsConverter(private val coroutineScope: CoroutineScope,
-                    private val fontsMap: Map<FontId, Font>) {
+internal class SwfsConverter(private val coroutineScope: CoroutineScope,
+                             private val fontsMap: Map<FontId, Font>) {
 
     fun createFrameGroups(swfs: List<Movie>, config: Configuration): List<FrameGroup> {
         val frameGroups = arrayOfNulls<FrameGroup>(swfs.size)

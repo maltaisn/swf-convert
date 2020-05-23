@@ -39,7 +39,7 @@ import kotlin.math.sqrt
 /**
  * Extends the functionality of [ShapeConverter] by allowing fill and line styles.
  */
-class StyledShapeConverter(
+internal class StyledShapeConverter(
         private val objectsMap: Map<Int, MovieTag>,
         private val colorTransform: CompositeColorTransform,
         private val config: Configuration

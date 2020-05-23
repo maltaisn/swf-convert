@@ -37,7 +37,7 @@ import java.awt.geom.Point2D
  * Most shape parsing logic was taken from:
  * [https://github.com/claus/as3swf/blob/master/src/com/codeazur/as3swf/data/SWFShape.as].
  */
-open class ShapeConverter {
+internal open class ShapeConverter {
 
     private lateinit var shape: Shape
     private lateinit var transform: AffineTransform

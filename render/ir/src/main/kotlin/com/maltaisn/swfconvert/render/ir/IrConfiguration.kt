@@ -18,6 +18,8 @@ package com.maltaisn.swfconvert.render.ir
 
 import com.maltaisn.swfconvert.core.config.Configuration
 import com.maltaisn.swfconvert.core.config.FormatConfiguration
+import com.maltaisn.swfconvert.core.frame.FramesRenderer
+import kotlinx.coroutines.CoroutineScope
 
 
 /**
@@ -30,6 +32,8 @@ data class IrConfiguration(
 
 ) : FormatConfiguration<IrConfiguration> {
 
-        override fun createRenderer(config: Configuration) = IrFrameRenderer(config)
+    override fun createRenderer(coroutineScope: CoroutineScope,
+                                config: Configuration): FramesRenderer =
+            IrFramesRenderer(coroutineScope, config)
 
 }

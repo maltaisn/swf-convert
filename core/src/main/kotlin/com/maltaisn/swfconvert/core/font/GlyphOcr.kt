@@ -28,8 +28,8 @@ import java.io.File
 import javax.imageio.ImageIO
 
 
-class GlyphOcr(private val config: Configuration,
-               private val tempDir: File) {
+internal class GlyphOcr(private val config: Configuration,
+                        private val tempDir: File) {
 
     private val tesseract = Tesseract()
 

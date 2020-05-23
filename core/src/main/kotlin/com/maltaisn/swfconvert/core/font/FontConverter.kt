@@ -31,8 +31,8 @@ import java.text.NumberFormat
 import java.util.*
 
 
-class FontConverter(private val fontsDir: File,
-                    private val config: Configuration) {
+internal class FontConverter(private val fontsDir: File,
+                             private val config: Configuration) {
 
     private val glyphOcr = GlyphOcr(config, File(fontsDir, "ocr"))
 
@@ -58,7 +58,7 @@ class FontConverter(private val fontsDir: File,
         val groups = mergeFonts(allFonts)
         if (config.main.groupFonts) {
             val ratio = (allFonts.size - groups.size) / allFonts.size.toFloat()
-            println("Created ${groups.size} font groups from ${allFonts.size} " +
+            println("Creating fonts: ${groups.size} font groups created from ${allFonts.size} " +
                     "fonts (-${PERCENT_FMT.format(ratio)})")
         }
 

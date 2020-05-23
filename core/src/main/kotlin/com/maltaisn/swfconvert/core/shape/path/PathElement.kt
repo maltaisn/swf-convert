@@ -79,7 +79,7 @@ sealed class PathElement(open val x: Float, open val y: Float) {
 
     data class Rectangle(override val x: Float, override val y: Float,
                          val width: Float, val height: Float) : PathElement(x, y) {
-        
+
         override fun toSvg(svg: StringBuilder) {
             svg.append("M ")
             svg.appendValues(x, y)

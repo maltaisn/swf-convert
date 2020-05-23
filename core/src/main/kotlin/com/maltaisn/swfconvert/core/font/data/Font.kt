@@ -25,7 +25,7 @@ data class Font(val id: FontId,
                 val metrics: FontMetrics,
                 val glyphs: List<FontGlyph>) {
 
-    lateinit var fontFile: File
+    var fontFile: File? = null
 
     fun getGlyph(entry: GlyphIndex) = glyphs[entry.glyphIndex]
 }

@@ -24,17 +24,17 @@ import com.flagstone.transform.linestyle.LineStyle1
 import com.flagstone.transform.linestyle.LineStyle2
 
 
-data class WLineStyle(val color: Color,
-                      val width: Int,
-                      val capStyle: CapStyle?,
-                      val joinStyle: JoinStyle?,
-                      val miterLimit: Int,
-                      val fillStyle: FillStyle?) {
+internal data class WLineStyle(val color: Color,
+                               val width: Int,
+                               val capStyle: CapStyle?,
+                               val joinStyle: JoinStyle?,
+                               val miterLimit: Int,
+                               val fillStyle: FillStyle?) {
 
     constructor(style: LineStyle1) : this(style.color, style.width, null,
             null, 0, null)
 
     constructor(style: LineStyle2) : this(style.color, style.width, style.startCap,
             style.joinStyle, style.miterLimit, style.fillStyle)
-    
+
 }

@@ -33,7 +33,7 @@ import kotlin.math.roundToInt
  * Based on ffdec, doubletype code was taken there too.
  * [https://github.com/jindrapetrik/jpexs-decompiler/blob/bf2a413725c09eecded4e8f42af4487ecd1842a5/libsrc/ttf/src/fontastic/Fontastic.java]
  */
-data class FontBuilder(val name: String) {
+internal data class FontBuilder(val name: String) {
 
     val glyphs = mutableMapOf<Char, FontGlyph>()
 

@@ -22,11 +22,11 @@ import com.maltaisn.swfconvert.core.zlibDecompress
 
 
 @Suppress("ArrayInDataClass")
-class WDefineImage(val width: Int,
-                   val height: Int,
-                   data: ByteArray,
-                   val bits: Int,
-                   val tableSize: Int) {
+internal class WDefineImage(val width: Int,
+                            val height: Int,
+                            data: ByteArray,
+                            val bits: Int,
+                            val tableSize: Int) {
 
     val data = data.zlibDecompress()
 

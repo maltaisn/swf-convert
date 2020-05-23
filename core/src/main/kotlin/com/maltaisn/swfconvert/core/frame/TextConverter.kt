@@ -41,9 +41,9 @@ import kotlin.math.absoluteValue
 /**
  * Converts SWF text tags to [TextObject] intermediate representation.
  */
-class TextConverter(private val fileIndex: Int,
-                    private val fonts: Map<FontId, Font>,
-private val config: Configuration) {
+internal class TextConverter(private val fileIndex: Int,
+                             private val fonts: Map<FontId, Font>,
+                             private val config: Configuration) {
 
     private lateinit var textTag: StaticTextTag
     private lateinit var colorTransform: CompositeColorTransform
@@ -206,9 +206,8 @@ private val config: Configuration) {
 
             // Add advance width difference to list
             if (i != glyphEntries.lastIndex) {
-                // Find difference with default advance width. Division by fontSize is to
-                // get value in glyph space units.
-                val actualAdvance = glyphEntry.advance.toFloat() / (scale.unscaleX * fontSize)
+                // Find difference with default advance width, in glyph space units.
+                val actualAdvance = glyphEntry.advance.toFloat() / (scale.unscaleX * fontSize) * GlyphData.EM_SQUARE_SIZE
                 val diff = actualAdvance - defaultAdvance
                 glyphOffsets += diff
                 if (diff.absoluteValue >= CUSTOM_POSITIONING_THRESHOLD) {

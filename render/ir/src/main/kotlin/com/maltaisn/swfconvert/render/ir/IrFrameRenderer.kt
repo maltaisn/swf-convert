@@ -17,7 +17,6 @@
 package com.maltaisn.swfconvert.render.ir
 
 import com.maltaisn.swfconvert.core.config.Configuration
-import com.maltaisn.swfconvert.core.frame.FrameRenderer
 import com.maltaisn.swfconvert.core.frame.data.*
 import com.maltaisn.swfconvert.core.shape.path.Path
 import com.maltaisn.swfconvert.core.shape.path.PathFillStyle
@@ -29,9 +28,9 @@ import java.awt.geom.AffineTransform
 import java.awt.geom.Rectangle2D
 
 
-class IrFrameRenderer(private val config: Configuration) : FrameRenderer {
+internal class IrFrameRenderer(private val config: Configuration) {
 
-    override suspend fun renderFrame(index: Int, frame: FrameGroup) {
+    fun renderFrame(index: Int, frame: FrameGroup) {
         val formatConfig = config.format as IrConfiguration
 
         // Serialize the frame group to JSON.
@@ -42,6 +41,7 @@ class IrFrameRenderer(private val config: Configuration) : FrameRenderer {
         val frameJson = json.stringify(IrObject.serializer(), serializableFrame)
 
         // Save output to file.
+        // TODO handle error
         config.main.output[index].writeText(frameJson)
     }
 
@@ -84,7 +84,7 @@ class IrFrameRenderer(private val config: Configuration) : FrameRenderer {
 
     private fun TextObject.toSerializable() =
             IrObject.Text(id, x, y, fontSize, color.toString(),
-                    font.fontFile.nameWithoutExtension, text, glyphOffsets)
+                    font.fontFile?.nameWithoutExtension, text, glyphOffsets)
 
     private fun Rectangle2D.toSerializable() = IrRectangle(x, y, width, height)
 

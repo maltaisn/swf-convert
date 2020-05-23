@@ -52,8 +52,8 @@ import java.util.*
 /**
  * Converts a single SWF file to the [FrameGroup] intermediate representation.
  */
-class SwfConverter(private val fontsMap: Map<FontId, Font>,
-                   private val config: Configuration) {
+internal class SwfConverter(private val fontsMap: Map<FontId, Font>,
+                            private val config: Configuration) {
 
     private lateinit var textConverter: TextConverter
     private lateinit var shapeParser: StyledShapeConverter

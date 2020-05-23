@@ -30,7 +30,7 @@ import java.awt.geom.AffineTransform
 /**
  * Class used to create [GlyphData] from a SWF font tag.
  */
-class GlyphPathParser(private val wfont: WDefineFont) {
+internal class GlyphPathParser(private val wfont: WDefineFont) {
 
     private val transform = AffineTransform.getScaleInstance(
             wfont.scale.scaleX.toDouble() * SWF_TO_TTF_EM_SCALE,

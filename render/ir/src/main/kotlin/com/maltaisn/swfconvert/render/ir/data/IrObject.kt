@@ -23,7 +23,7 @@ import kotlinx.serialization.Serializable
 
 
 @Serializable
-sealed class IrObject {
+internal sealed class IrObject {
 
     @Serializable
     @SerialName("frame_group")
@@ -68,7 +68,7 @@ sealed class IrObject {
     @Serializable
     @SerialName("shape")
     data class Shape(val id: Int,
-                     val paths: List<IrPath>): IrObject()
+                     val paths: List<IrPath>) : IrObject()
 
     @Serializable
     @SerialName("text")
@@ -77,14 +77,14 @@ sealed class IrObject {
                     val y: Float,
                     val fontSize: Float,
                     val color: String,
-                    val font: String,
+                    val font: String?,
                     val text: String,
-                    val glyphOffsets: List<Float>): IrObject()
+                    val glyphOffsets: List<Float>) : IrObject()
 
 }
 
 @Serializable
-data class IrRectangle(val x: Double,
-                       val y: Double,
-                       val width: Double,
-                       val height: Double)
+internal data class IrRectangle(val x: Double,
+                                val y: Double,
+                                val width: Double,
+                                val height: Double)

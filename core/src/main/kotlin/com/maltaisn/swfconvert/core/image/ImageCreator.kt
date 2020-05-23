@@ -19,35 +19,15 @@ package com.maltaisn.swfconvert.core.image
 import com.maltaisn.swfconvert.core.config.Configuration
 import com.maltaisn.swfconvert.core.config.MainConfiguration
 import com.maltaisn.swfconvert.core.frame.data.FrameGroup
-import com.maltaisn.swfconvert.core.frame.data.GroupObject
-import com.maltaisn.swfconvert.core.frame.data.ShapeObject
 import com.maltaisn.swfconvert.core.image.data.ImageData
-import com.maltaisn.swfconvert.core.shape.path.PathFillStyle
 import kotlinx.coroutines.*
 import java.io.File
 import java.text.NumberFormat
 import java.util.concurrent.atomic.AtomicInteger
 
 
-class ImageCreator(private val coroutineScope: CoroutineScope,
-                   private val config: Configuration) {
-
-    /**
-     * Create image files for a [frameGroup], written to [imagesDir].
-     * All images are created, no optimization is done.
-     */
-    fun createImages(frameGroup: FrameGroup, imagesDir: File) {
-        imagesDir.mkdirs()
-
-        // Get all images in frame
-        val imageFills = mutableListOf<PathFillStyle.Image>()
-        findAllImageFillsInGroup(frameGroup, imageFills)
-
-        // Create image files
-        for ((i, imageFill) in imageFills.withIndex()) {
-            createImageFiles(imageFill.imageData, i.toString(), imagesDir)
-        }
-    }
+internal class ImageCreator(private val coroutineScope: CoroutineScope,
+                            private val config: Configuration) {
 
     /**
      * Create all image files for a [frameGroups], written to [imagesDir].
@@ -58,7 +38,7 @@ class ImageCreator(private val coroutineScope: CoroutineScope,
         imagesDir.mkdirs()
 
         // Find all images in all frames
-        val allImageFills = findAllImageFillsInFrames(frameGroups)
+        val allImageFills = frameGroups.map { it.findAllImagesTo(mutableListOf()) }
 
         // Remove duplicate images
         val allImageData = mutableMapOf<ImageData, ImageData>()
@@ -117,31 +97,6 @@ class ImageCreator(private val coroutineScope: CoroutineScope,
                 print(" (-${PERCENT_FMT.format(ratio)})")
             }
             println()
-        }
-    }
-
-    private fun findAllImageFillsInFrames(frameGroups: List<FrameGroup>): List<List<PathFillStyle.Image>> {
-        val allImages = mutableListOf<List<PathFillStyle.Image>>()
-        for (frameGroup in frameGroups) {
-            val images = mutableListOf<PathFillStyle.Image>()
-            findAllImageFillsInGroup(frameGroup, images)
-            allImages += images
-        }
-        return allImages
-    }
-
-    private fun findAllImageFillsInGroup(group: GroupObject,
-                                         images: MutableList<PathFillStyle.Image>) {
-        for (obj in group.objects) {
-            if (obj is ShapeObject) {
-                for (path in obj.paths) {
-                    if (path.fillStyle is PathFillStyle.Image) {
-                        images += path.fillStyle
-                    }
-                }
-            } else if (obj is GroupObject) {
-                findAllImageFillsInGroup(obj, images)
-            }
         }
     }
 

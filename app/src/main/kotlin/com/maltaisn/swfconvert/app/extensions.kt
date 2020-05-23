@@ -16,6 +16,9 @@
 
 package com.maltaisn.swfconvert.app
 
+import com.maltaisn.swfconvert.core.image.data.Color
+import java.io.File
+
 
 /**
  * Attempts to fix [https://github.com/cbeust/jcommander/issues/365].
@@ -25,4 +28,18 @@ package com.maltaisn.swfconvert.app
 fun checkNoOptionsInArgs(args: List<String>) {
     val unknown = args.find { it.startsWith("-") } ?: return
     configError("Unknown option '$unknown'.")
+}
+
+fun File.isSwfFile() = this.extension.toLowerCase() == "swf"
+
+fun String.toBooleanOrNull() = when (this.toLowerCase()) {
+    "true" -> true
+    "false" -> false
+    else -> null
+}
+
+fun String.toColorOrNull(): Color? = when (this.length) {
+    7 -> this.substring(1).toIntOrNull(16)?.let { Color(it).withAlpha(0xFF) }
+    9 -> this.substring(1).toIntOrNull(16)?.let { Color(it) }
+    else -> null
 }

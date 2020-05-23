@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.core.frame
+package com.maltaisn.swfconvert.render.ir
 
 import com.maltaisn.swfconvert.core.config.Configuration
+import com.maltaisn.swfconvert.core.frame.FramesRenderer
 import com.maltaisn.swfconvert.core.frame.data.FrameGroup
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
@@ -28,14 +29,14 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * Convert all frames from the intermediate representation to output format.
  */
-class FramesRenderer(private val coroutineScope: CoroutineScope,
-                     private val config: Configuration) {
+internal class IrFramesRenderer(private val coroutineScope: CoroutineScope,
+                                private val config: Configuration) : FramesRenderer {
 
-    fun renderFrames(frameGroups: List<FrameGroup>) {
+    override fun renderFrames(frameGroups: List<FrameGroup>) {
         val progress = AtomicInteger()
         val jobs = frameGroups.mapIndexed { index, frameGroup ->
             val job = coroutineScope.async {
-                val renderer = config.format.createRenderer(config)
+                val renderer = IrFrameRenderer(config)
                 renderer.renderFrame(index, frameGroup)
 
                 val done = progress.incrementAndGet()
