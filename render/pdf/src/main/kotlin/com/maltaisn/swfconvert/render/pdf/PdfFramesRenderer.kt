@@ -21,7 +21,7 @@ import com.maltaisn.swfconvert.core.frame.data.FrameGroup
 import com.maltaisn.swfconvert.core.frame.data.GroupObject
 import com.maltaisn.swfconvert.core.frame.data.TextObject
 import com.maltaisn.swfconvert.core.image.data.ImageData
-import com.maltaisn.swfconvert.core.shape.path.PathFillStyle
+import com.maltaisn.swfconvert.core.shape.data.path.PathFillStyle
 import com.maltaisn.swfconvert.render.core.FramesRenderer
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfMetadata
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfOutlineCreator

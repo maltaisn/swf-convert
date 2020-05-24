@@ -30,23 +30,26 @@ import com.maltaisn.swfconvert.core.frame.data.ShapeObject
 import com.maltaisn.swfconvert.core.frame.data.TextObject
 import com.maltaisn.swfconvert.core.image.CompositeColorTransform
 import com.maltaisn.swfconvert.core.image.data.Color
-import com.maltaisn.swfconvert.core.shape.path.Path
-import com.maltaisn.swfconvert.core.shape.path.PathElement
+import com.maltaisn.swfconvert.core.shape.data.path.Path
+import com.maltaisn.swfconvert.core.shape.data.path.PathElement
 import com.maltaisn.swfconvert.core.toAffineTransformOrIdentity
 import com.maltaisn.swfconvert.core.toColor
 import java.awt.geom.AffineTransform
+import javax.inject.Inject
 import kotlin.math.absoluteValue
 
 
 /**
  * Converts SWF text tags to [TextObject] intermediate representation.
  */
-internal class TextConverter(private val fileIndex: Int,
-                             private val fonts: Map<FontId, Font>,
-                             private val config: CoreConfiguration) {
+internal class TextConverter @Inject constructor(
+        private val config: CoreConfiguration
+) {
 
     private lateinit var textTag: StaticTextTag
     private lateinit var colorTransform: CompositeColorTransform
+    private lateinit var fontsMap: Map<FontId, Font>
+    private var fileIndex: Int = 0
 
     // Text span style
     private var font: Font? = null
@@ -57,9 +60,12 @@ internal class TextConverter(private val fileIndex: Int,
 
 
     fun parseText(textTag: StaticTextTag,
-                  colorTransform: CompositeColorTransform): List<FrameObject> {
+                  colorTransform: CompositeColorTransform,
+                  fontsMap: Map<FontId, Font>, fileIndex: Int): List<FrameObject> {
         this.textTag = textTag
         this.colorTransform = colorTransform
+        this.fontsMap = fontsMap
+        this.fileIndex = fileIndex
 
         // Reset styles
         font = null
@@ -68,42 +74,16 @@ internal class TextConverter(private val fileIndex: Int,
         offsetX = 0f
         offsetY = 0f
 
-        // Make sure font scale parameters are all the same
-        // This is important because the same transform group is used for all spans.
-        var lastScale: FontScale? = null
-        for (span in textTag.spans) {
-            if (span.identifier != null) {
-                val fontId = FontId(fileIndex, span.identifier)
-                val font = fonts[fontId] ?: error("Unknown font ID")
-                val scale = font.metrics.scale
-                conversionError(lastScale == null || scale == lastScale) {
-                    "Different scale fonts in same text tag"
-                }
-                lastScale = scale
-            }
-        }
-        if (lastScale == null) {
-            // No fonts, so no text.
-            return emptyList()
-        }
+        val fontScale = getTextScale() ?: return emptyList()
+        val transform = getTextTransform(fontScale)
 
-        // Create text transform
-        // The Y scale is negated because glyphs in fonts are upright, and they must be flipped
-        // since frame is already flipped, the same way images are flipped.
-        // Then, the transform is scaled except for translation components.
-        val tagTr = textTag.transform.toAffineTransformOrIdentity()
-        val usx = lastScale.unscaleX.toDouble()
-        val usy = -lastScale.unscaleY.toDouble()
-        val transform = AffineTransform(
-                tagTr.scaleX * usx, tagTr.shearY * usx,
-                tagTr.shearX * usy, tagTr.scaleY * usy,
-                tagTr.translateX, tagTr.translateY)
-
+        // If transform is not identity, wrap text objects in a transform group.
         var textObjects = mutableListOf<FrameObject>()
         val objects: MutableList<FrameObject> = if (transform.isIdentity) {
             textObjects
         } else {
-            // Transform could not be extracted to translate and scale, so wrap objects in transform group.
+            // Note: it would be possible to extract translate and
+            // scale components to text objects attributes: x, y, fontSize.
             val group = GroupObject.Transform(textTag.identifier, transform)
             textObjects = group.objects
             mutableListOf(group)
@@ -129,6 +109,42 @@ internal class TextConverter(private val fileIndex: Int,
         }
 
         return objects
+    }
+
+    /**
+     * Get font scale used by the [textTag]. Also make sure font scale parameters are all the same
+     * (i.e DefineFont2 and DefineFont3 aren't mixed) because the same transform group is used for all spans.
+     * Returns `null` if no text spans in the tag have a font set, or tag has no text spans.
+     */
+    private fun getTextScale(): FontScale? {
+        var lastScale: FontScale? = null
+        for (span in textTag.spans) {
+            if (span.identifier != null) {
+                val fontId = FontId(fileIndex, span.identifier)
+                val font = fontsMap[fontId] ?: error("Unknown font ID")
+                val scale = font.metrics.scale
+                conversionError(lastScale == null || scale == lastScale) {
+                    "Different scale fonts in same text tag"
+                }
+                lastScale = scale
+            }
+        }
+        return lastScale
+    }
+
+    /** Creates the text transform used to draw the text. */
+    private fun getTextTransform(scale: FontScale): AffineTransform {
+        val tagTr = textTag.transform.toAffineTransformOrIdentity()
+        val usx = scale.unscaleX.toDouble()
+        // The Y scale is negated because glyphs in font files are upright, and they must be flipped
+        // since frame is already flipped, the same way images are flipped.
+        val usy = -scale.unscaleY.toDouble()
+        // Scale the transform except for translation components.
+        // (this is a pre-scale transformation but AffineTransform doesn't have it)
+        return AffineTransform(
+                tagTr.scaleX * usx, tagTr.shearY * usx,
+                tagTr.shearX * usy, tagTr.scaleY * usy,
+                tagTr.translateX, tagTr.translateY)
     }
 
     private fun parseTextSpan(span: TextSpan): TextObject? {
@@ -230,7 +246,7 @@ internal class TextConverter(private val fileIndex: Int,
         // Font
         if (span.identifier != null) {
             val fontId = FontId(fileIndex, span.identifier)
-            this.font = fonts[fontId] ?: error("Unknown font ID")
+            this.font = fontsMap[fontId] ?: error("Unknown font ID")
         }
         val font = this.font
         conversionError(font != null) { "No font specified" }

@@ -14,47 +14,49 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.core.old.font
+package com.maltaisn.swfconvert.core.font
 
 import com.flagstone.transform.shape.Shape
 import com.flagstone.transform.shape.ShapeData
 import com.maltaisn.swfconvert.core.font.data.GlyphData
 import com.maltaisn.swfconvert.core.font.data.WDefineFont
 import com.maltaisn.swfconvert.core.shape.ShapeConverter
-import com.maltaisn.swfconvert.core.shape.path.Path
-import com.maltaisn.swfconvert.core.shape.path.PathElement
-import com.maltaisn.swfconvert.core.shape.path.PathElement.MoveTo
+import com.maltaisn.swfconvert.core.shape.data.path.Path
+import com.maltaisn.swfconvert.core.shape.data.path.PathElement
+import com.maltaisn.swfconvert.core.shape.data.path.PathElement.MoveTo
 import java.awt.geom.AffineTransform
+import javax.inject.Inject
 
 
 /**
  * Class used to create [GlyphData] from a SWF font tag.
  */
-internal class GlyphPathParser(private val wfont: WDefineFont) {
+internal class GlyphPathParser @Inject constructor(
+        private val converter: ShapeConverter
+) {
 
-    private val transform = AffineTransform.getScaleInstance(
-            wfont.scale.scaleX.toDouble() * SWF_TO_TTF_EM_SCALE,
-            wfont.scale.scaleY.toDouble() * SWF_TO_TTF_EM_SCALE)
+    fun createFontGlyphsData(wfont: WDefineFont): List<GlyphData> {
+        val transform = AffineTransform.getScaleInstance(
+                wfont.scale.scaleX.toDouble() * SWF_TO_TTF_EM_SCALE,
+                wfont.scale.scaleY.toDouble() * SWF_TO_TTF_EM_SCALE)
 
-    private val converter = ShapeConverter()
-
-
-    fun createGlyphData(index: Int): GlyphData {
-        val advance = wfont.advances[index] * wfont.scale.scaleX
-        val shapeData = wfont.shapes[index].objects.first() as ShapeData
-        val shape = Shape.shapeFromData(shapeData)
-        val contours = parseGlyphShape(shape)
-        return GlyphData(advance, contours)
+        return wfont.codes.indices.map { i ->
+            val advance = wfont.advances[i] * wfont.scale.scaleX
+            val shapeData = wfont.shapes[i].objects.first() as ShapeData
+            val shape = Shape.shapeFromData(shapeData)
+            val contours = parseGlyphShape(shape, transform)
+            GlyphData(advance, contours)
+        }
     }
 
-    fun dispose() {
-        converter.dispose()
-    }
+    private fun parseGlyphShape(shape: Shape, transform: AffineTransform): List<Path> {
+        // Create the glyph shape from SWF shape records
+        val paths = converter.parseShape(shape,
+                emptyList(), emptyList(),
+                transform, IDENTITY_TRANSFORM,
+                ignoreStyles = true, allowRectangles = false)
 
-    private fun parseGlyphShape(shape: Shape): List<Path> {
-        val paths = converter.parseShape(shape, emptyList(), emptyList(),
-                transform, IDENTITY_TRANSFORM, ignoreStyles = true, allowRectangles = false)
-
+        // Separate glyph shape into contours, each having a single move to element.
         val contours = mutableListOf<Path>()
         for (path in paths) {
             val elements = mutableListOf<PathElement>()
@@ -70,6 +72,7 @@ internal class GlyphPathParser(private val wfont: WDefineFont) {
 
         return contours
     }
+
 
     companion object {
         private val IDENTITY_TRANSFORM = AffineTransform()

@@ -38,21 +38,25 @@ import com.maltaisn.swfconvert.core.frame.data.WPlace
 import com.maltaisn.swfconvert.core.image.CompositeColorTransform
 import com.maltaisn.swfconvert.core.shape.StyledShapeConverter
 import com.maltaisn.swfconvert.core.shape.data.WDefineShape
-import com.maltaisn.swfconvert.core.shape.path.Path
-import com.maltaisn.swfconvert.core.shape.path.PathElement
+import com.maltaisn.swfconvert.core.shape.data.path.Path
+import com.maltaisn.swfconvert.core.shape.data.path.PathElement
 import java.awt.Rectangle
 import java.awt.geom.AffineTransform
 import java.util.*
+import javax.inject.Inject
 
 
 /**
  * Converts a single SWF file to the [FrameGroup] intermediate representation.
  */
-internal class SwfConverter(private val fontsMap: Map<FontId, Font>,
-                            private val config: CoreConfiguration) {
+internal class SwfConverter @Inject constructor(
+        private val config: CoreConfiguration,
+        private val textConverter: TextConverter,
+        private val shapeParser: StyledShapeConverter
+) : Disposable {
 
-    private lateinit var textConverter: TextConverter
-    private lateinit var shapeParser: StyledShapeConverter
+    private lateinit var fontsMap: Map<FontId, Font>
+    private var fileIndex: Int = 0
 
     private val groupStack = LinkedList<GroupObject>()
     private val currentGroup: GroupObject
@@ -66,18 +70,21 @@ internal class SwfConverter(private val fontsMap: Map<FontId, Font>,
     private val transformStack = LinkedList<AffineTransform>()
 
 
-    fun createFrameGroup(swf: Movie, fileIndex: Int): FrameGroup {
+    fun createFrameGroup(swf: Movie, fontsMap: Map<FontId, Font>,
+                         fileIndex: Int): FrameGroup {
+        this.fileIndex = fileIndex
+        this.fontsMap = fontsMap
+
         objectsMap = swf.objects.filterIsInstance<DefineTag>().associateBy { it.identifier }
 
         colorTransform.transforms.clear()
         groupStack.clear()
         clipStack.clear()
+
         blendStack.clear()
-
-        textConverter = TextConverter(fileIndex, fontsMap, config)
-        shapeParser = StyledShapeConverter(objectsMap, colorTransform, config)
-
         blendStack.push(BlendMode.NORMAL)
+
+        shapeParser.initialize(objectsMap, colorTransform)
 
         // Create frame group
         val movieHeader = swf.objects.find { it is MovieHeader } as MovieHeader
@@ -104,8 +111,6 @@ internal class SwfConverter(private val fontsMap: Map<FontId, Font>,
             }
         }
         createFrame(frameTags)
-
-        shapeParser.dispose()
 
         check(currentGroup === frameGroup) { "Expected only frame in group stack" }
         return frameGroup
@@ -316,7 +321,7 @@ internal class SwfConverter(private val fontsMap: Map<FontId, Font>,
     }
 
     private fun createText(textTag: StaticTextTag) {
-        currentGroup.objects += textConverter.parseText(textTag, colorTransform)
+        currentGroup.objects += textConverter.parseText(textTag, colorTransform, fontsMap, fileIndex)
     }
 
     private fun addGroup(group: GroupObject) {
@@ -330,6 +335,10 @@ internal class SwfConverter(private val fontsMap: Map<FontId, Font>,
         is DefineShape3 -> WDefineShape(this)
         is DefineShape4 -> WDefineShape(this)
         else -> null
+    }
+
+    override fun dispose() {
+        shapeParser.dispose()
     }
 
     companion object {

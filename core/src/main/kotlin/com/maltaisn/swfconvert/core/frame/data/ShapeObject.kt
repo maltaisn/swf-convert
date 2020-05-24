@@ -16,7 +16,7 @@
 
 package com.maltaisn.swfconvert.core.frame.data
 
-import com.maltaisn.swfconvert.core.shape.path.Path
+import com.maltaisn.swfconvert.core.shape.data.path.Path
 
 
 class ShapeObject(override val id: Int,

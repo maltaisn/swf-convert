@@ -14,13 +14,20 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.core.shape.path
+package com.maltaisn.swfconvert.core.shape.data.path
 
 import com.maltaisn.swfconvert.core.image.data.Color
+import com.maltaisn.swfconvert.core.image.data.ImageData
+import com.maltaisn.swfconvert.core.shape.data.GradientColor
+import java.awt.geom.AffineTransform
 
 
-data class PathLineStyle(val color: Color,
-                         val width: Float,
-                         val cap: Int,
-                         val join: Int,
-                         val miterLimit: Float)
+sealed class PathFillStyle {
+
+    data class Solid(val color: Color) : PathFillStyle()
+
+    data class Image(val id: Int, val transform: AffineTransform, var imageData: ImageData) : PathFillStyle()
+
+    data class Gradient(val colors: List<GradientColor>, val transform: AffineTransform) : PathFillStyle()
+
+}

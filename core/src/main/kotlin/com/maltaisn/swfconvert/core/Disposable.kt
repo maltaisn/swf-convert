@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.core.shape.path
-
-import com.maltaisn.swfconvert.core.image.data.Color
-import com.maltaisn.swfconvert.core.image.data.ImageData
-import com.maltaisn.swfconvert.core.shape.data.GradientColor
-import java.awt.geom.AffineTransform
+package com.maltaisn.swfconvert.core
 
 
-sealed class PathFillStyle {
+/**
+ * Marker interface for a class that must be disposed after use.
+ * Class shouldn't be used after having been disposed.
+ */
+interface Disposable {
 
-    data class Solid(val color: Color) : PathFillStyle()
+    fun dispose()
 
-    data class Image(val id: Int, val transform: AffineTransform, var imageData: ImageData) : PathFillStyle()
+}
 
-    data class Gradient(val colors: List<GradientColor>, val transform: AffineTransform) : PathFillStyle()
-
+inline fun <T : Disposable, R> T.use(block: (T) -> R): R {
+    val result = block(this)
+    this.dispose()
+    return result
 }

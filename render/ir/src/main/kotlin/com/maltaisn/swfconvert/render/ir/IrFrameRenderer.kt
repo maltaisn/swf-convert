@@ -18,9 +18,9 @@ package com.maltaisn.swfconvert.render.ir
 
 import com.maltaisn.swfconvert.core.CoreConfiguration
 import com.maltaisn.swfconvert.core.frame.data.*
-import com.maltaisn.swfconvert.core.shape.path.Path
-import com.maltaisn.swfconvert.core.shape.path.PathFillStyle
-import com.maltaisn.swfconvert.core.shape.path.PathLineStyle
+import com.maltaisn.swfconvert.core.shape.data.path.Path
+import com.maltaisn.swfconvert.core.shape.data.path.PathFillStyle
+import com.maltaisn.swfconvert.core.shape.data.path.PathLineStyle
 import com.maltaisn.swfconvert.render.ir.data.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration

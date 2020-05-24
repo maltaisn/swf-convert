@@ -18,7 +18,7 @@ package com.maltaisn.swfconvert.core
 
 import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.maltaisn.swfconvert.core.image.data.Color
-import com.maltaisn.swfconvert.core.shape.path.PathLineStyle
+import com.maltaisn.swfconvert.core.shape.data.path.PathLineStyle
 import com.mortennobel.imagescaling.ResampleFilter
 import java.awt.BasicStroke
 import java.io.File

@@ -43,7 +43,7 @@ class SwfCollectionConverter @Inject internal constructor(
         // Decode SWFs files
         val swfs = swfsDecoder.decodeFiles(config.input)
 
-        // Create font groups
+        // Create font files
         val fontGroups = fontConverter.createFontGroups(swfs)
 
         // Create font files and ungroup them.

@@ -20,12 +20,14 @@ import com.flagstone.transform.text.GlyphIndex
 import java.io.File
 
 
-data class Font(val id: FontId,
-                var name: String,
-                val metrics: FontMetrics,
-                val glyphs: List<FontGlyph>) {
+data class Font(
+        val id: FontId,
+        override var name: String,
+        override val metrics: FontMetrics,
+        override val glyphs: List<FontGlyph>
+) : BaseFont {
 
-    var fontFile: File? = null
+    override var fontFile: File? = null
 
     fun getGlyph(entry: GlyphIndex) = glyphs[entry.glyphIndex]
 }

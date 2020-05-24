@@ -18,6 +18,7 @@ package com.maltaisn.swfconvert.core.image
 
 import com.flagstone.transform.image.*
 import com.maltaisn.swfconvert.core.CoreConfiguration
+import com.maltaisn.swfconvert.core.Disposable
 import com.maltaisn.swfconvert.core.conversionError
 import com.maltaisn.swfconvert.core.image.data.Color
 import com.maltaisn.swfconvert.core.image.data.ImageData
@@ -32,6 +33,7 @@ import java.io.ByteArrayOutputStream
 import javax.imageio.IIOImage
 import javax.imageio.ImageIO
 import javax.imageio.ImageWriteParam
+import javax.inject.Inject
 import kotlin.math.roundToInt
 
 
@@ -40,7 +42,9 @@ import kotlin.math.roundToInt
  * Doesn't support [DefineJPEGImage4] for now. (deblocking filter)
  * See [https://www.adobe.com/content/dam/acom/en/devnet/pdf/swf-file-format-spec.pdf].
  */
-class ImageDecoder(private val config: CoreConfiguration) {
+class ImageDecoder @Inject constructor(
+        private val config: CoreConfiguration
+) : Disposable {
 
     private val jpgWriter = ImageIO.getImageWritersByFormatName(ImageFormat.JPG.extension).next()
     private val jpgWriteParam = jpgWriter.defaultWriteParam.apply {
@@ -48,7 +52,7 @@ class ImageDecoder(private val config: CoreConfiguration) {
         compressionQuality = config.jpegQuality
     }
 
-    fun dispose() {
+    override fun dispose() {
         jpgWriter.dispose()
     }
 

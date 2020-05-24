@@ -23,13 +23,14 @@ import com.maltaisn.swfconvert.core.image.data.Color
 import com.maltaisn.swfconvert.core.shape.ShapeConverter.Edge.CurveEdge
 import com.maltaisn.swfconvert.core.shape.ShapeConverter.Edge.LineEdge
 import com.maltaisn.swfconvert.core.shape.data.WShapeStyle
-import com.maltaisn.swfconvert.core.shape.path.Path
-import com.maltaisn.swfconvert.core.shape.path.PathElement
-import com.maltaisn.swfconvert.core.shape.path.PathElement.*
-import com.maltaisn.swfconvert.core.shape.path.PathFillStyle
-import com.maltaisn.swfconvert.core.shape.path.PathLineStyle
+import com.maltaisn.swfconvert.core.shape.data.path.Path
+import com.maltaisn.swfconvert.core.shape.data.path.PathElement
+import com.maltaisn.swfconvert.core.shape.data.path.PathElement.*
+import com.maltaisn.swfconvert.core.shape.data.path.PathFillStyle
+import com.maltaisn.swfconvert.core.shape.data.path.PathLineStyle
 import java.awt.geom.AffineTransform
 import java.awt.geom.Point2D
+import javax.inject.Inject
 
 
 /**
@@ -37,7 +38,7 @@ import java.awt.geom.Point2D
  * Most shape parsing logic was taken from:
  * [https://github.com/claus/as3swf/blob/master/src/com/codeazur/as3swf/data/SWFShape.as].
  */
-internal open class ShapeConverter {
+internal open class ShapeConverter @Inject constructor() {
 
     private lateinit var shape: Shape
     private lateinit var transform: AffineTransform
@@ -100,8 +101,6 @@ internal open class ShapeConverter {
 
         return paths.toList()
     }
-
-    open fun dispose() = Unit
 
     private fun createFillPaths(groupIndex: Int) {
         val path = createPathFromEdgeMap(fillEdgeMaps[groupIndex])
@@ -413,11 +412,11 @@ internal open class ShapeConverter {
     }
 
 
-    open fun convertFillStyle(fillStyle: FillStyle): PathFillStyle {
+    protected open fun convertFillStyle(fillStyle: FillStyle): PathFillStyle {
         throw UnsupportedOperationException("Can't convert fill style")
     }
 
-    open fun convertLineStyle(lineStyle: LineStyle): PathLineStyle {
+    protected open fun convertLineStyle(lineStyle: LineStyle): PathLineStyle {
         throw UnsupportedOperationException("Can't convert fill style")
     }
 

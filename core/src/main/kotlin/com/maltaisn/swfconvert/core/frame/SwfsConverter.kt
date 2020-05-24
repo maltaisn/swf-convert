@@ -21,12 +21,14 @@ import com.maltaisn.swfconvert.core.CoreConfiguration
 import com.maltaisn.swfconvert.core.font.data.Font
 import com.maltaisn.swfconvert.core.font.data.FontId
 import com.maltaisn.swfconvert.core.frame.data.FrameGroup
+import com.maltaisn.swfconvert.core.use
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
+import javax.inject.Provider
 
 
 /**
@@ -34,7 +36,8 @@ import javax.inject.Inject
  */
 internal class SwfsConverter @Inject constructor(
         private val coroutineScope: CoroutineScope,
-        private val config: CoreConfiguration
+        private val config: CoreConfiguration,
+        private val swfConverterProvider: Provider<SwfConverter>
 ) {
 
     fun createFrameGroups(swfs: List<Movie>, fontsMap: Map<FontId, Font>): List<FrameGroup> {
@@ -44,8 +47,9 @@ internal class SwfsConverter @Inject constructor(
         print("Converted SWF 0 / ${swfs.size}\r")
         val jobs = swfs.mapIndexed { i, swf ->
             val job = coroutineScope.async {
-                val converter = SwfConverter(fontsMap, config)
-                frameGroups[i] = converter.createFrameGroup(swf, i)
+                frameGroups[i] = swfConverterProvider.get().use {
+                    it.createFrameGroup(swf, fontsMap, i)
+                }
 
                 val done = progress.incrementAndGet()
                 print("Converted SWF $done / ${swfs.size}\r")

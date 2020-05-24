@@ -22,7 +22,7 @@ import dagger.Component
 import kotlinx.coroutines.CoroutineScope
 
 
-@Component
+@Component(modules = [CoreModule::class])
 interface CoreComponent {
 
     fun configuration(): CoreConfiguration

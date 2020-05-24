@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.app.di
+package com.maltaisn.swfconvert.core.font.data
 
-import com.maltaisn.swfconvert.app.SwfConvert
-import com.maltaisn.swfconvert.core.di.CoreComponent
-import com.maltaisn.swfconvert.render.core.di.RenderCoreComponent
-import dagger.Component
+import java.io.File
 
 
-@Component(modules = [AppModule::class],
-        dependencies = [CoreComponent::class, RenderCoreComponent::class])
-internal interface AppComponent {
+interface BaseFont {
 
-    fun inject(swfConvert: SwfConvert)
+    var name: String
+    val metrics: FontMetrics
+    val glyphs: List<FontGlyph>
+    var fontFile: File?
 
 }

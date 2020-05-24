@@ -20,10 +20,10 @@ import com.maltaisn.swfconvert.core.CoreConfiguration
 import com.maltaisn.swfconvert.core.font.data.GlyphData
 import com.maltaisn.swfconvert.core.frame.data.*
 import com.maltaisn.swfconvert.core.image.data.ImageData
-import com.maltaisn.swfconvert.core.shape.path.Path
-import com.maltaisn.swfconvert.core.shape.path.PathElement
-import com.maltaisn.swfconvert.core.shape.path.PathFillStyle
-import com.maltaisn.swfconvert.core.shape.path.PathLineStyle
+import com.maltaisn.swfconvert.core.shape.data.path.Path
+import com.maltaisn.swfconvert.core.shape.data.path.PathElement
+import com.maltaisn.swfconvert.core.shape.data.path.PathFillStyle
+import com.maltaisn.swfconvert.core.shape.data.path.PathLineStyle
 import org.apache.pdfbox.cos.COSArray
 import org.apache.pdfbox.cos.COSDictionary
 import org.apache.pdfbox.cos.COSFloat

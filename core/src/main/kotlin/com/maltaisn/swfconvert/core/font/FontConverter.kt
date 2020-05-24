@@ -24,8 +24,6 @@ import com.flagstone.transform.font.DefineFont4
 import com.maltaisn.swfconvert.core.CoreConfiguration
 import com.maltaisn.swfconvert.core.conversionError
 import com.maltaisn.swfconvert.core.font.data.*
-import com.maltaisn.swfconvert.core.old.font.GlyphPathParser
-import com.maltaisn.swfconvert.core.validateFilename
 import java.io.File
 import java.text.NumberFormat
 import java.util.*
@@ -33,13 +31,16 @@ import javax.inject.Inject
 
 
 internal class FontConverter @Inject constructor(
-        private val config: CoreConfiguration
+        private val config: CoreConfiguration,
+        private val glyphPathParser: GlyphPathParser,
+        private val glyphOcr: GlyphOcr,
+        private val fontBuilder: FontBuilder
 ) {
-
-    private val glyphOcr = GlyphOcr(config, File(config.fontsDir, "ocr"))
 
     private val unknownCharsMap = mutableMapOf<GlyphData, Char>()
     private var nextUnknownCharCode = 0
+
+    private val ocrTempDir = File(config.fontsDir, "ocr")
 
     /**
      * Each SWF file has its own fonts, which are sometimes subsetted.
@@ -69,12 +70,12 @@ internal class FontConverter @Inject constructor(
     /**
      * Create the TTF font files for a list of font groups.
      */
-    fun createFontFiles(groups: List<FontGroup>) {
+    fun createFontFiles(fonts: List<BaseFont>) {
         print("Creating fonts: building TTF fonts\r")
         val tempDir = File(config.fontsDir, "temp")
         tempDir.mkdirs()
-        for (group in groups) {
-            buildFontFile(group, tempDir)
+        for (font in fonts) {
+            fontBuilder.buildFont(font, config.fontsDir, tempDir)
         }
         tempDir.deleteRecursively()
         println()
@@ -126,14 +127,12 @@ internal class FontConverter @Inject constructor(
                 // Create glyphs
                 val codes = mutableSetOf<Char>()
                 val glyphs = mutableListOf<FontGlyph>()
-                val glyphConverter = GlyphPathParser(wfont)
+                val glyphsData = glyphPathParser.createFontGlyphsData(wfont)
                 for ((i, code) in wfont.codes.withIndex()) {
-                    val data = glyphConverter.createGlyphData(i)
-                    val glyph = createFontGlyph(data, code, codes)
+                    val glyph = createFontGlyph(glyphsData[i], code, codes)
                     glyphs += glyph
                     codes += glyph.char
                 }
-                glyphConverter.dispose()
 
                 // Create font
                 val scale = wfont.scale
@@ -184,7 +183,7 @@ internal class FontConverter @Inject constructor(
                 } else {
                     val ocrChar = if (config.ocrDetectGlyphs) {
                         // Try to recognize char with OCR
-                        glyphOcr.recognizeGlyphData(data)
+                        glyphOcr.recognizeGlyphData(data, ocrTempDir)
                     } else {
                         null
                     }
@@ -273,78 +272,6 @@ internal class FontConverter @Inject constructor(
             group.name = name
             assignedNames += name
         }
-    }
-
-    private fun buildFontFile(group: FontGroup, tempDir: File) {
-        val builder = group.builder()
-        val ttfFile = builder.build(tempDir)
-        val outFile = File(config.fontsDir, validateFilename("${group.name}.ttf"))
-        ttfFile.renameTo(outFile)
-        group.fontFile = outFile
-    }
-
-    /**
-     * Represents a group of font objects merged into a single group,
-     * that share the same info and the same glyphs.
-     */
-    data class FontGroup(var name: String,
-                         val metrics: FontMetrics,
-                         val fonts: MutableList<Font>,
-                         val glyphs: MutableMap<Char, FontGlyph>) {
-
-        lateinit var fontFile: File
-
-        private val isAllWhitespaces: Boolean
-            get() = glyphs.values.all { it.isWhitespace }
-
-        fun isCompatibleWith(other: FontGroup, requireCommon: Boolean): Boolean {
-            if (other.glyphs.size < glyphs.size) {
-                // Use group with the least glyph as comparison base.
-                return other.isCompatibleWith(this, requireCommon)
-            }
-            return when {
-                isAllWhitespaces || other.isAllWhitespaces -> {
-                    // One font or the other has only whitespace. Since all whitespace is converted
-                    // to identical spaces, fonts are automatically compatible.
-                    true
-                }
-                metrics == other.metrics -> {
-                    // Both font have same metrics, check glyphs.
-                    var hasCommonChar = false
-                    for ((char, glyph) in glyphs) {
-                        val otherGlyph = other.glyphs[char]
-                        if (otherGlyph != null) {
-                            if (glyph != otherGlyph) {
-                                // Two glyphs with same character but different shape, so these two fonts are different.
-                                return false
-                            } else if (!glyph.isWhitespace) {
-                                hasCommonChar = true
-                            }
-                        }
-                    }
-                    // If no character is common between the two fonts, we can't say if they
-                    // are compatible, so it's better to assume they're not for the moment, to
-                    // make further merging more efficient.
-                    hasCommonChar || !requireCommon
-                }
-                else -> false
-            }
-        }
-
-        fun merge(font: FontGroup) {
-            glyphs += font.glyphs
-            fonts += font.fonts
-        }
-
-        fun builder() = FontBuilder(validateFilename(name)).also {
-            it.glyphs += glyphs
-            it.ascent = metrics.ascent
-            it.descent = metrics.descent
-        }
-
-        override fun toString() = "FontGroup{name=$name, metrics=$metrics, " +
-                "${fonts.size} fonts, ${glyphs.size} glyphs}"
-
     }
 
     companion object {

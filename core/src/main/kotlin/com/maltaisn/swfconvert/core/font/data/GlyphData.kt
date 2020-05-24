@@ -16,7 +16,7 @@
 
 package com.maltaisn.swfconvert.core.font.data
 
-import com.maltaisn.swfconvert.core.shape.path.Path
+import com.maltaisn.swfconvert.core.shape.data.path.Path
 
 data class GlyphData(val advanceWidth: Float,
                      val contours: List<Path>) {

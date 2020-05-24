@@ -22,9 +22,10 @@ import com.maltaisn.swfconvert.core.image.ImageDecoder
 import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.maltaisn.swfconvert.core.image.data.Color
 import com.maltaisn.swfconvert.core.image.data.ImageData
-import com.maltaisn.swfconvert.core.shape.path.Path
-import com.maltaisn.swfconvert.core.shape.path.PathElement.*
-import com.maltaisn.swfconvert.core.shape.path.PathFillStyle
+import com.maltaisn.swfconvert.core.shape.data.path.Path
+import com.maltaisn.swfconvert.core.shape.data.path.PathElement.*
+import com.maltaisn.swfconvert.core.shape.data.path.PathFillStyle
+import com.maltaisn.swfconvert.core.use
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -48,7 +49,8 @@ internal class FramesRasterizer @Inject constructor(
         private val coroutineScope: CoroutineScope,
         private val config: CoreConfiguration,
         private val pdfConfig: PdfConfiguration,
-        private val pdfFrameRendererProvider: Provider<PdfFrameRenderer>
+        private val pdfFrameRendererProvider: Provider<PdfFrameRenderer>,
+        private val imageDecoderProvider: Provider<ImageDecoder>
 ) {
 
     fun rasterizeFramesIfNeeded(pdfDoc: PDDocument,
@@ -139,9 +141,9 @@ internal class FramesRasterizer @Inject constructor(
      * Images created during rasterization are saved to [imagesDir].
      */
     private fun rasterizeFrame(pdfDoc: PDDocument,
-                       frameGroup: FrameGroup, imagesDir: File,
-                       pdfImages: MutableMap<ImageData, PDImageXObject>,
-                       pdfFonts: Map<File, PDFont>): FrameGroup {
+                               frameGroup: FrameGroup, imagesDir: File,
+                               pdfImages: MutableMap<ImageData, PDImageXObject>,
+                               pdfFonts: Map<File, PDFont>): FrameGroup {
         imagesDir.mkdirs()
 
         // Extract all text from frame.
@@ -166,9 +168,9 @@ internal class FramesRasterizer @Inject constructor(
         frameDoc.close()
 
         // Create image data
-        val imageDecoder = ImageDecoder(config)
-        val imageData = imageDecoder.createImageData(pdfImage, null, null, ImageFormat.JPG)
-        imageDecoder.dispose()
+        val imageData = imageDecoderProvider.get().use {
+            it.createImageData(pdfImage, null, null, ImageFormat.JPG)
+        }
 
         // Create PDF image
         val imageFile = File(imagesDir, "frame.${imageData.format.extension}")

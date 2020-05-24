@@ -32,8 +32,6 @@ internal data class WDefineFont(val identifier: Int,
                                 val kernings: List<Kerning>,
                                 val scale: FontScale) {
 
-    // Note that according to specification all scale values should be `1` for DefineFont2.
-    // However, the files converted here were not created correctly, so scale fixes it.
     constructor(font: DefineFont2) : this(font.identifier, font.name, font.ascent, font.descent,
             font.codes, font.shapes, font.advances, font.kernings, DEFINEFONT2_SCALE)
 
@@ -41,6 +39,7 @@ internal data class WDefineFont(val identifier: Int,
             font.codes, font.shapes, font.advances, font.kernings, DEFINEFONT3_SCALE)
 
     companion object {
+        // TODO allow custom values
         private val DEFINEFONT2_SCALE = FontScale(0.05f, 0.05f, 20f, -20f)
         private val DEFINEFONT3_SCALE = FontScale(0.05f, -0.05f, 1f, 1f)
     }

@@ -20,18 +20,19 @@ import com.flagstone.transform.MovieTag
 import com.flagstone.transform.fillstyle.*
 import com.flagstone.transform.image.ImageTag
 import com.flagstone.transform.linestyle.*
-import com.maltaisn.swfconvert.core.CoreConfiguration
+import com.maltaisn.swfconvert.core.Disposable
 import com.maltaisn.swfconvert.core.conversionError
 import com.maltaisn.swfconvert.core.image.CompositeColorTransform
 import com.maltaisn.swfconvert.core.image.ImageDecoder
 import com.maltaisn.swfconvert.core.shape.data.GradientColor
 import com.maltaisn.swfconvert.core.shape.data.WLineStyle
-import com.maltaisn.swfconvert.core.shape.path.PathFillStyle
-import com.maltaisn.swfconvert.core.shape.path.PathLineStyle
+import com.maltaisn.swfconvert.core.shape.data.path.PathFillStyle
+import com.maltaisn.swfconvert.core.shape.data.path.PathLineStyle
 import com.maltaisn.swfconvert.core.toAffineTransform
 import com.maltaisn.swfconvert.core.toColor
 import java.awt.BasicStroke
 import java.awt.geom.AffineTransform
+import javax.inject.Inject
 import kotlin.math.min
 import kotlin.math.sqrt
 
@@ -39,13 +40,23 @@ import kotlin.math.sqrt
 /**
  * Extends the functionality of [ShapeConverter] by allowing fill and line styles.
  */
-internal class StyledShapeConverter(
-        private val objectsMap: Map<Int, MovieTag>,
-        private val colorTransform: CompositeColorTransform,
-        private val config: CoreConfiguration
-) : ShapeConverter() {
+internal class StyledShapeConverter @Inject constructor(
+        private val imageDecoder: ImageDecoder
+) : ShapeConverter(), Disposable {
 
-    private val imageDecoder = ImageDecoder(config)
+    private lateinit var objectsMap: Map<Int, MovieTag>
+    private lateinit var colorTransform: CompositeColorTransform
+
+    /**
+     * Initialize this shape converter with resources.
+     * @param objectsMap Used to get image tags from SWF.
+     * @param colorTransform Color transform applied on fill and line styles.
+     */
+    fun initialize(objectsMap: Map<Int, MovieTag>,
+                   colorTransform: CompositeColorTransform) {
+        this.objectsMap = objectsMap
+        this.colorTransform = colorTransform
+    }
 
     override fun convertFillStyle(fillStyle: FillStyle) = when (fillStyle) {
         is SolidFill -> {
@@ -90,7 +101,6 @@ internal class StyledShapeConverter(
     }
 
     override fun dispose() {
-        super.dispose()
         imageDecoder.dispose()
     }
 

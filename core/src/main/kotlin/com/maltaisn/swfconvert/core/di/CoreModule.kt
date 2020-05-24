@@ -14,16 +14,23 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.core.frame
+package com.maltaisn.swfconvert.core.di
 
-import com.maltaisn.swfconvert.core.frame.data.FrameGroup
+import dagger.Module
+import dagger.Provides
+import net.sourceforge.tess4j.Tesseract
+import org.doubletype.ossa.Engine
 
 
-interface FramesRenderer {
+@Module
+object CoreModule {
 
-    /**
-     * Render a list of [frameGroups] to the output files specified by the configuration.
-     */
-    fun renderFrames(frameGroups: List<FrameGroup>)
+    @Provides
+    @JvmStatic
+    fun providesTesseract() = Tesseract()
+
+    @Provides
+    @JvmStatic
+    fun providesDoubletypeEngine() = Engine()
 
 }

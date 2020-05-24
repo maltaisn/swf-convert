@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.core.shape.path
+package com.maltaisn.swfconvert.core.shape.data.path
 
 
 data class Path(val elements: List<PathElement>,

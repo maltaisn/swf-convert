@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.app.di
+package com.maltaisn.swfconvert.core.shape.data.path
 
-import com.maltaisn.swfconvert.app.SwfConvert
-import com.maltaisn.swfconvert.core.di.CoreComponent
-import com.maltaisn.swfconvert.render.core.di.RenderCoreComponent
-import dagger.Component
+import com.maltaisn.swfconvert.core.image.data.Color
 
 
-@Component(modules = [AppModule::class],
-        dependencies = [CoreComponent::class, RenderCoreComponent::class])
-internal interface AppComponent {
-
-    fun inject(swfConvert: SwfConvert)
-
-}
+data class PathLineStyle(val color: Color,
+                         val width: Float,
+                         val cap: Int,
+                         val join: Int,
+                         val miterLimit: Float)

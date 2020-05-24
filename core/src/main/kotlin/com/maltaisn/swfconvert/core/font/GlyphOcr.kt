@@ -18,7 +18,7 @@ package com.maltaisn.swfconvert.core.font
 
 import com.maltaisn.swfconvert.core.CoreConfiguration
 import com.maltaisn.swfconvert.core.font.data.GlyphData
-import com.maltaisn.swfconvert.core.shape.path.PathElement.*
+import com.maltaisn.swfconvert.core.shape.data.path.PathElement.*
 import net.sourceforge.tess4j.ITessAPI
 import net.sourceforge.tess4j.Tesseract
 import java.awt.Color
@@ -26,12 +26,13 @@ import java.awt.geom.GeneralPath
 import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
+import javax.inject.Inject
 
 
-internal class GlyphOcr(private val config: CoreConfiguration,
-                        private val tempDir: File) {
-
-    private val tesseract = Tesseract()
+internal class GlyphOcr @Inject constructor(
+        private val config: CoreConfiguration,
+        private val tesseract: Tesseract
+) {
 
     init {
         tesseract.setTessVariable("user_defined_dpi", "300")
@@ -39,7 +40,7 @@ internal class GlyphOcr(private val config: CoreConfiguration,
         tesseract.setPageSegMode(ITessAPI.TessPageSegMode.PSM_SINGLE_WORD)
     }
 
-    fun recognizeGlyphData(data: GlyphData): Char? {
+    fun recognizeGlyphData(data: GlyphData, tempDir: File): Char? {
         val image = renderGlyphData(data)
 
         // Recognize glyph from image with OCR
