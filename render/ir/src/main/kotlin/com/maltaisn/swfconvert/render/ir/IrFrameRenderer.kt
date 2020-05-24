@@ -29,7 +29,7 @@ import java.awt.geom.Rectangle2D
 import javax.inject.Inject
 
 
-class IrFrameRenderer @Inject constructor(
+internal class IrFrameRenderer @Inject constructor(
         private val config: CoreConfiguration,
         private val irConfig: IrConfiguration
 ) {

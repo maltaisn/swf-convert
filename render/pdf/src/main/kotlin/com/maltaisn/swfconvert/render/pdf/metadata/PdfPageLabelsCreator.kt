@@ -26,7 +26,7 @@ import javax.inject.Inject
 /**
  * Create optimized PDF page labels from a list of page names.
  */
-class PdfPageLabelsCreator @Inject constructor(
+internal class PdfPageLabelsCreator @Inject constructor(
         private val config: PdfConfiguration
 ) {
 

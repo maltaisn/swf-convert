@@ -44,7 +44,7 @@ import javax.inject.Provider
 /**
  * Rasterizes frame groups to optimize their size, if needed and enabled.
  */
-class FramesRasterizer @Inject constructor(
+internal class FramesRasterizer @Inject constructor(
         private val coroutineScope: CoroutineScope,
         private val config: CoreConfiguration,
         private val pdfConfig: PdfConfiguration,
@@ -157,7 +157,7 @@ class FramesRasterizer @Inject constructor(
         // Render the PDF
         val frameDoc = PDDocument()
         val pdfFrameRenderer = pdfFrameRendererProvider.get()
-        pdfFrameRenderer.renderFrame(frameDoc, frameGroup, pdfImages, pdfFonts)
+        pdfFrameRenderer.renderFrame(frameDoc, croppedFrame, pdfImages, pdfFonts)
 
         // Render the image
         val pdfRenderer = PDFRenderer(frameDoc)

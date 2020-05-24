@@ -45,7 +45,7 @@ import javax.inject.Provider
 /**
  * Convert all frames from the intermediate representation to output format.
  */
-class PdfFramesRenderer @Inject constructor(
+class PdfFramesRenderer @Inject internal constructor(
         private val coroutineScope: CoroutineScope,
         private val config: CoreConfiguration,
         private val pdfConfig: PdfConfiguration,

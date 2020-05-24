@@ -22,6 +22,6 @@ import kotlin.reflect.KClass
 
 
 @Retention(AnnotationRetention.RUNTIME)
-@Target(AnnotationTarget.FUNCTION)
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY_GETTER)
 @MapKey
 annotation class FramesRendererKey(val value: KClass<out RenderConfiguration>)

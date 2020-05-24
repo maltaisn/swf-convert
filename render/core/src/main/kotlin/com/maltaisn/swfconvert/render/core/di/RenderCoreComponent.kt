@@ -25,8 +25,8 @@ import kotlinx.coroutines.CoroutineScope
 @Component
 interface RenderCoreComponent {
 
-    fun configuration(): RenderConfiguration
-    fun coroutineScope(): CoroutineScope
+    val configuration: RenderConfiguration
+    val coroutineScope: CoroutineScope
 
     @Component.Factory
     interface Factory {

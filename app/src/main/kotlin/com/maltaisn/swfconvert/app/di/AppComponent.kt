@@ -26,7 +26,7 @@ import javax.inject.Singleton
 @Singleton
 @Component(modules = [AppModule::class],
         dependencies = [CoreComponent::class, RenderCoreComponent::class])
-interface AppComponent {
+internal interface AppComponent {
 
     fun inject(swfConvert: SwfConvert)
 

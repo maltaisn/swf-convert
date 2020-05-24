@@ -31,7 +31,7 @@ import javax.inject.Provider
 /**
  * Convert all frames from the intermediate representation to output format.
  */
-class IrFramesRenderer @Inject constructor(
+class IrFramesRenderer @Inject internal constructor(
         private val coroutineScope: CoroutineScope,
         private val config: CoreConfiguration,
         private val irFrameRendererProvider: Provider<IrFrameRenderer>

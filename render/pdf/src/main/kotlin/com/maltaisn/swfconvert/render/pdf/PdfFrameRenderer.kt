@@ -44,7 +44,7 @@ import java.util.*
 import javax.inject.Inject
 
 
-class PdfFrameRenderer @Inject constructor(
+class PdfFrameRenderer @Inject internal constructor(
         private val config: CoreConfiguration,
         private val pdfConfig: PdfConfiguration
 ) {

@@ -25,10 +25,10 @@ import dagger.multibindings.Multibinds
 
 
 @Module(includes = [RenderIrModule::class, RenderPdfModule::class])
-abstract class AppModule {
+internal interface AppModule {
 
-    @Multibinds
-    abstract fun providesFrameRenderersMap(): Map<Class<out RenderConfiguration>,
+    @get:Multibinds
+    val providesFrameRenderersMap: Map<Class<out RenderConfiguration>,
             @JvmSuppressWildcards FramesRenderer>
 
 }
