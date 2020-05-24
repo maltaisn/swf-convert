@@ -16,7 +16,7 @@
 
 package com.maltaisn.swfconvert.core.font
 
-import com.maltaisn.swfconvert.core.config.Configuration
+import com.maltaisn.swfconvert.core.CoreConfiguration
 import com.maltaisn.swfconvert.core.font.data.GlyphData
 import com.maltaisn.swfconvert.core.shape.path.PathElement.*
 import net.sourceforge.tess4j.ITessAPI
@@ -28,7 +28,7 @@ import java.io.File
 import javax.imageio.ImageIO
 
 
-internal class GlyphOcr(private val config: Configuration,
+internal class GlyphOcr(private val config: CoreConfiguration,
                         private val tempDir: File) {
 
     private val tesseract = Tesseract()
@@ -50,7 +50,7 @@ internal class GlyphOcr(private val config: Configuration,
             else -> null
         }
 
-        if (config.main.outputOcrGlyphs) {
+        if (config.outputOcrGlyphs) {
             val sb = StringBuilder()
             sb.append(data.hashCode().toUInt())
             if (char != null) {

@@ -17,7 +17,7 @@
 package com.maltaisn.swfconvert.core.image
 
 import com.flagstone.transform.image.*
-import com.maltaisn.swfconvert.core.config.Configuration
+import com.maltaisn.swfconvert.core.CoreConfiguration
 import com.maltaisn.swfconvert.core.conversionError
 import com.maltaisn.swfconvert.core.image.data.Color
 import com.maltaisn.swfconvert.core.image.data.ImageData
@@ -40,12 +40,12 @@ import kotlin.math.roundToInt
  * Doesn't support [DefineJPEGImage4] for now. (deblocking filter)
  * See [https://www.adobe.com/content/dam/acom/en/devnet/pdf/swf-file-format-spec.pdf].
  */
-class ImageDecoder(private val config: Configuration) {
+class ImageDecoder(private val config: CoreConfiguration) {
 
     private val jpgWriter = ImageIO.getImageWritersByFormatName(ImageFormat.JPG.extension).next()
     private val jpgWriteParam = jpgWriter.defaultWriteParam.apply {
         compressionMode = ImageWriteParam.MODE_EXPLICIT
-        compressionQuality = config.main.jpegQuality
+        compressionQuality = config.jpegQuality
     }
 
     fun dispose() {
@@ -219,11 +219,11 @@ class ImageDecoder(private val config: Configuration) {
         image = image.flippedVertically()
         colorTransform?.transform(image)
         if (density != null) {
-            image = image.downsampled(density, config.main.maxDpi)
+            image = image.downsampled(density, config.maxDpi)
         }
 
         // Create image data
-        val format = config.main.imageFormat ?: defaultFormat
+        val format = config.imageFormat ?: defaultFormat
         val data: ByteArray
         val alphaData: ByteArray
         when (image.type) {
@@ -272,8 +272,8 @@ class ImageDecoder(private val config: Configuration) {
      */
     private fun BufferedImage.downsampled(currentDensity: Float,
                                           maxDensity: Float): BufferedImage {
-        val min = config.main.downsampleMinSize.toFloat()
-        if (!config.main.downsampleImages || currentDensity < maxDensity ||
+        val min = config.downsampleMinSize.toFloat()
+        if (!config.downsampleImages || currentDensity < maxDensity ||
                 this.width < min || this.height < min) {
             // Downsampling disabled, or density is below maximum, or size is already very small.
             return this
@@ -296,7 +296,7 @@ class ImageDecoder(private val config: Configuration) {
         val iw = w.roundToInt()
         val ih = h.roundToInt()
         val resizeOp = ResampleOp(iw, ih)
-        resizeOp.filter = config.main.downsampleFilter!!
+        resizeOp.filter = config.downsampleFilter!!
         // TODO implement "fast" filter
         val destImage = BufferedImage(iw, ih, this.type)
         return resizeOp.filter(this, destImage)

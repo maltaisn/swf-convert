@@ -22,7 +22,7 @@ import com.maltaisn.swfconvert.app.checkNoOptionsInArgs
 import com.maltaisn.swfconvert.app.configError
 import com.maltaisn.swfconvert.app.isSwfFile
 import com.maltaisn.swfconvert.app.toColorOrNull
-import com.maltaisn.swfconvert.core.config.MainConfiguration
+import com.maltaisn.swfconvert.core.CoreConfiguration
 import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.maltaisn.swfconvert.core.image.data.Color
 import com.mortennobel.imagescaling.ResampleFilter
@@ -31,7 +31,7 @@ import java.io.File
 import java.text.DecimalFormat
 
 
-class BaseParams(private val singleFileOutput: Boolean,
+class CoreParams(private val singleFileOutput: Boolean,
                  private val outputExtension: String) {
 
     // Files configuration
@@ -191,7 +191,7 @@ class BaseParams(private val singleFileOutput: Boolean,
         }
     }
 
-    fun createConfigurations(): List<MainConfiguration> {
+    fun createConfigurations(): List<CoreConfiguration> {
         configError(downsampleMinSize >= 3) { "Minimum downsampling size must be at least 3 px." }
         configError(maxDpi in 10f..2000f) { "Maximum image density must be between 10 and 2000 DPI." }
 
@@ -215,7 +215,7 @@ class BaseParams(private val singleFileOutput: Boolean,
 
         return inputFileCollections.mapIndexed { i, input ->
             val tempDir = File(tempDir ?: input.first().parent)
-            MainConfiguration(
+            CoreConfiguration(
                     input,
                     outputFiles[i],
                     tempDir,

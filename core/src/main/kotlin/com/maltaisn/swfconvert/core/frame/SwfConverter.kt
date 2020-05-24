@@ -28,9 +28,7 @@ import com.flagstone.transform.shape.DefineShape2
 import com.flagstone.transform.shape.DefineShape3
 import com.flagstone.transform.shape.DefineShape4
 import com.flagstone.transform.text.StaticTextTag
-import com.maltaisn.swfconvert.core.Units
-import com.maltaisn.swfconvert.core.config.Configuration
-import com.maltaisn.swfconvert.core.conversionError
+import com.maltaisn.swfconvert.core.*
 import com.maltaisn.swfconvert.core.font.data.Font
 import com.maltaisn.swfconvert.core.font.data.FontId
 import com.maltaisn.swfconvert.core.frame.data.FrameGroup
@@ -42,8 +40,6 @@ import com.maltaisn.swfconvert.core.shape.StyledShapeConverter
 import com.maltaisn.swfconvert.core.shape.data.WDefineShape
 import com.maltaisn.swfconvert.core.shape.path.Path
 import com.maltaisn.swfconvert.core.shape.path.PathElement
-import com.maltaisn.swfconvert.core.toAffineTransformOrIdentity
-import com.maltaisn.swfconvert.core.toPlaceTagOrNull
 import java.awt.Rectangle
 import java.awt.geom.AffineTransform
 import java.util.*
@@ -53,7 +49,7 @@ import java.util.*
  * Converts a single SWF file to the [FrameGroup] intermediate representation.
  */
 internal class SwfConverter(private val fontsMap: Map<FontId, Font>,
-                            private val config: Configuration) {
+                            private val config: CoreConfiguration) {
 
     private lateinit var textConverter: TextConverter
     private lateinit var shapeParser: StyledShapeConverter
@@ -87,7 +83,7 @@ internal class SwfConverter(private val fontsMap: Map<FontId, Font>,
         val movieHeader = swf.objects.find { it is MovieHeader } as MovieHeader
         val frameGroup = FrameGroup(movieHeader.frameSize.width.toFloat(),
                 movieHeader.frameSize.height.toFloat(),
-                config.main.framePadding / Units.TWIPS_TO_INCH)
+                config.framePadding / Units.TWIPS_TO_INCH)
 
         // Create root frame
         groupStack.push(frameGroup)
@@ -305,13 +301,13 @@ internal class SwfConverter(private val fontsMap: Map<FontId, Font>,
 
         } else if (paths.isNotEmpty()) {
             // Add debug shape bounds
-            if (config.main.drawShapeBounds) {
+            if (config.drawShapeBounds) {
                 val bounds = shapeTag.bounds
                 currentGroup.objects += ShapeObject(shapeTag.identifier,
                         listOf(Path(listOf(PathElement.Rectangle(
                                 bounds.minX.toFloat(), bounds.minY.toFloat(),
                                 bounds.width.toFloat(), bounds.height.toFloat())),
-                                lineStyle = config.main.debugLineStyle)))
+                                lineStyle = config.debugLineStyle)))
             }
 
             // Add shape to current group.

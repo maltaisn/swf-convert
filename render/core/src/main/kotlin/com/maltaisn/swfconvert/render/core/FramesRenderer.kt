@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.render.ir
+package com.maltaisn.swfconvert.render.core
 
-import com.maltaisn.swfconvert.render.core.RenderConfiguration
+import com.maltaisn.swfconvert.core.frame.data.FrameGroup
 
 
-/**
- * Configuration for the intermediate representation output format.
- */
-data class IrConfiguration(
+interface FramesRenderer {
 
-        /** Whether to pretty print JSON or not. */
-        val prettyPrint: Boolean
+    /**
+     * Render a list of [frameGroups] to the output files specified by the configuration.
+     */
+    fun renderFrames(frameGroups: List<FrameGroup>)
 
-) : RenderConfiguration
+}

@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.render.ir
+package com.maltaisn.swfconvert.render.core.di
 
 import com.maltaisn.swfconvert.render.core.RenderConfiguration
+import dagger.MapKey
+import kotlin.reflect.KClass
 
 
-/**
- * Configuration for the intermediate representation output format.
- */
-data class IrConfiguration(
-
-        /** Whether to pretty print JSON or not. */
-        val prettyPrint: Boolean
-
-) : RenderConfiguration
+@Retention(AnnotationRetention.RUNTIME)
+@Target(AnnotationTarget.FUNCTION)
+@MapKey
+annotation class FramesRendererKey(val value: KClass<out RenderConfiguration>)

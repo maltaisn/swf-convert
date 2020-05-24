@@ -32,10 +32,10 @@ import java.text.DecimalFormat
 
 
 @Parameters(commandDescription = "PDF output format")
-class FormatPdfParams : FormatParams<PdfConfiguration> {
+class RenderPdfParams : RenderParams<PdfConfiguration> {
 
     @ParametersDelegate
-    override var params = BaseParams(true, "pdf")
+    override var params = CoreParams(true, "pdf")
 
     // General
 
@@ -60,13 +60,6 @@ class FormatPdfParams : FormatParams<PdfConfiguration> {
 
     @Parameter(names = ["--rasterization-dpi"], description = "Density in DPI to use to rasterize output if rasterization is enabled.", order = 1220)
     var rasterizationDpi = 200f
-
-    @Parameter(names = ["--rasterizer"], description = "External program used to rasterize output files.", order = 1230)
-    var rasterizer: String = PdfConfiguration.INTERNAL_RASTERIZER
-
-    @Parameter(names = ["--rasterizer-args"], description = "Arguments to use with rasterizer to rasterize files of specified output format.", order = 1240)
-    var rasterizerArgs: String = "--input=%1\$s --dpi=%2\$s --output=%3\$s"
-    // Note: default arguments are just to show format parameters in help, they aren't really used.
 
 
     private val pdfMetadata: List<PdfMetadata> by lazy {
@@ -107,8 +100,6 @@ class FormatPdfParams : FormatParams<PdfConfiguration> {
                 rasterizationEnabled,
                 rasterizationThreshold,
                 rasterizationDpi,
-                rasterizer,
-                rasterizerArgs,
                 parallelRasterization)
 
         return if (pdfMetadata.isEmpty()) {
@@ -128,7 +119,6 @@ class FormatPdfParams : FormatParams<PdfConfiguration> {
             println("""
                 |Rasterization threshold : ${NUMBER_FMT.format(rasterizationThreshold)}
                 |Rasterization DPI : ${NUMBER_FMT.format(rasterizationDpi)}
-                |Rasterizer: $rasterizer
             """.trimMargin())
         }
     }

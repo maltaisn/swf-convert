@@ -19,9 +19,9 @@ package com.maltaisn.swfconvert.app.params
 import com.maltaisn.swfconvert.app.ConfigException
 
 
-interface FormatParams<T> {
+interface RenderParams<T> {
 
-    val params: BaseParams
+    val params: CoreParams
 
     /**
      * Validate and create the configurations associated to the parameters.

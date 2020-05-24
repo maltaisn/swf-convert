@@ -16,17 +16,16 @@
 
 package com.maltaisn.swfconvert.render.pdf
 
-import com.maltaisn.swfconvert.core.config.Configuration
-import com.maltaisn.swfconvert.core.frame.FramesRenderer
+import com.maltaisn.swfconvert.core.CoreConfiguration
 import com.maltaisn.swfconvert.core.frame.data.FrameGroup
 import com.maltaisn.swfconvert.core.frame.data.GroupObject
 import com.maltaisn.swfconvert.core.frame.data.TextObject
 import com.maltaisn.swfconvert.core.image.data.ImageData
 import com.maltaisn.swfconvert.core.shape.path.PathFillStyle
+import com.maltaisn.swfconvert.render.core.FramesRenderer
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfMetadata
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfOutlineCreator
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfPageLabelsCreator
-import com.maltaisn.swfconvert.render.pdf.rasterize.FramesRasterizer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -39,16 +38,22 @@ import org.apache.pdfbox.pdmodel.font.PDType0Font
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
+import javax.inject.Inject
+import javax.inject.Provider
 
 
 /**
  * Convert all frames from the intermediate representation to output format.
  */
-internal class PdfFramesRenderer(private val coroutineScope: CoroutineScope,
-                                 private val config: Configuration) : FramesRenderer {
-
-    private val pdfConfig: PdfConfiguration
-        get() = config.format as PdfConfiguration
+class PdfFramesRenderer @Inject constructor(
+        private val coroutineScope: CoroutineScope,
+        private val config: CoreConfiguration,
+        private val pdfConfig: PdfConfiguration,
+        private val pdfFrameRendererProvider: Provider<PdfFrameRenderer>,
+        private val framesRasterizer: FramesRasterizer,
+        private val pdfOutlineCreator: PdfOutlineCreator,
+        private val pdfPageLabelsCreator: PdfPageLabelsCreator
+) : FramesRenderer {
 
     override fun renderFrames(frameGroups: List<FrameGroup>) {
         var currFrameGroups = frameGroups
@@ -62,10 +67,8 @@ internal class PdfFramesRenderer(private val coroutineScope: CoroutineScope,
         val pdfFonts = createPdfFonts(pdfDoc, currFrameGroups)
 
         // Rasterize pages
-        val rasterizer = FramesRasterizer(coroutineScope, config)
-        val imagesDir = File(config.main.tempDir, "images")
-        currFrameGroups = rasterizer.rasterizeFramesIfNeeded(
-                pdfDoc, currFrameGroups, imagesDir, pdfImages, pdfFonts)
+        currFrameGroups = framesRasterizer.rasterizeFramesIfNeeded(
+                pdfDoc, currFrameGroups, config.imagesDir, pdfImages, pdfFonts)
 
         // Render all frames to PDF
         val pdfPages = renderFramesToPdf(currFrameGroups, pdfImages, pdfFonts)
@@ -84,7 +87,7 @@ internal class PdfFramesRenderer(private val coroutineScope: CoroutineScope,
 
         // Export PDF
         // TODO handle errors
-        pdfDoc.save(config.main.output.first())
+        pdfDoc.save(config.output.first())
         pdfDoc.close()
         for (pdfPage in pdfPages) {
             pdfPage.close()
@@ -170,20 +173,20 @@ internal class PdfFramesRenderer(private val coroutineScope: CoroutineScope,
         val jobs = frameGroups.map { frameGroup ->
             val job = coroutineScope.async {
                 val pdfPage = PDDocument(MemoryUsageSetting.setupTempFileOnly())
-                val renderer = PdfFrameRenderer(config)
+                val renderer = pdfFrameRendererProvider.get()
                 renderer.renderFrame(pdfPage, frameGroup, pdfImages, pdfFonts)
 
                 val done = progress.incrementAndGet()
                 print("Rendered frame $done / ${frameGroups.size}\r")
                 pdfPage
             }
-            if (!config.main.parallelFrameRendering) {
+            if (!config.parallelFrameRendering) {
                 pdfPages += runBlocking { job.await() }
             }
             job
         }
 
-        if (config.main.parallelFrameRendering) {
+        if (config.parallelFrameRendering) {
             pdfPages += runBlocking { jobs.awaitAll() }
         }
 
@@ -191,11 +194,11 @@ internal class PdfFramesRenderer(private val coroutineScope: CoroutineScope,
     }
 
     private fun addMetadataToPdf(pdfDoc: PDDocument, metadata: PdfMetadata) {
-        PdfOutlineCreator().createOutline(pdfDoc, metadata.outline, metadata.outlineOpenLevel)
+        pdfOutlineCreator.createOutline(pdfDoc, metadata.outline, metadata.outlineOpenLevel)
 
         val pageLabels = metadata.pageLabels
         if (pageLabels != null) {
-            PdfPageLabelsCreator(pdfConfig).createPageLabels(pdfDoc, metadata.pageLabels)
+            pdfPageLabelsCreator.createPageLabels(pdfDoc, metadata.pageLabels)
         }
 
         val pdfInfo = pdfDoc.documentInformation

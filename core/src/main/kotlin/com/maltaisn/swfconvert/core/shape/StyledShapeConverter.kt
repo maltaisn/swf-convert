@@ -20,7 +20,7 @@ import com.flagstone.transform.MovieTag
 import com.flagstone.transform.fillstyle.*
 import com.flagstone.transform.image.ImageTag
 import com.flagstone.transform.linestyle.*
-import com.maltaisn.swfconvert.core.config.Configuration
+import com.maltaisn.swfconvert.core.CoreConfiguration
 import com.maltaisn.swfconvert.core.conversionError
 import com.maltaisn.swfconvert.core.image.CompositeColorTransform
 import com.maltaisn.swfconvert.core.image.ImageDecoder
@@ -42,7 +42,7 @@ import kotlin.math.sqrt
 internal class StyledShapeConverter(
         private val objectsMap: Map<Int, MovieTag>,
         private val colorTransform: CompositeColorTransform,
-        private val config: Configuration
+        private val config: CoreConfiguration
 ) : ShapeConverter() {
 
     private val imageDecoder = ImageDecoder(config)

@@ -21,7 +21,7 @@ import com.flagstone.transform.font.DefineFont
 import com.flagstone.transform.font.DefineFont2
 import com.flagstone.transform.font.DefineFont3
 import com.flagstone.transform.font.DefineFont4
-import com.maltaisn.swfconvert.core.config.Configuration
+import com.maltaisn.swfconvert.core.CoreConfiguration
 import com.maltaisn.swfconvert.core.conversionError
 import com.maltaisn.swfconvert.core.font.data.*
 import com.maltaisn.swfconvert.core.old.font.GlyphPathParser
@@ -29,12 +29,14 @@ import com.maltaisn.swfconvert.core.validateFilename
 import java.io.File
 import java.text.NumberFormat
 import java.util.*
+import javax.inject.Inject
 
 
-internal class FontConverter(private val fontsDir: File,
-                             private val config: Configuration) {
+internal class FontConverter @Inject constructor(
+        private val config: CoreConfiguration
+) {
 
-    private val glyphOcr = GlyphOcr(config, File(fontsDir, "ocr"))
+    private val glyphOcr = GlyphOcr(config, File(config.fontsDir, "ocr"))
 
     private val unknownCharsMap = mutableMapOf<GlyphData, Char>()
     private var nextUnknownCharCode = 0
@@ -46,17 +48,13 @@ internal class FontConverter(private val fontsDir: File,
      * This grouping is not perfect, but can sometimes reduce the number of fonts by 50x-100x.
      */
     fun createFontGroups(swfs: List<Movie>): List<FontGroup> {
-        // Create font destination folder
-        fontsDir.deleteRecursively()
-        fontsDir.mkdirs()
-
         // Create fonts for each font tag in each file.
         val allFonts = createAllFonts(swfs)
 
         // Merge fonts with the same name if they are compatible.
         print("Creating fonts: merging fonts\r")
         val groups = mergeFonts(allFonts)
-        if (config.main.groupFonts) {
+        if (config.groupFonts) {
             val ratio = (allFonts.size - groups.size) / allFonts.size.toFloat()
             println("Creating fonts: ${groups.size} font groups created from ${allFonts.size} " +
                     "fonts (-${PERCENT_FMT.format(ratio)})")
@@ -73,7 +71,7 @@ internal class FontConverter(private val fontsDir: File,
      */
     fun createFontFiles(groups: List<FontGroup>) {
         print("Creating fonts: building TTF fonts\r")
-        val tempDir = File(fontsDir, "temp")
+        val tempDir = File(config.fontsDir, "temp")
         tempDir.mkdirs()
         for (group in groups) {
             buildFontFile(group, tempDir)
@@ -184,7 +182,7 @@ internal class FontConverter(private val fontsDir: File,
                     }
 
                 } else {
-                    val ocrChar = if (config.main.ocrDetectGlyphs) {
+                    val ocrChar = if (config.ocrDetectGlyphs) {
                         // Try to recognize char with OCR
                         glyphOcr.recognizeGlyphData(data)
                     } else {
@@ -229,7 +227,7 @@ internal class FontConverter(private val fontsDir: File,
 
     private fun mergeFontGroups(groups: List<FontGroup>,
                                 requireCommon: Boolean): List<FontGroup> {
-        if (!config.main.groupFonts) {
+        if (!config.groupFonts) {
             return groups
         }
 
@@ -280,7 +278,7 @@ internal class FontConverter(private val fontsDir: File,
     private fun buildFontFile(group: FontGroup, tempDir: File) {
         val builder = group.builder()
         val ttfFile = builder.build(tempDir)
-        val outFile = File(fontsDir, validateFilename("${group.name}.ttf"))
+        val outFile = File(config.fontsDir, validateFilename("${group.name}.ttf"))
         ttfFile.renameTo(outFile)
         group.fontFile = outFile
     }

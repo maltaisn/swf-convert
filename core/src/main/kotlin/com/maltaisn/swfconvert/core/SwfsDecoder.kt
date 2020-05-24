@@ -17,18 +17,21 @@
 package com.maltaisn.swfconvert.core
 
 import com.flagstone.transform.Movie
-import com.maltaisn.swfconvert.core.config.Configuration
 import kotlinx.coroutines.*
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
+import javax.inject.Inject
 
 
 /**
  * Decodes SWF files with `transform-swf` in parallel.
  */
-class SwfsDecoder(private val coroutineScope: CoroutineScope) {
+internal class SwfsDecoder @Inject constructor(
+        private val coroutineScope: CoroutineScope,
+        private val config: CoreConfiguration
+) {
 
-    fun decodeFiles(files: List<File>, config: Configuration): List<Movie> {
+    fun decodeFiles(files: List<File>): List<Movie> {
         val swfs = arrayOfNulls<Movie>(files.size)
         val progress = AtomicInteger()
 
@@ -42,12 +45,12 @@ class SwfsDecoder(private val coroutineScope: CoroutineScope) {
                 val done = progress.incrementAndGet()
                 print("Decoded SWF file $done / ${files.size}\r")
             }
-            if (!config.main.parallelSwfDecoding) {
+            if (!config.parallelSwfDecoding) {
                 runBlocking { job.await() }
             }
             job
         }
-        if (config.main.parallelSwfDecoding) {
+        if (config.parallelSwfDecoding) {
             runBlocking { jobs.awaitAll() }
         }
 

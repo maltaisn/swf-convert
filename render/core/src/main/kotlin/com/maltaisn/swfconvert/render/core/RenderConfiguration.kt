@@ -14,17 +14,11 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.render.ir
-
-import com.maltaisn.swfconvert.render.core.RenderConfiguration
+package com.maltaisn.swfconvert.render.core
 
 
 /**
- * Configuration for the intermediate representation output format.
+ * Marker interface for configuration used to convert from the
+ * intermediate representation to an output format.
  */
-data class IrConfiguration(
-
-        /** Whether to pretty print JSON or not. */
-        val prettyPrint: Boolean
-
-) : RenderConfiguration
+interface RenderConfiguration

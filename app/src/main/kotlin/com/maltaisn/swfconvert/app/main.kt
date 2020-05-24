@@ -18,7 +18,6 @@ package com.maltaisn.swfconvert.app
 
 import com.maltaisn.swfconvert.app.params.ParamsParser
 import com.maltaisn.swfconvert.core.ConversionError
-import com.maltaisn.swfconvert.core.SwfCollectionConverter
 import java.text.DecimalFormat
 import kotlin.system.measureTimeMillis
 
@@ -30,15 +29,15 @@ fun main(args: Array<String>) {
 
     // Do each conversion
     try {
-        val converter = SwfCollectionConverter()
         for ((i, config) in configs.withIndex()) {
             println("Converting collection ${i + 1} / ${configs.size}")
             val duration = measureTimeMillis {
-                converter.convertSwfCollection(config)
+                SwfConvert(config).convert()
             }
             println("Done in ${DURATION_FMT.format(duration / 1000.0)} s\n")
         }
     } catch (e: ConversionError) {
+        // TODO
         println()
     }
 }

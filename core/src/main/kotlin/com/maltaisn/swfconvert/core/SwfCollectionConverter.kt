@@ -16,32 +16,34 @@
 
 package com.maltaisn.swfconvert.core
 
-import com.maltaisn.swfconvert.core.config.Configuration
 import com.maltaisn.swfconvert.core.font.FontConverter
 import com.maltaisn.swfconvert.core.frame.SwfsConverter
+import com.maltaisn.swfconvert.core.frame.data.FrameGroup
 import com.maltaisn.swfconvert.core.image.ImageCreator
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import java.io.File
+import javax.inject.Inject
 
 
 /**
- * Converts a collection of SWF files to the output format.
+ * Converts a collection of SWF files to the intermediate representation.
  */
-class SwfCollectionConverter {
+class SwfCollectionConverter @Inject internal constructor(
+        private val config: CoreConfiguration,
+        private val swfsDecoder: SwfsDecoder,
+        private val swfsConverter: SwfsConverter,
+        private val fontConverter: FontConverter,
+        private val imageCreator: ImageCreator
+) {
 
-    private val coroutineScope = CoroutineScope(Dispatchers.Default)
-
-
-    fun convertSwfCollection(config: Configuration) {
-        val fontsDir = File(config.main.tempDir, "fonts")
-        val imagesDir = File(config.main.tempDir, "images")
+    fun convert(): List<FrameGroup> {
+        config.imagesDir.deleteRecursively()
+        config.fontsDir.deleteRecursively()
+        config.imagesDir.mkdirs()
+        config.fontsDir.mkdirs()
 
         // Decode SWFs files
-        val swfs = SwfsDecoder(coroutineScope).decodeFiles(config.main.input, config)
+        val swfs = swfsDecoder.decodeFiles(config.input)
 
         // Create font groups
-        val fontConverter = FontConverter(fontsDir, config)
         val fontGroups = fontConverter.createFontGroups(swfs)
 
         // Create font files and ungroup them.
@@ -49,24 +51,21 @@ class SwfCollectionConverter {
         val fontsMap = fontConverter.ungroupFonts(fontGroups)
 
         // Convert SWF to intermediate representation.
-        val swfsConverter = SwfsConverter(coroutineScope, fontsMap)
-        val frameGroups = swfsConverter.createFrameGroups(swfs, config)
+        val frameGroups = swfsConverter.createFrameGroups(swfs, fontsMap)
 
         // Create images and remove duplicates if needed.
-        imagesDir.deleteRecursively()
-        val imageCreator = ImageCreator(coroutineScope, config)
-        imageCreator.createAndOptimizeImages(frameGroups, imagesDir)
+        imageCreator.createAndOptimizeImages(frameGroups)
 
-        // Render frames (from intermediate format to output format)
-        val renderer = config.format.createRenderer(coroutineScope, config)
-        renderer.renderFrames(frameGroups)
+        return frameGroups
+    }
 
-        // Remove files not to keep
-        if (!config.main.keepImages) {
-            imagesDir.deleteRecursively()
+    fun cleanup() {
+        // Remove temporary files if needed
+        if (!config.keepImages) {
+            config.imagesDir.deleteRecursively()
         }
-        if (!config.main.keepFonts) {
-            fontsDir.deleteRecursively()
+        if (!config.keepFonts) {
+            config.fontsDir.deleteRecursively()
         }
     }
 

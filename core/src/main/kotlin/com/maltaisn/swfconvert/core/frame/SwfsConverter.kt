@@ -17,7 +17,7 @@
 package com.maltaisn.swfconvert.core.frame
 
 import com.flagstone.transform.Movie
-import com.maltaisn.swfconvert.core.config.Configuration
+import com.maltaisn.swfconvert.core.CoreConfiguration
 import com.maltaisn.swfconvert.core.font.data.Font
 import com.maltaisn.swfconvert.core.font.data.FontId
 import com.maltaisn.swfconvert.core.frame.data.FrameGroup
@@ -26,15 +26,18 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.atomic.AtomicInteger
+import javax.inject.Inject
 
 
 /**
  * Converts a collection of SWF files to the [FrameGroup] intermediate representation.
  */
-internal class SwfsConverter(private val coroutineScope: CoroutineScope,
-                             private val fontsMap: Map<FontId, Font>) {
+internal class SwfsConverter @Inject constructor(
+        private val coroutineScope: CoroutineScope,
+        private val config: CoreConfiguration
+) {
 
-    fun createFrameGroups(swfs: List<Movie>, config: Configuration): List<FrameGroup> {
+    fun createFrameGroups(swfs: List<Movie>, fontsMap: Map<FontId, Font>): List<FrameGroup> {
         val frameGroups = arrayOfNulls<FrameGroup>(swfs.size)
         val progress = AtomicInteger()
 
@@ -47,12 +50,12 @@ internal class SwfsConverter(private val coroutineScope: CoroutineScope,
                 val done = progress.incrementAndGet()
                 print("Converted SWF $done / ${swfs.size}\r")
             }
-            if (!config.main.parallelSwfConversion) {
+            if (!config.parallelSwfConversion) {
                 runBlocking { job.await() }
             }
             job
         }
-        if (config.main.parallelSwfConversion) {
+        if (config.parallelSwfConversion) {
             runBlocking { jobs.awaitAll() }
         }
 

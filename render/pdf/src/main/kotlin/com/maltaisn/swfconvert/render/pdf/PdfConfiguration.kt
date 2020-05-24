@@ -16,12 +16,8 @@
 
 package com.maltaisn.swfconvert.render.pdf
 
-import com.maltaisn.swfconvert.core.config.Configuration
-import com.maltaisn.swfconvert.core.config.FormatConfiguration
-import com.maltaisn.swfconvert.core.frame.FramesRenderer
+import com.maltaisn.swfconvert.render.core.RenderConfiguration
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfMetadata
-import com.maltaisn.swfconvert.render.pdf.rasterize.PdfBoxFrameRasterizer
-import kotlinx.coroutines.CoroutineScope
 
 
 /**
@@ -57,34 +53,7 @@ data class PdfConfiguration(
         /** Density to use to rasterize output files if rasterization is enabled. */
         val rasterizationDpi: Float,
 
-        /** Program used to rasterize output files, or `"pdfbox"` to use internal rasterizer. */
-        val rasterizer: String,
-
-        /**
-         * Arguments to use with [rasterizer] to rasterize output files.
-         * These are ignored if rasterizer is the internal one.
-         *
-         * Format arguments are:
-         * 1. Input file path (surrounded with double quotes).
-         * 2. Output desired DPI.
-         * 3. Output PNG file path (surrounded with double quotes).
-         *
-         * For example, to use inkscape as an external rasterizer, this can be set to:
-         * `"%1\$s -z --export-dpi=%2\$s --export-area-page --export-png=%3\$s"`.
-         */
-        val rasterizerArgs: String,
-
         /** Whether to rasterize pages in parallel. */
         val parallelRasterization: Boolean
 
-) : FormatConfiguration<PdfConfiguration> {
-
-    override fun createRenderer(coroutineScope: CoroutineScope,
-                                config: Configuration): FramesRenderer =
-            PdfFramesRenderer(coroutineScope, config)
-
-    companion object {
-        const val INTERNAL_RASTERIZER = PdfBoxFrameRasterizer.NAME
-    }
-
-}
+) : RenderConfiguration

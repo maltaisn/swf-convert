@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.render.pdf.rasterize
+package com.maltaisn.swfconvert.render.pdf
 
-import com.maltaisn.swfconvert.core.config.Configuration
+import com.maltaisn.swfconvert.core.CoreConfiguration
 import com.maltaisn.swfconvert.core.frame.data.*
 import com.maltaisn.swfconvert.core.image.ImageDecoder
 import com.maltaisn.swfconvert.core.image.ImageFormat
@@ -25,7 +25,6 @@ import com.maltaisn.swfconvert.core.image.data.ImageData
 import com.maltaisn.swfconvert.core.shape.path.Path
 import com.maltaisn.swfconvert.core.shape.path.PathElement.*
 import com.maltaisn.swfconvert.core.shape.path.PathFillStyle
-import com.maltaisn.swfconvert.render.pdf.PdfConfiguration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -33,26 +32,24 @@ import kotlinx.coroutines.runBlocking
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.font.PDFont
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject
+import org.apache.pdfbox.rendering.ImageType
+import org.apache.pdfbox.rendering.PDFRenderer
 import java.awt.geom.AffineTransform
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
+import javax.inject.Inject
+import javax.inject.Provider
 
 
 /**
  * Rasterizes frame groups to optimize their size, if needed and enabled.
  */
-internal class FramesRasterizer(private val coroutineScope: CoroutineScope,
-                                private val config: Configuration) {
-
-    private val pdfConfig: PdfConfiguration
-        get() = config.format as PdfConfiguration
-
-    init {
-        // Register frame rasterizers.
-        FrameRasterizer.register(PdfBoxFrameRasterizer.NAME, PdfBoxFrameRasterizer(config))
-        FrameRasterizer.register(null, ExternalFrameRasterizer(config))
-    }
-
+class FramesRasterizer @Inject constructor(
+        private val coroutineScope: CoroutineScope,
+        private val config: CoreConfiguration,
+        private val pdfConfig: PdfConfiguration,
+        private val pdfFrameRendererProvider: Provider<PdfFrameRenderer>
+) {
 
     fun rasterizeFramesIfNeeded(pdfDoc: PDDocument,
                                 frameGroups: List<FrameGroup>, imagesDir: File,
@@ -141,7 +138,7 @@ internal class FramesRasterizer(private val coroutineScope: CoroutineScope,
      * them with an image. Texts are made transparent to hide them but allow selection.
      * Images created during rasterization are saved to [imagesDir].
      */
-    fun rasterizeFrame(pdfDoc: PDDocument,
+    private fun rasterizeFrame(pdfDoc: PDDocument,
                        frameGroup: FrameGroup, imagesDir: File,
                        pdfImages: MutableMap<ImageData, PDImageXObject>,
                        pdfFonts: Map<File, PDFont>): FrameGroup {
@@ -157,15 +154,16 @@ internal class FramesRasterizer(private val coroutineScope: CoroutineScope,
             croppedFrame.objects += frameGroup.objects
         }
 
-        // Render the PDF to an image
-        val rasterizer = FrameRasterizer.getByName(pdfConfig.rasterizer)
-                ?: FrameRasterizer.getByName(null)!!
-        var pdfImage = rasterizer.rasterizeFrame(croppedFrame, imagesDir, pdfImages, pdfFonts)
-        if (pdfImage == null) {
-            // Use PDFBox rasterizer if the other fails.
-            val pdfBoxRasterizer = FrameRasterizer.getByName(PdfBoxFrameRasterizer.NAME) as PdfBoxFrameRasterizer
-            pdfImage = pdfBoxRasterizer.rasterizeFrame(croppedFrame, imagesDir, pdfImages, pdfFonts)
-        }
+        // Render the PDF
+        val frameDoc = PDDocument()
+        val pdfFrameRenderer = pdfFrameRendererProvider.get()
+        pdfFrameRenderer.renderFrame(frameDoc, frameGroup, pdfImages, pdfFonts)
+
+        // Render the image
+        val pdfRenderer = PDFRenderer(frameDoc)
+        val pdfImage = pdfRenderer.renderImageWithDPI(
+                0, pdfConfig.rasterizationDpi, ImageType.RGB)
+        frameDoc.close()
 
         // Create image data
         val imageDecoder = ImageDecoder(config)

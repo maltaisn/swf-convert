@@ -16,27 +16,27 @@
 
 package com.maltaisn.swfconvert.core.image
 
-import com.maltaisn.swfconvert.core.config.Configuration
-import com.maltaisn.swfconvert.core.config.MainConfiguration
+import com.maltaisn.swfconvert.core.CoreConfiguration
 import com.maltaisn.swfconvert.core.frame.data.FrameGroup
 import com.maltaisn.swfconvert.core.image.data.ImageData
 import kotlinx.coroutines.*
 import java.io.File
 import java.text.NumberFormat
 import java.util.concurrent.atomic.AtomicInteger
+import javax.inject.Inject
 
 
-internal class ImageCreator(private val coroutineScope: CoroutineScope,
-                            private val config: Configuration) {
+internal class ImageCreator @Inject constructor(
+        private val coroutineScope: CoroutineScope,
+        private val config: CoreConfiguration
+) {
 
     /**
      * Create all image files for a [frameGroups], written to [imagesDir].
-     * If [MainConfiguration.removeDuplicateImages] is `true`, duplicate image
+     * If [CoreConfiguration.removeDuplicateImages] is `true`, duplicate image
      * data is removed to optimize output size.
      */
-    fun createAndOptimizeImages(frameGroups: List<FrameGroup>, imagesDir: File) {
-        imagesDir.mkdirs()
-
+    fun createAndOptimizeImages(frameGroups: List<FrameGroup>) {
         // Find all images in all frames
         val allImageFills = frameGroups.map { it.findAllImagesTo(mutableListOf()) }
 
@@ -53,7 +53,7 @@ internal class ImageCreator(private val coroutineScope: CoroutineScope,
                     val data = imageFill.imageData
 
                     var createImage = false
-                    if (!config.main.removeDuplicateImages) {
+                    if (!config.removeDuplicateImages) {
                         createImage = true
 
                     } else {
@@ -72,7 +72,7 @@ internal class ImageCreator(private val coroutineScope: CoroutineScope,
                     if (createImage) {
                         val count = imagesCount.getAndIncrement()
                         withContext(Dispatchers.IO) {
-                            createImageFiles(data, count.toString(), imagesDir)
+                            createImageFiles(data, count.toString())
                         }
                     }
 
@@ -80,16 +80,16 @@ internal class ImageCreator(private val coroutineScope: CoroutineScope,
                     print("Created image $done / $total\r")
                 }
             }
-            if (!config.main.parallelImageCreation) {
+            if (!config.parallelImageCreation) {
                 runBlocking { job.await() }
             }
             job
         }
-        if (config.main.parallelImageCreation) {
+        if (config.parallelImageCreation) {
             runBlocking { jobs.awaitAll() }
         }
 
-        if (config.main.removeDuplicateImages) {
+        if (config.removeDuplicateImages) {
             val count = imagesCount.get()
             print("Created images: $count from $total")
             val ratio = (total - count).toFloat() / total
@@ -100,16 +100,16 @@ internal class ImageCreator(private val coroutineScope: CoroutineScope,
         }
     }
 
-    private fun createImageFiles(data: ImageData, name: String, imagesDir: File) {
+    private fun createImageFiles(data: ImageData, name: String) {
         // Output image data file.
         val ext = data.format.extension
-        val dataFile = File(imagesDir, "$name.$ext")
+        val dataFile = File(config.imagesDir, "$name.$ext")
         dataFile.writeBytes(data.data)
         data.dataFile = dataFile
 
         if (data.alphaData.isNotEmpty()) {
             // Save image alpha data file.
-            val alphaDataFile = File(imagesDir, "${name}_mask.$ext")
+            val alphaDataFile = File(config.imagesDir, "${name}_mask.$ext")
             alphaDataFile.writeBytes(data.alphaData)
             data.alphaDataFile = alphaDataFile
         }

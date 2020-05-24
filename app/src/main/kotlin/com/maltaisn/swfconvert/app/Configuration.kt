@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.render.ir
+package com.maltaisn.swfconvert.app
 
+import com.maltaisn.swfconvert.core.CoreConfiguration
 import com.maltaisn.swfconvert.render.core.RenderConfiguration
 
 
 /**
- * Configuration for the intermediate representation output format.
+ * Configuration used for converting a SWF file collection to the output format.
  */
-data class IrConfiguration(
-
-        /** Whether to pretty print JSON or not. */
-        val prettyPrint: Boolean
-
-) : RenderConfiguration
+data class Configuration(
+        val core: CoreConfiguration,
+        val render: RenderConfiguration)

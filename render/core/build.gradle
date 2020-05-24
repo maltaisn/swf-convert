@@ -6,25 +6,18 @@ plugins {
 
 dependencies {
     implementation project(":core")
-    implementation project(":render:core")
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
-    implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serializationVersion"
 
-    implementation "com.google.dagger:dagger:$daggerVersion"
+    compileOnly "com.google.dagger:dagger:$daggerVersion"
     kapt "com.google.dagger:dagger-compiler:$daggerVersion"
-
-    testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
-    testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
 }
 
 sourceSets {
     main {
         java.srcDirs += "src/main/kotlin"
-    }
-    test {
-        java.srcDirs += "src/test/kotlin"
+        resources.srcDirs += "src/main/res"
     }
 }
 

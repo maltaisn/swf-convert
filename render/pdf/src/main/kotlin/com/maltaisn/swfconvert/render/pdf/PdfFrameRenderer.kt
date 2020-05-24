@@ -16,7 +16,7 @@
 
 package com.maltaisn.swfconvert.render.pdf
 
-import com.maltaisn.swfconvert.core.config.Configuration
+import com.maltaisn.swfconvert.core.CoreConfiguration
 import com.maltaisn.swfconvert.core.font.data.GlyphData
 import com.maltaisn.swfconvert.core.frame.data.*
 import com.maltaisn.swfconvert.core.image.data.ImageData
@@ -41,12 +41,13 @@ import java.awt.BasicStroke
 import java.awt.geom.Rectangle2D
 import java.io.File
 import java.util.*
+import javax.inject.Inject
 
 
-internal class PdfFrameRenderer(private val config: Configuration) {
-
-    private val pdfConfig: PdfConfiguration
-        get() = config.format as PdfConfiguration
+class PdfFrameRenderer @Inject constructor(
+        private val config: CoreConfiguration,
+        private val pdfConfig: PdfConfiguration
+) {
 
     private lateinit var pdfDoc: PDDocument
     private lateinit var pdfImages: Map<ImageData, PDImageXObject>
@@ -135,7 +136,7 @@ internal class PdfFrameRenderer(private val config: Configuration) {
     }
 
     private fun drawClipGroup(group: GroupObject.Clip) {
-        if (config.main.disableClipping) {
+        if (config.disableClipping) {
             drawSimpleGroup(group)
             return
         }
@@ -151,7 +152,7 @@ internal class PdfFrameRenderer(private val config: Configuration) {
     }
 
     private fun drawMaskedGroup(group: GroupObject.Masked) {
-        if (config.main.disableMasking) {
+        if (config.disableMasking) {
             drawSimpleGroup(group)
             return
         }
@@ -200,7 +201,7 @@ internal class PdfFrameRenderer(private val config: Configuration) {
     }
 
     private fun drawBlendGroup(group: GroupObject.Blend) {
-        if (config.main.disableBlending) {
+        if (config.disableBlending) {
             drawSimpleGroup(group)
             return
         }
@@ -334,14 +335,14 @@ internal class PdfFrameRenderer(private val config: Configuration) {
     }
 
     private fun clipPath(path: Path) {
-        if (config.main.disableClipping) {
+        if (config.disableClipping) {
             return
         }
 
         // Draw clip bounds
-        if (config.main.drawClipBounds) {
+        if (config.drawClipBounds) {
             streamWrapper.withState {
-                applyLineStyle(config.main.debugLineStyle)
+                applyLineStyle(config.debugLineStyle)
                 drawPathToPdf(path)
                 streamWrapper.stream.stroke()
             }

@@ -14,12 +14,20 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.core.config
+package com.maltaisn.swfconvert.app.di
+
+import com.maltaisn.swfconvert.app.SwfConvert
+import com.maltaisn.swfconvert.core.di.CoreComponent
+import com.maltaisn.swfconvert.render.core.di.RenderCoreComponent
+import dagger.Component
+import javax.inject.Singleton
 
 
-/**
- * Configuration used for converting a SWF file collection to the output format.
- */
-data class Configuration(
-        val main: MainConfiguration,
-        val format: FormatConfiguration<*>)
+@Singleton
+@Component(modules = [AppModule::class],
+        dependencies = [CoreComponent::class, RenderCoreComponent::class])
+interface AppComponent {
+
+    fun inject(swfConvert: SwfConvert)
+
+}

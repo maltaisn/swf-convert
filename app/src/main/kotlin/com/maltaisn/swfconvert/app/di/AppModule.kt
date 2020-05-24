@@ -14,22 +14,21 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.core.config
+package com.maltaisn.swfconvert.app.di
 
-import com.maltaisn.swfconvert.core.frame.FramesRenderer
-import kotlinx.coroutines.CoroutineScope
+import com.maltaisn.swfconvert.render.core.FramesRenderer
+import com.maltaisn.swfconvert.render.core.RenderConfiguration
+import com.maltaisn.swfconvert.render.ir.di.RenderIrModule
+import com.maltaisn.swfconvert.render.pdf.di.RenderPdfModule
+import dagger.Module
+import dagger.multibindings.Multibinds
 
 
-/**
- * Marker interface for configuration used to convert from the
- * intermediate representation to an output format.
- */
-interface FormatConfiguration<T : FormatConfiguration<T>> {
+@Module(includes = [RenderIrModule::class, RenderPdfModule::class])
+abstract class AppModule {
 
-    /**
-     * Create a new [FramesRenderer] for this format.
-     */
-    fun createRenderer(coroutineScope: CoroutineScope,
-                       config: Configuration): FramesRenderer
+    @Multibinds
+    abstract fun providesFrameRenderersMap(): Map<Class<out RenderConfiguration>,
+            @JvmSuppressWildcards FramesRenderer>
 
 }

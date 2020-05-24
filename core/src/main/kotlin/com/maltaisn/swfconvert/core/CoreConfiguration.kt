@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.core.config
+package com.maltaisn.swfconvert.core
 
 import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.maltaisn.swfconvert.core.image.data.Color
@@ -28,7 +28,7 @@ import java.io.File
  * Configuration for the conversion to the intermediate format.
  * Not all these options are relevant for all formats however.
  */
-data class MainConfiguration(
+data class CoreConfiguration(
         // FILES CONFIGURATION
 
         /** Input files. */
@@ -133,5 +133,10 @@ data class MainConfiguration(
 
     val debugLineStyle = PathLineStyle(debugLineColor, debugLineWidth,
             BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0f)
+
+    // Temporary directories for fonts and images based on [tempDir]
+    val fontsDir = File(tempDir, "fonts")
+    val imagesDir = File(tempDir, "images")
+
 }
 

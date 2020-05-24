@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.render.ir
+package com.maltaisn.swfconvert.render.ir.di
 
-import com.maltaisn.swfconvert.render.core.RenderConfiguration
+import com.maltaisn.swfconvert.render.core.di.RenderCoreComponent
+import dagger.Component
 
 
-/**
- * Configuration for the intermediate representation output format.
- */
-data class IrConfiguration(
-
-        /** Whether to pretty print JSON or not. */
-        val prettyPrint: Boolean
-
-) : RenderConfiguration
+@Component(
+        dependencies = [RenderCoreComponent::class],
+        modules = [RenderIrModule::class])
+interface RenderIrComponent

@@ -23,13 +23,13 @@ import com.maltaisn.swfconvert.render.ir.IrConfiguration
 
 
 @Parameters(commandDescription = "Intermediate representation output format")
-class FormatIrParams : FormatParams<IrConfiguration> {
+class RenderIrParams : RenderParams<IrConfiguration> {
 
     @ParametersDelegate
-    override var params = BaseParams(false, "json").apply {
+    override var params = CoreParams(false, "json").apply {
         // Keep fonts and images by default for IR output.
-        this.params[BaseParams.OPT_KEEP_FONTS] = true.toString()
-        this.params[BaseParams.OPT_KEEP_IMAGES] = true.toString()
+        this.params[CoreParams.OPT_KEEP_FONTS] = true.toString()
+        this.params[CoreParams.OPT_KEEP_IMAGES] = true.toString()
     }
 
     @Parameter(names = ["--pretty"], description = "Whether to pretty print JSON or not.", order = 1000)

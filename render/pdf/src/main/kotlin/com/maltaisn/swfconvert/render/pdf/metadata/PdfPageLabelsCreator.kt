@@ -20,12 +20,15 @@ import com.maltaisn.swfconvert.render.pdf.PdfConfiguration
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.common.PDPageLabelRange
 import org.apache.pdfbox.pdmodel.common.PDPageLabels
+import javax.inject.Inject
 
 
 /**
  * Create optimized PDF page labels from a list of page names.
  */
-internal class PdfPageLabelsCreator(private val config: PdfConfiguration) {
+class PdfPageLabelsCreator @Inject constructor(
+        private val config: PdfConfiguration
+) {
 
     fun createPageLabels(pdfDoc: PDDocument, pageLabels: List<String>) {
         pdfDoc.documentCatalog.pageLabels = if (config.optimizePageLabels) {

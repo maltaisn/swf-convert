@@ -14,17 +14,23 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.render.ir
+package com.maltaisn.swfconvert.render.core.di
 
 import com.maltaisn.swfconvert.render.core.RenderConfiguration
+import dagger.BindsInstance
+import dagger.Component
+import kotlinx.coroutines.CoroutineScope
 
 
-/**
- * Configuration for the intermediate representation output format.
- */
-data class IrConfiguration(
+@Component
+interface RenderCoreComponent {
 
-        /** Whether to pretty print JSON or not. */
-        val prettyPrint: Boolean
+    fun configuration(): RenderConfiguration
+    fun coroutineScope(): CoroutineScope
 
-) : RenderConfiguration
+    @Component.Factory
+    interface Factory {
+        fun create(@BindsInstance coroutineScope: CoroutineScope,
+                   @BindsInstance config: RenderConfiguration): RenderCoreComponent
+    }
+}

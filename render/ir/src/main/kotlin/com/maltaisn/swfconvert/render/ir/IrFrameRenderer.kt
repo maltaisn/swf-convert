@@ -16,7 +16,7 @@
 
 package com.maltaisn.swfconvert.render.ir
 
-import com.maltaisn.swfconvert.core.config.Configuration
+import com.maltaisn.swfconvert.core.CoreConfiguration
 import com.maltaisn.swfconvert.core.frame.data.*
 import com.maltaisn.swfconvert.core.shape.path.Path
 import com.maltaisn.swfconvert.core.shape.path.PathFillStyle
@@ -26,23 +26,25 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import java.awt.geom.AffineTransform
 import java.awt.geom.Rectangle2D
+import javax.inject.Inject
 
 
-internal class IrFrameRenderer(private val config: Configuration) {
+class IrFrameRenderer @Inject constructor(
+        private val config: CoreConfiguration,
+        private val irConfig: IrConfiguration
+) {
 
     fun renderFrame(index: Int, frame: FrameGroup) {
-        val formatConfig = config.format as IrConfiguration
-
         // Serialize the frame group to JSON.
         val json = Json(JsonConfiguration.Stable.copy(
-                prettyPrint = formatConfig.prettyPrint,
+                prettyPrint = irConfig.prettyPrint,
                 encodeDefaults = false))
         val serializableFrame = frame.toSerializable()
         val frameJson = json.stringify(IrObject.serializer(), serializableFrame)
 
         // Save output to file.
         // TODO handle error
-        config.main.output[index].writeText(frameJson)
+        config.output[index].writeText(frameJson)
     }
 
     private fun FrameObject.toSerializable(): IrObject = when (this) {

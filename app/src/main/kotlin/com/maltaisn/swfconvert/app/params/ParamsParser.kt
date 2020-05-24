@@ -19,8 +19,8 @@ package com.maltaisn.swfconvert.app.params
 import com.beust.jcommander.JCommander
 import com.beust.jcommander.ParameterException
 import com.maltaisn.swfconvert.app.ConfigException
+import com.maltaisn.swfconvert.app.Configuration
 import com.maltaisn.swfconvert.app.configError
-import com.maltaisn.swfconvert.core.config.Configuration
 import kotlin.system.exitProcess
 
 
@@ -28,8 +28,8 @@ class ParamsParser {
 
     private val mainParams = MainParams()
 
-    private val irParams = FormatIrParams()
-    private val pdfParams = FormatPdfParams()
+    private val irParams = RenderIrParams()
+    private val pdfParams = RenderPdfParams()
 
     private val commands = mapOf(
             "ir" to irParams,

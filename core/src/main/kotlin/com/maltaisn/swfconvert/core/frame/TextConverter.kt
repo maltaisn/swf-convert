@@ -18,7 +18,7 @@ package com.maltaisn.swfconvert.core.frame
 
 import com.flagstone.transform.text.StaticTextTag
 import com.flagstone.transform.text.TextSpan
-import com.maltaisn.swfconvert.core.config.Configuration
+import com.maltaisn.swfconvert.core.CoreConfiguration
 import com.maltaisn.swfconvert.core.conversionError
 import com.maltaisn.swfconvert.core.font.data.Font
 import com.maltaisn.swfconvert.core.font.data.FontId
@@ -43,7 +43,7 @@ import kotlin.math.absoluteValue
  */
 internal class TextConverter(private val fileIndex: Int,
                              private val fonts: Map<FontId, Font>,
-                             private val config: Configuration) {
+                             private val config: CoreConfiguration) {
 
     private lateinit var textTag: StaticTextTag
     private lateinit var colorTransform: CompositeColorTransform
@@ -119,12 +119,12 @@ internal class TextConverter(private val fileIndex: Int,
         }
 
         // Add text bounds rectangle if needed
-        if (config.main.drawTextBounds) {
+        if (config.drawTextBounds) {
             val bounds = textTag.bounds
             val boundsRect = Path(listOf(PathElement.Rectangle(
                     bounds.minX.toFloat(), bounds.minY.toFloat(),
                     bounds.width.toFloat(), bounds.height.toFloat())),
-                    lineStyle = config.main.debugLineStyle)
+                    lineStyle = config.debugLineStyle)
             objects += ShapeObject(textTag.identifier, listOf(boundsRect))
         }
 
