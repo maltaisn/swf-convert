@@ -25,6 +25,7 @@ import com.maltaisn.swfconvert.convert.ConvertConfiguration
 import com.maltaisn.swfconvert.convert.conversionError
 import com.maltaisn.swfconvert.convert.wrapper.WDefineFont
 import com.maltaisn.swfconvert.core.text.*
+import dagger.Lazy
 import java.io.File
 import java.text.NumberFormat
 import java.util.*
@@ -34,7 +35,7 @@ import javax.inject.Inject
 internal class FontConverter @Inject constructor(
         private val config: ConvertConfiguration,
         private val glyphPathParser: GlyphPathParser,
-        private val glyphOcr: GlyphOcr,
+        private val glyphOcr: Lazy<GlyphOcr>,
         private val fontBuilder: FontBuilder
 ) {
 
@@ -184,7 +185,7 @@ internal class FontConverter @Inject constructor(
                 } else {
                     val ocrChar = if (config.ocrDetectGlyphs) {
                         // Try to recognize char with OCR
-                        glyphOcr.recognizeGlyphData(data, ocrTempDir)
+                        glyphOcr.get().recognizeGlyphData(data, ocrTempDir)
                     } else {
                         null
                     }
