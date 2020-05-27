@@ -16,11 +16,14 @@
 
 package com.maltaisn.swfconvert.render.ir
 
-import com.maltaisn.swfconvert.core.CoreConfiguration
-import com.maltaisn.swfconvert.core.frame.data.*
-import com.maltaisn.swfconvert.core.shape.data.path.Path
-import com.maltaisn.swfconvert.core.shape.data.path.PathFillStyle
-import com.maltaisn.swfconvert.core.shape.data.path.PathLineStyle
+import com.maltaisn.swfconvert.core.FrameGroup
+import com.maltaisn.swfconvert.core.FrameObject
+import com.maltaisn.swfconvert.core.GroupObject
+import com.maltaisn.swfconvert.core.shape.Path
+import com.maltaisn.swfconvert.core.shape.PathFillStyle
+import com.maltaisn.swfconvert.core.shape.PathLineStyle
+import com.maltaisn.swfconvert.core.shape.ShapeObject
+import com.maltaisn.swfconvert.core.text.TextObject
 import com.maltaisn.swfconvert.render.ir.data.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
@@ -30,14 +33,13 @@ import javax.inject.Inject
 
 
 internal class IrFrameRenderer @Inject constructor(
-        private val config: CoreConfiguration,
-        private val irConfig: IrConfiguration
+        private val config: IrConfiguration
 ) {
 
     fun renderFrame(index: Int, frame: FrameGroup) {
         // Serialize the frame group to JSON.
         val json = Json(JsonConfiguration.Stable.copy(
-                prettyPrint = irConfig.prettyPrint,
+                prettyPrint = config.prettyPrint,
                 encodeDefaults = false))
         val serializableFrame = frame.toSerializable()
         val frameJson = json.stringify(IrObject.serializer(), serializableFrame)

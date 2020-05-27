@@ -22,15 +22,18 @@ import com.maltaisn.swfconvert.app.checkNoOptionsInArgs
 import com.maltaisn.swfconvert.app.configError
 import com.maltaisn.swfconvert.app.isSwfFile
 import com.maltaisn.swfconvert.app.toColorOrNull
-import com.maltaisn.swfconvert.core.CoreConfiguration
+import com.maltaisn.swfconvert.convert.ConvertConfiguration
+import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.core.image.ImageFormat
-import com.maltaisn.swfconvert.core.image.data.Color
 import com.mortennobel.imagescaling.ResampleFilter
 import com.mortennobel.imagescaling.ResampleFilters
 import java.io.File
 import java.text.DecimalFormat
 
 
+/**
+ * Params for the 'convert' module and common params for the render modules.
+ */
 class CoreParams(private val singleFileOutput: Boolean,
                  private val outputExtension: String) {
 
@@ -87,6 +90,8 @@ class CoreParams(private val singleFileOutput: Boolean,
     var help = false
 
 
+    // Convert module safe params
+
     private val inputFileCollections: List<List<File>> by lazy {
         configError(input.isNotEmpty()) { "No input files." }
         checkNoOptionsInArgs(input)
@@ -113,7 +118,38 @@ class CoreParams(private val singleFileOutput: Boolean,
         collections
     }
 
-    private val outputFiles: List<List<File>> by lazy {
+    private val downsampleFilter: ResampleFilter?
+        get() = when (downsampleFilterName.toLowerCase()) {
+            "fast" -> null
+            "bell" -> ResampleFilters.getBellFilter()
+            "bicubic" -> ResampleFilters.getBiCubicFilter()
+            "bicubichf" -> ResampleFilters.getBiCubicHighFreqResponse()
+            "box" -> ResampleFilters.getBoxFilter()
+            "bspline" -> ResampleFilters.getBSplineFilter()
+            "hermite" -> ResampleFilters.getHermiteFilter()
+            "lanczos3" -> ResampleFilters.getLanczos3Filter()
+            "mitchell" -> ResampleFilters.getMitchellFilter()
+            "triangle" -> ResampleFilters.getTriangleFilter()
+            else -> configError("Unknown downsampling filter '$downsampleFilterName'.")
+        }
+
+    private val jpegQualityFloat: Float by lazy {
+        configError(jpegQuality in 0..100) { "JPEG quality must be between 0 and 100." }
+        jpegQuality / 100f
+    }
+
+    private val imageFormat: ImageFormat? by lazy {
+        when (imageFormatName) {
+            "default" -> null
+            "jpg", "jpeg" -> ImageFormat.JPG
+            "png" -> ImageFormat.PNG
+            else -> configError("Invalid image format '$imageFormatName'.")
+        }
+    }
+
+    // Render core safe params
+
+    val outputFiles: List<List<File>> by lazy {
         checkNoOptionsInArgs(output)
 
         val input = inputFileCollections
@@ -162,43 +198,21 @@ class CoreParams(private val singleFileOutput: Boolean,
         outputFiles
     }
 
-    private val downsampleFilter: ResampleFilter?
-        get() = when (downsampleFilterName.toLowerCase()) {
-            "fast" -> null
-            "bell" -> ResampleFilters.getBellFilter()
-            "bicubic" -> ResampleFilters.getBiCubicFilter()
-            "bicubichf" -> ResampleFilters.getBiCubicHighFreqResponse()
-            "box" -> ResampleFilters.getBoxFilter()
-            "bspline" -> ResampleFilters.getBSplineFilter()
-            "hermite" -> ResampleFilters.getHermiteFilter()
-            "lanczos3" -> ResampleFilters.getLanczos3Filter()
-            "mitchell" -> ResampleFilters.getMitchellFilter()
-            "triangle" -> ResampleFilters.getTriangleFilter()
-            else -> configError("Unknown downsampling filter '$downsampleFilterName'.")
-        }
-
-    private val jpegQualityFloat: Float by lazy {
-        configError(jpegQuality in 0..100) { "JPEG quality must be between 0 and 100." }
-        jpegQuality / 100f
+    val parallelFrameRendering by lazy {
+        params[OPT_PARALLEL_FRAME_RENDERING]?.toBoolean() ?: true
     }
 
-    private val imageFormat: ImageFormat? by lazy {
-        when (imageFormatName) {
-            "default" -> null
-            "jpg", "jpeg" -> ImageFormat.JPG
-            "png" -> ImageFormat.PNG
-            else -> configError("Invalid image format '$imageFormatName'.")
-        }
-    }
+    fun getTempDirForInput(input: List<File>) =
+            File(tempDir ?: input.first().parent)
 
-    fun createConfigurations(): List<CoreConfiguration> {
+
+    fun createConfigurations(): List<ConvertConfiguration> {
         configError(downsampleMinSize >= 3) { "Minimum downsampling size must be at least 3 px." }
         configError(maxDpi in 10f..2000f) { "Maximum image density must be between 10 and 2000 DPI." }
 
         // Additional options
         val parallelSwfDecoding = params[OPT_PARALLEL_SWF_DECODING]?.toBoolean() ?: true
         val parallelSwfConversion = params[OPT_PARALLEL_SWF_CONVERSION]?.toBoolean() ?: true
-        val parallelFrameRendering = params[OPT_PARALLEL_FRAME_RENDERING]?.toBoolean() ?: true
         val parallelImageCreation = params[OPT_PARALLEL_IMAGE_CREATION]?.toBoolean() ?: true
         val keepFonts = params[OPT_KEEP_FONTS]?.toBoolean() ?: false
         val keepImages = params[OPT_KEEP_IMAGES]?.toBoolean() ?: false
@@ -213,11 +227,10 @@ class CoreParams(private val singleFileOutput: Boolean,
         val debugLineWidth = params[OPT_DEBUG_LINE_WIDTH]?.toFloatOrNull() ?: 20f
         val debugLineColor = params[OPT_DEBUG_LINE_COLOR]?.toColorOrNull() ?: Color(0, 255, 0)
 
-        return inputFileCollections.mapIndexed { i, input ->
-            val tempDir = File(tempDir ?: input.first().parent)
-            CoreConfiguration(
+        return inputFileCollections.map { input ->
+            val tempDir = getTempDirForInput(input)
+            ConvertConfiguration(
                     input,
-                    outputFiles[i],
                     tempDir,
                     ocrDetectGlyphs,
                     groupFonts,
@@ -230,7 +243,6 @@ class CoreParams(private val singleFileOutput: Boolean,
                     imageFormat,
                     parallelSwfDecoding,
                     parallelSwfConversion,
-                    parallelFrameRendering,
                     parallelImageCreation,
                     keepFonts,
                     keepImages,

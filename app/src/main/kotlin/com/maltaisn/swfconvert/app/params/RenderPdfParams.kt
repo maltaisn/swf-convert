@@ -21,6 +21,7 @@ import com.beust.jcommander.Parameters
 import com.beust.jcommander.ParametersDelegate
 import com.maltaisn.swfconvert.app.checkNoOptionsInArgs
 import com.maltaisn.swfconvert.app.configError
+import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.maltaisn.swfconvert.render.pdf.PdfConfiguration
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfMetadata
 import kotlinx.serialization.SerializationException
@@ -61,6 +62,12 @@ class RenderPdfParams : RenderParams<PdfConfiguration> {
     @Parameter(names = ["--rasterization-dpi"], description = "Density in DPI to use to rasterize output if rasterization is enabled.", order = 1220)
     var rasterizationDpi = 200f
 
+    @Parameter(names = ["--rasterization-format"], description = "Image format to use for rasterized output.", order = 1230)
+    var rasterizationFormatName = ImageFormat.JPG.extension
+
+    @Parameter(names = ["--rasterization-jpeg-quality"], description = "JPEG image quality for rasterization, between 0 and 100.", order = 1240)
+    var rasterizationJpegQuality = 75
+
 
     private val pdfMetadata: List<PdfMetadata> by lazy {
         if (metadata.isEmpty()) {
@@ -87,25 +94,40 @@ class RenderPdfParams : RenderParams<PdfConfiguration> {
         }
     }
 
-    override fun createConfigurations(count: Int): List<PdfConfiguration> {
+    private val rasterizationJpegQualityFloat: Float by lazy {
+        configError(rasterizationJpegQuality in 0..100) { "Rasterization JPEG quality must be between 0 and 100." }
+        rasterizationJpegQuality / 100f
+    }
+
+    private val rasterizationFormat: ImageFormat by lazy {
+        when (rasterizationFormatName) {
+            "jpg", "jpeg" -> ImageFormat.JPG
+            "png" -> ImageFormat.PNG
+            else -> configError("Invalid rasterization image format '$rasterizationFormatName'.")
+        }
+    }
+
+    override fun createConfigurations(inputs: List<List<File>>): List<PdfConfiguration> {
         configError(rasterizationDpi in 10f..2000f) { "Rasterization density must be between 10 and 2000 DPI." }
         configError(rasterizationThreshold >= 0) { "Rasterization threshold complexity must be greater or equal to 0." }
 
         val parallelRasterization = params.params[OPT_PARALLEL_RASTERIZATION]?.toBoolean() ?: true
 
-        val config = PdfConfiguration(
-                compress,
-                null,
-                optimizePageLabels,
-                rasterizationEnabled,
-                rasterizationThreshold,
-                rasterizationDpi,
-                parallelRasterization)
-
-        return if (pdfMetadata.isEmpty()) {
-            List(count) { config }
-        } else {
-            List(count) { config.copy(metadata = pdfMetadata.getOrNull(it)) }
+        return inputs.mapIndexed { i, input ->
+            val tempDir = params.getTempDirForInput(input)
+            PdfConfiguration(
+                    params.outputFiles[i],
+                    tempDir,
+                    compress,
+                    pdfMetadata.getOrNull(i),
+                    optimizePageLabels,
+                    rasterizationEnabled,
+                    rasterizationThreshold,
+                    rasterizationDpi,
+                    rasterizationFormat,
+                    rasterizationJpegQualityFloat,
+                    params.parallelFrameRendering,
+                    parallelRasterization)
         }
     }
 

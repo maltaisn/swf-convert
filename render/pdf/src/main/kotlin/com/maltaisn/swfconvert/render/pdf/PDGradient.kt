@@ -16,7 +16,7 @@
 
 package com.maltaisn.swfconvert.render.pdf
 
-import com.maltaisn.swfconvert.core.image.data.Color
+import com.maltaisn.swfconvert.core.image.Color
 import org.apache.pdfbox.cos.*
 import org.apache.pdfbox.pdmodel.common.PDRange
 import org.apache.pdfbox.pdmodel.common.function.PDFunction

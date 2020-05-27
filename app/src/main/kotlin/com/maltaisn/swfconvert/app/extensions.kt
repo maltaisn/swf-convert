@@ -16,7 +16,7 @@
 
 package com.maltaisn.swfconvert.app
 
-import com.maltaisn.swfconvert.core.image.data.Color
+import com.maltaisn.swfconvert.core.image.Color
 import java.io.File
 
 

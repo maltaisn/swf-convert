@@ -17,6 +17,7 @@
 package com.maltaisn.swfconvert.app.params
 
 import com.maltaisn.swfconvert.app.ConfigException
+import java.io.File
 
 
 interface RenderParams<T> {
@@ -26,13 +27,12 @@ interface RenderParams<T> {
     /**
      * Validate and create the configurations associated to the parameters.
      *
-     * @param count Number of input file collections. Any parameter related to the number
-     * of input file collections should have the same number of values. This function
-     * is also expected to return a list containing [count] configurations.
+     * @param inputs Input file collections. Any parameter related to it should have the same number
+     * of values. This function is also expected to return a list containing as many configurations.
      *
      * @throws ConfigException Thrown on validation error.
      */
-    fun createConfigurations(count: Int): List<T>
+    fun createConfigurations(inputs: List<List<File>>): List<T>
 
     /**
      * Print the values of the parameters to the standard output.

@@ -16,14 +16,19 @@
 
 package com.maltaisn.swfconvert.render.pdf
 
+import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.maltaisn.swfconvert.render.core.RenderConfiguration
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfMetadata
+import java.io.File
 
 
 /**
  * Configuration for the PDF output format.
  */
 data class PdfConfiguration(
+
+        override val output: List<File>,
+        override val tempDir: File,
 
         /** Whether to compress output files or not. */
         val compress: Boolean,
@@ -52,6 +57,16 @@ data class PdfConfiguration(
 
         /** Density to use to rasterize output files if rasterization is enabled. */
         val rasterizationDpi: Float,
+
+        /** Image format to use for rasterized frames. */
+        val rasterizationFormat: ImageFormat,
+
+        /** JPEG quality to use for rasterized frames, if format is JPG. */
+        val rasterizationJpegQuality: Float,
+
+        // DEBUG OPTIONS
+
+        override val parallelFrameRendering: Boolean,
 
         /** Whether to rasterize pages in parallel. */
         val parallelRasterization: Boolean

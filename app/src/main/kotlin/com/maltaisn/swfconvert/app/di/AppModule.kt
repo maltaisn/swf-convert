@@ -16,7 +16,7 @@
 
 package com.maltaisn.swfconvert.app.di
 
-import com.maltaisn.swfconvert.core.di.CoreModule
+import com.maltaisn.swfconvert.convert.di.ConvertModule
 import com.maltaisn.swfconvert.render.core.FramesRenderer
 import com.maltaisn.swfconvert.render.core.RenderConfiguration
 import com.maltaisn.swfconvert.render.ir.di.RenderIrModule
@@ -25,7 +25,11 @@ import dagger.Module
 import dagger.multibindings.Multibinds
 
 
-@Module(includes = [CoreModule::class, RenderIrModule::class, RenderPdfModule::class])
+@Module(includes = [
+    ConvertModule::class,
+    RenderIrModule::class,
+    RenderPdfModule::class
+])
 internal interface AppModule {
 
     @get:Multibinds

@@ -16,7 +16,7 @@
 
 package com.maltaisn.swfconvert.render.core
 
-import com.maltaisn.swfconvert.core.frame.data.FrameGroup
+import com.maltaisn.swfconvert.core.FrameGroup
 
 
 interface FramesRenderer {

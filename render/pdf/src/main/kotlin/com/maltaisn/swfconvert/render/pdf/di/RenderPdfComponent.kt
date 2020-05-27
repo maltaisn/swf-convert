@@ -20,6 +20,7 @@ import com.maltaisn.swfconvert.render.core.di.RenderCoreComponent
 import dagger.Component
 
 
-@Component(modules = [RenderPdfModule::class],
+@Component(
+        modules = [RenderPdfModule::class],
         dependencies = [RenderCoreComponent::class])
 interface RenderPdfComponent

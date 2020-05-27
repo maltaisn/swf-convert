@@ -68,8 +68,10 @@ class ParamsParser {
 
             // Create configuration
             val mainConfigs = command.params.createConfigurations()
-            val formatConfigs = command.createConfigurations(mainConfigs.size)
-            return mainConfigs.zip(formatConfigs) { main, format -> Configuration(main, format) }
+            val formatConfigs = command.createConfigurations(mainConfigs.map { it.input })
+            return mainConfigs.zip(formatConfigs) { convert, render ->
+                Configuration(convert, render)
+            }
 
         } catch (e: ConfigException) {
             // Configuration error

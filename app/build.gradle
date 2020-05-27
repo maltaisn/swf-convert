@@ -5,6 +5,7 @@ plugins {
 
 dependencies {
     implementation project(":core")
+    implementation project(":convert")
 
     implementation project(":render:core")
     implementation project(":render:ir")

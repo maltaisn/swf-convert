@@ -19,6 +19,9 @@ package com.maltaisn.swfconvert.app.params
 import com.beust.jcommander.Parameter
 
 
+/**
+ * Params for the app itself.
+ */
 class MainParams {
 
     @Parameter(names = ["-h", "--help"], description = "Show help message.", help = true, order = 1000)

@@ -16,16 +16,17 @@
 
 package com.maltaisn.swfconvert.render.pdf
 
-import com.maltaisn.swfconvert.core.CoreConfiguration
-import com.maltaisn.swfconvert.core.frame.data.*
-import com.maltaisn.swfconvert.core.image.ImageDecoder
-import com.maltaisn.swfconvert.core.image.ImageFormat
-import com.maltaisn.swfconvert.core.image.data.Color
-import com.maltaisn.swfconvert.core.image.data.ImageData
-import com.maltaisn.swfconvert.core.shape.data.path.Path
-import com.maltaisn.swfconvert.core.shape.data.path.PathElement.*
-import com.maltaisn.swfconvert.core.shape.data.path.PathFillStyle
-import com.maltaisn.swfconvert.core.use
+import com.maltaisn.swfconvert.core.FrameGroup
+import com.maltaisn.swfconvert.core.FrameObject
+import com.maltaisn.swfconvert.core.GroupObject
+import com.maltaisn.swfconvert.core.image.Color
+import com.maltaisn.swfconvert.core.image.ImageData
+import com.maltaisn.swfconvert.core.image.ImageDataCreator
+import com.maltaisn.swfconvert.core.shape.Path
+import com.maltaisn.swfconvert.core.shape.PathElement.*
+import com.maltaisn.swfconvert.core.shape.PathFillStyle
+import com.maltaisn.swfconvert.core.shape.ShapeObject
+import com.maltaisn.swfconvert.core.text.TextObject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -47,17 +48,16 @@ import javax.inject.Provider
  */
 internal class FramesRasterizer @Inject constructor(
         private val coroutineScope: CoroutineScope,
-        private val config: CoreConfiguration,
-        private val pdfConfig: PdfConfiguration,
+        private val config: PdfConfiguration,
         private val pdfFrameRendererProvider: Provider<PdfFrameRenderer>,
-        private val imageDecoderProvider: Provider<ImageDecoder>
+        private val imageDataCreatorProvider: Provider<ImageDataCreator>
 ) {
 
     fun rasterizeFramesIfNeeded(pdfDoc: PDDocument,
                                 frameGroups: List<FrameGroup>, imagesDir: File,
                                 pdfImages: MutableMap<ImageData, PDImageXObject>,
                                 pdfFonts: Map<File, PDFont>): List<FrameGroup> {
-        if (!pdfConfig.rasterizationEnabled) {
+        if (!config.rasterizationEnabled) {
             return frameGroups
         }
 
@@ -67,7 +67,7 @@ internal class FramesRasterizer @Inject constructor(
         val framesToRasterize = mutableListOf<Int>()
         for ((i, frameGroup) in frameGroups.withIndex()) {
             val complexity = evaluateShapeComplexity(frameGroup)
-            if (complexity >= pdfConfig.rasterizationThreshold) {
+            if (complexity >= config.rasterizationThreshold) {
                 // Frame is too complex, rasterize.
                 framesToRasterize += i
             }
@@ -93,12 +93,12 @@ internal class FramesRasterizer @Inject constructor(
                 val done = progress.incrementAndGet()
                 print("Rasterizing frames: rasterized frame $done / ${framesToRasterize.size}\r")
             }
-            if (!pdfConfig.parallelRasterization) {
+            if (!config.parallelRasterization) {
                 runBlocking { job.await() }
             }
             job
         }
-        if (pdfConfig.parallelRasterization) {
+        if (config.parallelRasterization) {
             runBlocking { jobs.awaitAll() }
         }
 
@@ -164,13 +164,12 @@ internal class FramesRasterizer @Inject constructor(
         // Render the image
         val pdfRenderer = PDFRenderer(frameDoc)
         val pdfImage = pdfRenderer.renderImageWithDPI(
-                0, pdfConfig.rasterizationDpi, ImageType.RGB)
+                0, config.rasterizationDpi, ImageType.RGB)
         frameDoc.close()
 
         // Create image data
-        val imageData = imageDecoderProvider.get().use {
-            it.createImageData(pdfImage, null, null, ImageFormat.JPG)
-        }
+        val imageData = imageDataCreatorProvider.get().createImageData(pdfImage,
+                config.rasterizationFormat, config.rasterizationJpegQuality)
 
         // Create PDF image
         val imageFile = File(imagesDir, "frame.${imageData.format.extension}")

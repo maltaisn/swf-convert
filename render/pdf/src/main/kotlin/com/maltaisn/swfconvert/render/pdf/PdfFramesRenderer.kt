@@ -16,12 +16,11 @@
 
 package com.maltaisn.swfconvert.render.pdf
 
-import com.maltaisn.swfconvert.core.CoreConfiguration
-import com.maltaisn.swfconvert.core.frame.data.FrameGroup
-import com.maltaisn.swfconvert.core.frame.data.GroupObject
-import com.maltaisn.swfconvert.core.frame.data.TextObject
-import com.maltaisn.swfconvert.core.image.data.ImageData
-import com.maltaisn.swfconvert.core.shape.data.path.PathFillStyle
+import com.maltaisn.swfconvert.core.FrameGroup
+import com.maltaisn.swfconvert.core.GroupObject
+import com.maltaisn.swfconvert.core.image.ImageData
+import com.maltaisn.swfconvert.core.shape.PathFillStyle
+import com.maltaisn.swfconvert.core.text.TextObject
 import com.maltaisn.swfconvert.render.core.FramesRenderer
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfMetadata
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfOutlineCreator
@@ -47,8 +46,7 @@ import javax.inject.Provider
  */
 class PdfFramesRenderer @Inject internal constructor(
         private val coroutineScope: CoroutineScope,
-        private val config: CoreConfiguration,
-        private val pdfConfig: PdfConfiguration,
+        private val config: PdfConfiguration,
         private val pdfFrameRendererProvider: Provider<PdfFrameRenderer>,
         private val framesRasterizer: FramesRasterizer,
         private val pdfOutlineCreator: PdfOutlineCreator,
@@ -67,8 +65,9 @@ class PdfFramesRenderer @Inject internal constructor(
         val pdfFonts = createPdfFonts(pdfDoc, currFrameGroups)
 
         // Rasterize pages
+        val imagesDir = File(config.tempDir, "images")
         currFrameGroups = framesRasterizer.rasterizeFramesIfNeeded(
-                pdfDoc, currFrameGroups, config.imagesDir, pdfImages, pdfFonts)
+                pdfDoc, currFrameGroups, imagesDir, pdfImages, pdfFonts)
 
         // Render all frames to PDF
         val pdfPages = renderFramesToPdf(currFrameGroups, pdfImages, pdfFonts)
@@ -80,7 +79,7 @@ class PdfFramesRenderer @Inject internal constructor(
 
         // Add metadata
         println("Exporting PDF")
-        val metadata = pdfConfig.metadata
+        val metadata = config.metadata
         if (metadata != null) {
             addMetadataToPdf(pdfDoc, metadata)
         }

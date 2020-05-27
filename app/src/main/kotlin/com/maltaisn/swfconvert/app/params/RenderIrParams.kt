@@ -20,6 +20,7 @@ import com.beust.jcommander.Parameter
 import com.beust.jcommander.Parameters
 import com.beust.jcommander.ParametersDelegate
 import com.maltaisn.swfconvert.render.ir.IrConfiguration
+import java.io.File
 
 
 @Parameters(commandDescription = "Intermediate representation output format")
@@ -36,9 +37,13 @@ class RenderIrParams : RenderParams<IrConfiguration> {
     var prettyPrint: Boolean = false
 
 
-    override fun createConfigurations(count: Int): List<IrConfiguration> {
-        val config = IrConfiguration(prettyPrint)
-        return List(count) { config }
+    override fun createConfigurations(inputs: List<List<File>>) = inputs.mapIndexed { i, input ->
+        val tempDir = params.getTempDirForInput(input)
+        IrConfiguration(
+                params.outputFiles[i],
+                tempDir,
+                prettyPrint,
+                params.parallelFrameRendering)
     }
 
     override fun print() {

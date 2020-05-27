@@ -17,7 +17,7 @@
 package com.maltaisn.swfconvert.render.ir.data
 
 
-import com.maltaisn.swfconvert.core.frame.BlendMode
+import com.maltaisn.swfconvert.core.BlendMode
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

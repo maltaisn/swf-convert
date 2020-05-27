@@ -16,8 +16,7 @@
 
 package com.maltaisn.swfconvert.render.ir
 
-import com.maltaisn.swfconvert.core.CoreConfiguration
-import com.maltaisn.swfconvert.core.frame.data.FrameGroup
+import com.maltaisn.swfconvert.core.FrameGroup
 import com.maltaisn.swfconvert.render.core.FramesRenderer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
@@ -33,7 +32,7 @@ import javax.inject.Provider
  */
 class IrFramesRenderer @Inject internal constructor(
         private val coroutineScope: CoroutineScope,
-        private val config: CoreConfiguration,
+        private val config: IrConfiguration,
         private val irFrameRendererProvider: Provider<IrFrameRenderer>
 ) : FramesRenderer {
 

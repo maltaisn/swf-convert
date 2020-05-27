@@ -17,13 +17,17 @@
 package com.maltaisn.swfconvert.app.di
 
 import com.maltaisn.swfconvert.app.SwfConvert
-import com.maltaisn.swfconvert.core.di.CoreComponent
+import com.maltaisn.swfconvert.convert.di.ConvertComponent
 import com.maltaisn.swfconvert.render.core.di.RenderCoreComponent
 import dagger.Component
 
 
-@Component(modules = [AppModule::class],
-        dependencies = [CoreComponent::class, RenderCoreComponent::class])
+@Component(
+        modules = [AppModule::class],
+        dependencies = [
+            ConvertComponent::class,
+            RenderCoreComponent::class
+        ])
 internal interface AppComponent {
 
     fun inject(swfConvert: SwfConvert)

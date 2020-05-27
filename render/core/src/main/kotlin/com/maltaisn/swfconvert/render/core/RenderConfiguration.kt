@@ -16,9 +16,21 @@
 
 package com.maltaisn.swfconvert.render.core
 
+import java.io.File
+
 
 /**
- * Marker interface for configuration used to convert from the
- * intermediate representation to an output format.
+ * Configuration used to convert from the intermediate representation to an output format.
  */
-interface RenderConfiguration
+interface RenderConfiguration {
+
+    /** Output files, size should be 1 or same as input size. */
+    val output: List<File>
+
+    /** Directory to which temp and debug files are written. */
+    val tempDir: File
+
+    /** Whether to convert input files from intermediate format to output format in parallel. */
+    val parallelFrameRendering: Boolean
+
+}

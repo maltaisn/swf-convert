@@ -16,14 +16,13 @@
 
 package com.maltaisn.swfconvert.render.pdf
 
-import com.maltaisn.swfconvert.core.CoreConfiguration
-import com.maltaisn.swfconvert.core.font.data.GlyphData
-import com.maltaisn.swfconvert.core.frame.data.*
-import com.maltaisn.swfconvert.core.image.data.ImageData
-import com.maltaisn.swfconvert.core.shape.data.path.Path
-import com.maltaisn.swfconvert.core.shape.data.path.PathElement
-import com.maltaisn.swfconvert.core.shape.data.path.PathFillStyle
-import com.maltaisn.swfconvert.core.shape.data.path.PathLineStyle
+import com.maltaisn.swfconvert.core.FrameGroup
+import com.maltaisn.swfconvert.core.FrameObject
+import com.maltaisn.swfconvert.core.GroupObject
+import com.maltaisn.swfconvert.core.image.ImageData
+import com.maltaisn.swfconvert.core.shape.*
+import com.maltaisn.swfconvert.core.text.GlyphData
+import com.maltaisn.swfconvert.core.text.TextObject
 import org.apache.pdfbox.cos.COSArray
 import org.apache.pdfbox.cos.COSDictionary
 import org.apache.pdfbox.cos.COSFloat
@@ -45,8 +44,7 @@ import javax.inject.Inject
 
 
 class PdfFrameRenderer @Inject internal constructor(
-        private val config: CoreConfiguration,
-        private val pdfConfig: PdfConfiguration
+        private val config: PdfConfiguration
 ) {
 
     private lateinit var pdfDoc: PDDocument
@@ -79,7 +77,7 @@ class PdfFrameRenderer @Inject internal constructor(
         pageBoundsStack.push(bounds)
 
         // Draw page
-        withPdfStream(PdfPageContentStream(pdfDoc, pdfPage, pdfConfig.compress)) {
+        withPdfStream(PdfPageContentStream(pdfDoc, pdfPage, config.compress)) {
             drawObject(frame)
         }
     }
@@ -136,10 +134,10 @@ class PdfFrameRenderer @Inject internal constructor(
     }
 
     private fun drawClipGroup(group: GroupObject.Clip) {
-        if (config.disableClipping) {
-            drawSimpleGroup(group)
-            return
-        }
+//        if (config.disableClipping) {
+//            drawSimpleGroup(group)
+//            return
+//        }
         streamWrapper.withState {
             // Apply clip
             for (clip in group.clips) {
@@ -152,10 +150,10 @@ class PdfFrameRenderer @Inject internal constructor(
     }
 
     private fun drawMaskedGroup(group: GroupObject.Masked) {
-        if (config.disableMasking) {
-            drawSimpleGroup(group)
-            return
-        }
+//        if (config.disableMasking) {
+//            drawSimpleGroup(group)
+//            return
+//        }
 
         if (group.objects.size < 2) {
             // There must be at least a mask and something to mask.
@@ -201,10 +199,10 @@ class PdfFrameRenderer @Inject internal constructor(
     }
 
     private fun drawBlendGroup(group: GroupObject.Blend) {
-        if (config.disableBlending) {
-            drawSimpleGroup(group)
-            return
-        }
+//        if (config.disableBlending) {
+//            drawSimpleGroup(group)
+//            return
+//        }
 
         if (countGroupBlendableChildren(group) == 1) {
             // Single object, blend can be applied directly.
@@ -335,18 +333,18 @@ class PdfFrameRenderer @Inject internal constructor(
     }
 
     private fun clipPath(path: Path) {
-        if (config.disableClipping) {
-            return
-        }
+//        if (config.disableClipping) {
+//            return
+//        }
 
         // Draw clip bounds
-        if (config.drawClipBounds) {
-            streamWrapper.withState {
-                applyLineStyle(config.debugLineStyle)
-                drawPathToPdf(path)
-                streamWrapper.stream.stroke()
-            }
-        }
+//        if (config.drawClipBounds) {
+//            streamWrapper.withState {
+//                applyLineStyle(config.debugLineStyle)
+//                drawPathToPdf(path)
+//                streamWrapper.stream.stroke()
+//            }
+//        }
 
         // Clip path
         drawPathToPdf(path)

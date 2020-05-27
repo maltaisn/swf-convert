@@ -17,6 +17,7 @@
 package com.maltaisn.swfconvert.render.ir
 
 import com.maltaisn.swfconvert.render.core.RenderConfiguration
+import java.io.File
 
 
 /**
@@ -24,7 +25,14 @@ import com.maltaisn.swfconvert.render.core.RenderConfiguration
  */
 data class IrConfiguration(
 
+        override val output: List<File>,
+        override val tempDir: File,
+
         /** Whether to pretty print JSON or not. */
-        val prettyPrint: Boolean
+        val prettyPrint: Boolean,
+
+        // DEBUG OPTIONS
+
+        override val parallelFrameRendering: Boolean
 
 ) : RenderConfiguration

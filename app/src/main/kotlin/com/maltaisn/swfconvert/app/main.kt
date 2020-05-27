@@ -17,7 +17,7 @@
 package com.maltaisn.swfconvert.app
 
 import com.maltaisn.swfconvert.app.params.ParamsParser
-import com.maltaisn.swfconvert.core.ConversionError
+import com.maltaisn.swfconvert.convert.ConversionError
 import java.text.DecimalFormat
 import kotlin.system.measureTimeMillis
 

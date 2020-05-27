@@ -16,8 +16,8 @@
 
 package com.maltaisn.swfconvert.render.pdf
 
-import com.maltaisn.swfconvert.core.frame.BlendMode
-import com.maltaisn.swfconvert.core.image.data.Color
+import com.maltaisn.swfconvert.core.BlendMode
+import com.maltaisn.swfconvert.core.image.Color
 import org.apache.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState
 import org.apache.pdfbox.util.Matrix
 import java.awt.BasicStroke

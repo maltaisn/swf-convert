@@ -17,8 +17,8 @@
 package com.maltaisn.swfconvert.app
 
 import com.maltaisn.swfconvert.app.di.DaggerAppComponent
-import com.maltaisn.swfconvert.core.SwfCollectionConverter
-import com.maltaisn.swfconvert.core.di.DaggerCoreComponent
+import com.maltaisn.swfconvert.convert.SwfCollectionConverter
+import com.maltaisn.swfconvert.convert.di.DaggerConvertComponent
 import com.maltaisn.swfconvert.render.core.FramesRenderer
 import com.maltaisn.swfconvert.render.core.RenderConfiguration
 import com.maltaisn.swfconvert.render.core.di.DaggerRenderCoreComponent
@@ -40,8 +40,8 @@ class SwfConvert(private val config: Configuration) {
 
     init {
         // Create components
-        val coreComponent = DaggerCoreComponent.factory()
-                .create(coroutineScope, config.core)
+        val convertComponent = DaggerConvertComponent.factory()
+                .create(coroutineScope, config.convert)
         val renderCoreComponent = DaggerRenderCoreComponent.factory()
                 .create(coroutineScope, config.render)
         DaggerRenderIrComponent.builder()
@@ -52,7 +52,7 @@ class SwfConvert(private val config: Configuration) {
                 .build()
 
         val appComponent = DaggerAppComponent.builder()
-                .coreComponent(coreComponent)
+                .convertComponent(convertComponent)
                 .renderCoreComponent(renderCoreComponent)
                 .build()
         appComponent.inject(this)
