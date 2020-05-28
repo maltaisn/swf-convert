@@ -25,8 +25,12 @@ sealed class PathFillStyle {
 
     data class Solid(val color: Color) : PathFillStyle()
 
-    data class Image(val id: Int, val transform: AffineTransform, var imageData: ImageData) : PathFillStyle()
+    data class Image(val id: Int,
+                     val transform: AffineTransform,
+                     var imageData: ImageData,
+                     val clip: Boolean) : PathFillStyle()
 
-    data class Gradient(val colors: List<GradientColor>, val transform: AffineTransform) : PathFillStyle()
+    data class Gradient(val colors: List<GradientColor>,
+                        val transform: AffineTransform) : PathFillStyle()
 
 }

@@ -20,6 +20,7 @@ import com.flagstone.transform.MovieTag
 import com.flagstone.transform.fillstyle.*
 import com.flagstone.transform.image.ImageTag
 import com.flagstone.transform.linestyle.*
+import com.maltaisn.swfconvert.convert.ConvertConfiguration
 import com.maltaisn.swfconvert.convert.conversionError
 import com.maltaisn.swfconvert.convert.image.CompositeColorTransform
 import com.maltaisn.swfconvert.convert.image.ImageDecoder
@@ -41,6 +42,7 @@ import kotlin.math.sqrt
  * Extends the functionality of [ShapeConverter] by allowing fill and line styles.
  */
 internal class StyledShapeConverter @Inject constructor(
+        private val config: ConvertConfiguration,
         private val imageDecoder: ImageDecoder
 ) : ShapeConverter(), Disposable {
 
@@ -77,7 +79,7 @@ internal class StyledShapeConverter @Inject constructor(
             val density = findImageDensity(image, tr)
             val imageData = imageDecoder.convertImage(image, colorTransform, density)
 
-            PathFillStyle.Image(image.identifier, tr, imageData)
+            PathFillStyle.Image(image.identifier, tr, imageData, !config.disableClipping)
         }
         is GradientFill -> {
             conversionError(fillStyle.spread == Spread.PAD) { "Unsupported spread mode" }

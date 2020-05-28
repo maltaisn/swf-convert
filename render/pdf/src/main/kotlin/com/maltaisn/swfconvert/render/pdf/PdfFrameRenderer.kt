@@ -134,10 +134,6 @@ class PdfFrameRenderer @Inject internal constructor(
     }
 
     private fun drawClipGroup(group: GroupObject.Clip) {
-//        if (config.disableClipping) {
-//            drawSimpleGroup(group)
-//            return
-//        }
         streamWrapper.withState {
             // Apply clip
             for (clip in group.clips) {
@@ -150,11 +146,6 @@ class PdfFrameRenderer @Inject internal constructor(
     }
 
     private fun drawMaskedGroup(group: GroupObject.Masked) {
-//        if (config.disableMasking) {
-//            drawSimpleGroup(group)
-//            return
-//        }
-
         if (group.objects.size < 2) {
             // There must be at least a mask and something to mask.
             // Otherwise there's nothing to draw.
@@ -199,11 +190,6 @@ class PdfFrameRenderer @Inject internal constructor(
     }
 
     private fun drawBlendGroup(group: GroupObject.Blend) {
-//        if (config.disableBlending) {
-//            drawSimpleGroup(group)
-//            return
-//        }
-
         if (countGroupBlendableChildren(group) == 1) {
             // Single object, blend can be applied directly.
             streamWrapper.withState {
@@ -272,7 +258,9 @@ class PdfFrameRenderer @Inject internal constructor(
 
     private fun drawImage(path: Path, imageFill: PathFillStyle.Image) {
         streamWrapper.withState {
-            clipPath(path)
+            if (imageFill.clip) {
+                clipPath(path)
+            }
 
             val pdfImage = pdfImages[imageFill.imageData] ?: error("Missing PDF image")
             streamWrapper.stream.drawImage(pdfImage, Matrix(imageFill.transform))
@@ -333,20 +321,6 @@ class PdfFrameRenderer @Inject internal constructor(
     }
 
     private fun clipPath(path: Path) {
-//        if (config.disableClipping) {
-//            return
-//        }
-
-        // Draw clip bounds
-//        if (config.drawClipBounds) {
-//            streamWrapper.withState {
-//                applyLineStyle(config.debugLineStyle)
-//                drawPathToPdf(path)
-//                streamWrapper.stream.stroke()
-//            }
-//        }
-
-        // Clip path
         drawPathToPdf(path)
         streamWrapper.stream.clipEvenOdd()
     }

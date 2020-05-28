@@ -191,7 +191,7 @@ internal class FramesRasterizer @Inject constructor(
     }
 
     /**
-     * Create a rectangle [ShapeObject] with filled with an [image]
+     * Create a rectangle [ShapeObject] with filled with an [image][imageData]
      * to be placed at the root of a [frameGroup].
      */
     private fun createRootImageObject(frameGroup: FrameGroup,
@@ -201,7 +201,7 @@ internal class FramesRasterizer @Inject constructor(
         val h = frameGroup.height
         val imageTransform = AffineTransform(w, 0f, 0f, h, 0f, 0f)
         return ShapeObject(0, listOf(Path(listOf(Rectangle(0f, 0f, w, h)),
-                fillStyle = PathFillStyle.Image(0, imageTransform, imageData))))
+                fillStyle = PathFillStyle.Image(0, imageTransform, imageData, false))))
     }
 
 }

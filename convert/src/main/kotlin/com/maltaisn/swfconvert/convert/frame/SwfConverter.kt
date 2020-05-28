@@ -166,25 +166,31 @@ internal class SwfConverter @Inject constructor(
         var blendModeChanged = false
         if (blendMode != null) {
             if (blendMode == Blend.ALPHA) {
-                conversionError(wshape != null) { "Unsupported mask object" }
+                if (!config.disableMasking) {
+                    conversionError(wshape != null) { "Unsupported mask object" }
 
-                // Find mask object bounds
-                val boundsRect = Rectangle(wshape.bounds.minX, wshape.bounds.minY,
-                        wshape.bounds.width, wshape.bounds.height)
-                val bounds = transform.createTransformedShape(boundsRect).bounds2D
+                    // Find mask object bounds
+                    val boundsRect = Rectangle(wshape.bounds.minX, wshape.bounds.minY,
+                            wshape.bounds.width, wshape.bounds.height)
+                    val bounds = transform.createTransformedShape(boundsRect).bounds2D
 
-                // Replace last group with a masked group. Current object will be used as mask.
-                val group = currentGroup
-                val maskedGroup = GroupObject.Masked(group.id, bounds)
-                maskedGroup.objects += group.objects
-                group.objects.clear()
-                if (group is GroupObject.Blend) {
-                    // If current group is blend mode, this is the blend mode that will be used to
-                    // draw objects to mask. But it will hide previous blend mode so it has to be ignored.
-                    groupStack.pop()
-                    currentGroup.objects -= group
+                    // Replace last group with a masked group. Current object will be used as mask.
+                    val group = currentGroup
+                    val maskedGroup = GroupObject.Masked(group.id, bounds)
+                    maskedGroup.objects += group.objects
+                    group.objects.clear()
+                    if (group is GroupObject.Blend) {
+                        // If current group is blend mode, this is the blend mode that will be used to
+                        // draw objects to mask. But it will hide previous blend mode so it has to be ignored.
+                        groupStack.pop()
+                        currentGroup.objects -= group
+                    }
+                    addGroup(maskedGroup)
                 }
-                addGroup(maskedGroup)
+
+            } else if (config.disableBlending) {
+                // Blending disabled, add no-op group.
+                addGroup(GroupObject.Simple(id))
 
             } else {
                 val blend = when (blendMode) {
@@ -304,7 +310,12 @@ internal class SwfConverter @Inject constructor(
             }
 
             clipStack.push(placeTag.clipDepth)
-            addGroup(GroupObject.Clip(shapeTag.identifier, shapeObject.paths.toSet().toList()))
+            addGroup(GroupObject.Clip(shapeTag.identifier,
+                    if (config.disableClipping) {
+                        emptyList()
+                    } else {
+                        shapeObject.paths.toSet().toList()
+                    }))
 
         } else if (paths.isNotEmpty()) {
             // Add debug shape bounds
