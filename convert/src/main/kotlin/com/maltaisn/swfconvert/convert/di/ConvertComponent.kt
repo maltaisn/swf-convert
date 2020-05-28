@@ -19,7 +19,6 @@ package com.maltaisn.swfconvert.convert.di
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
 import dagger.BindsInstance
 import dagger.Component
-import kotlinx.coroutines.CoroutineScope
 
 
 @Component(modules = [ConvertModule::class])
@@ -29,7 +28,6 @@ interface ConvertComponent {
 
     @Component.Factory
     interface Factory {
-        fun create(@BindsInstance coroutineScope: CoroutineScope,
-                   @BindsInstance config: ConvertConfiguration): ConvertComponent
+        fun create(@BindsInstance config: ConvertConfiguration): ConvertComponent
     }
 }

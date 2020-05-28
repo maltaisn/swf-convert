@@ -19,85 +19,74 @@ package com.maltaisn.swfconvert.convert.image
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
 import com.maltaisn.swfconvert.core.FrameGroup
 import com.maltaisn.swfconvert.core.image.ImageData
-import kotlinx.coroutines.*
+import com.maltaisn.swfconvert.core.mapInParallel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.NumberFormat
-import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 
 
 internal class ImageCreator @Inject constructor(
-        private val coroutineScope: CoroutineScope,
         private val config: ConvertConfiguration
 ) {
 
     /**
-     * Create all image files for a [frameGroups], written to [imagesDir].
+     * Create all image files for a [frameGroups], written to images temp dir.
      * If [ConvertConfiguration.removeDuplicateImages] is `true`, duplicate image
      * data is removed to optimize output size.
      */
-    fun createAndOptimizeImages(frameGroups: List<FrameGroup>) {
+    suspend fun createAndOptimizeImages(frameGroups: List<FrameGroup>) {
         // Find all images in all frames
-        val allImageFills = frameGroups.map { it.findAllImagesTo(mutableListOf()) }
+        val allImageFills = frameGroups.flatMap { it.findAllImagesTo(mutableListOf()) }
 
-        // Remove duplicate images
-        val allImageData = mutableMapOf<ImageData, ImageData>()
-        val imagesCount = AtomicInteger()
+        val allImages = if (config.removeDuplicateImages) {
+            // Remove duplicate images in all frames.
+            val total = allImageFills.size
+            val allImageData = mutableMapOf<ImageData, ImageData>()
+            print("Creating images: checking for duplicates 0 / $total\r")
+            for ((i, imageFill) in allImageFills.withIndex()) {
+                // Check if image already exists.
+                val data = imageFill.imageData
 
-        val total = allImageFills.sumBy { it.size }
-        val progress = AtomicInteger()
-
-        val jobs = allImageFills.map { imageFills ->
-            val job = coroutineScope.async {
-                for (imageFill in imageFills) {
-                    val data = imageFill.imageData
-
-                    var createImage = false
-                    if (!config.removeDuplicateImages) {
-                        createImage = true
-
-                    } else {
-                        // Check if image was already created.
-                        val existingData = allImageData[data]
-                        if (existingData == null) {
-                            // Image doesn't exist, create it.
-                            allImageData[data] = data
-                            createImage = true
-                        } else {
-                            // Image already exists, use existing data in fill object.
-                            imageFill.imageData = existingData
-                        }
-                    }
-
-                    if (createImage) {
-                        val count = imagesCount.getAndIncrement()
-                        withContext(Dispatchers.IO) {
-                            createImageFiles(data, count.toString())
-                        }
-                    }
-
-                    val done = progress.incrementAndGet()
-                    print("Created image $done / $total\r")
+                val existingData = allImageData[data]
+                if (existingData == null) {
+                    // Image doesn't exist, add it.
+                    allImageData[data] = data
+                } else {
+                    // Image already exists, use existing identical data in fill object.
+                    imageFill.imageData = existingData
                 }
-            }
-            if (!config.parallelImageCreation) {
-                runBlocking { job.await() }
-            }
-            job
-        }
-        if (config.parallelImageCreation) {
-            runBlocking { jobs.awaitAll() }
-        }
 
-        if (config.removeDuplicateImages) {
-            val count = imagesCount.get()
-            print("Created images: $count from $total")
-            val ratio = (total - count).toFloat() / total
+                print("Creating images: checking for duplicates ${i + 1} / $total\r")
+            }
+            println()
+
+            // Show number of duplicate images
+            val removed = total - allImageData.size
+            print("Creating images: removed $removed duplicates from $total images")
+            val ratio = removed.toFloat() / total
             if (ratio.isFinite()) {
                 print(" (-${PERCENT_FMT.format(ratio)})")
             }
             println()
+
+            allImageData.keys
+
+        } else {
+            // Use all images as is, keep duplicates.
+            allImageFills.map { it.imageData }
         }
+
+        // Create image files
+        print("Creating images: created file 0 / ${allImages.size}\r")
+        allImages.mapInParallel(config.parallelImageCreation) { imageData, progress ->
+            withContext(Dispatchers.IO) {
+                createImageFiles(imageData, (progress - 1).toString())
+            }
+            print("Creating images: created file $progress / ${allImages.size}\r")
+        }
+        println()
     }
 
     private fun createImageFiles(data: ImageData, name: String) {

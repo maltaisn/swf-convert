@@ -25,6 +25,8 @@ import com.maltaisn.swfconvert.core.shape.PathLineStyle
 import com.maltaisn.swfconvert.core.shape.ShapeObject
 import com.maltaisn.swfconvert.core.text.TextObject
 import com.maltaisn.swfconvert.render.ir.data.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import java.awt.geom.AffineTransform
@@ -36,7 +38,7 @@ internal class IrFrameRenderer @Inject constructor(
         private val config: IrConfiguration
 ) {
 
-    fun renderFrame(index: Int, frame: FrameGroup) {
+    suspend fun renderFrame(index: Int, frame: FrameGroup) {
         // Serialize the frame group to JSON.
         val json = Json(JsonConfiguration.Stable.copy(
                 prettyPrint = config.prettyPrint,
@@ -46,7 +48,9 @@ internal class IrFrameRenderer @Inject constructor(
 
         // Save output to file.
         // TODO handle error
-        config.output[index].writeText(frameJson)
+        withContext(Dispatchers.IO) {
+            config.output[index].writeText(frameJson)
+        }
     }
 
     private fun FrameObject.toSerializable(): IrObject = when (this) {

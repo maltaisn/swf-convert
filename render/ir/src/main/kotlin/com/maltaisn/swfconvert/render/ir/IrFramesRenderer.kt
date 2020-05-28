@@ -17,12 +17,8 @@
 package com.maltaisn.swfconvert.render.ir
 
 import com.maltaisn.swfconvert.core.FrameGroup
+import com.maltaisn.swfconvert.core.mapInParallel
 import com.maltaisn.swfconvert.render.core.FramesRenderer
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
-import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Provider
 
@@ -31,30 +27,18 @@ import javax.inject.Provider
  * Convert all frames from the intermediate representation to output format.
  */
 class IrFramesRenderer @Inject internal constructor(
-        private val coroutineScope: CoroutineScope,
         private val config: IrConfiguration,
         private val irFrameRendererProvider: Provider<IrFrameRenderer>
 ) : FramesRenderer {
 
-    override fun renderFrames(frameGroups: List<FrameGroup>) {
-        val progress = AtomicInteger()
-        val jobs = frameGroups.mapIndexed { index, frameGroup ->
-            val job = coroutineScope.async {
-                val renderer = irFrameRendererProvider.get()
-                renderer.renderFrame(index, frameGroup)
+    override suspend fun renderFrames(frameGroups: List<FrameGroup>) {
+        print("Rendered frame 0 / ${frameGroups.size}\r")
+        frameGroups.withIndex().mapInParallel(config.parallelFrameRendering) { (i, frameGroup), progress ->
+            val renderer = irFrameRendererProvider.get()
+            renderer.renderFrame(i, frameGroup)
 
-                val done = progress.incrementAndGet()
-                print("Rendered frame $done / ${frameGroups.size}\r")
-            }
-            if (!config.parallelFrameRendering) {
-                runBlocking { job.await() }
-            }
-            job
+            print("Rendered frame $progress / ${frameGroups.size}\r")
         }
-        if (config.parallelFrameRendering) {
-            runBlocking { jobs.awaitAll() }
-        }
-
         println()
     }
 

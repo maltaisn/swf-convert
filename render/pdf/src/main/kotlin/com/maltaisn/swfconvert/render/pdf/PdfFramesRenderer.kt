@@ -19,16 +19,15 @@ package com.maltaisn.swfconvert.render.pdf
 import com.maltaisn.swfconvert.core.FrameGroup
 import com.maltaisn.swfconvert.core.GroupObject
 import com.maltaisn.swfconvert.core.image.ImageData
+import com.maltaisn.swfconvert.core.mapInParallel
 import com.maltaisn.swfconvert.core.shape.PathFillStyle
 import com.maltaisn.swfconvert.core.text.TextObject
 import com.maltaisn.swfconvert.render.core.FramesRenderer
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfMetadata
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfOutlineCreator
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfPageLabelsCreator
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.apache.pdfbox.cos.COSName
 import org.apache.pdfbox.io.MemoryUsageSetting
 import org.apache.pdfbox.pdmodel.PDDocument
@@ -36,7 +35,7 @@ import org.apache.pdfbox.pdmodel.font.PDFont
 import org.apache.pdfbox.pdmodel.font.PDType0Font
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject
 import java.io.File
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Provider
 
@@ -45,7 +44,6 @@ import javax.inject.Provider
  * Convert all frames from the intermediate representation to output format.
  */
 class PdfFramesRenderer @Inject internal constructor(
-        private val coroutineScope: CoroutineScope,
         private val config: PdfConfiguration,
         private val pdfFrameRendererProvider: Provider<PdfFrameRenderer>,
         private val framesRasterizer: FramesRasterizer,
@@ -53,7 +51,7 @@ class PdfFramesRenderer @Inject internal constructor(
         private val pdfPageLabelsCreator: PdfPageLabelsCreator
 ) : FramesRenderer {
 
-    override fun renderFrames(frameGroups: List<FrameGroup>) {
+    override suspend fun renderFrames(frameGroups: List<FrameGroup>) {
         var currFrameGroups = frameGroups
 
         // Create PDF document using only temp files as memory buffer.
@@ -61,8 +59,12 @@ class PdfFramesRenderer @Inject internal constructor(
         val pdfDoc = PDDocument(MemoryUsageSetting.setupTempFileOnly())
 
         // Create PDF images and fonts
-        val pdfImages = createPdfImages(pdfDoc, currFrameGroups)
-        val pdfFonts = createPdfFonts(pdfDoc, currFrameGroups)
+        val pdfImages = withContext(Dispatchers.IO) {
+            createPdfImages(pdfDoc, currFrameGroups)
+        }
+        val pdfFonts = withContext(Dispatchers.IO) {
+            createPdfFonts(pdfDoc, currFrameGroups)
+        }
 
         // Rasterize pages
         val imagesDir = File(config.tempDir, "images")
@@ -86,10 +88,12 @@ class PdfFramesRenderer @Inject internal constructor(
 
         // Export PDF
         // TODO handle errors
-        pdfDoc.save(config.output.first())
-        pdfDoc.close()
-        for (pdfPage in pdfPages) {
-            pdfPage.close()
+        withContext(Dispatchers.IO) {
+            pdfDoc.save(config.output.first())
+            pdfDoc.close()
+            for (pdfPage in pdfPages) {
+                pdfPage.close()
+            }
         }
 
         println()
@@ -106,7 +110,7 @@ class PdfFramesRenderer @Inject internal constructor(
 
         // Create PDF image for each image.
         print("Creating PDF images: created image 0 / ${allImages.size}\r")
-        val pdfImagesMap = mutableMapOf<ImageData, PDImageXObject>()
+        val pdfImagesMap = ConcurrentHashMap<ImageData, PDImageXObject>()
         for ((i, image) in allImages.withIndex()) {
             val data = image.imageData
             pdfImagesMap[data] = createPdfImage(pdfDoc, data)
@@ -162,33 +166,19 @@ class PdfFramesRenderer @Inject internal constructor(
         return destination
     }
 
-    private fun renderFramesToPdf(frameGroups: List<FrameGroup>,
-                                  pdfImages: Map<ImageData, PDImageXObject>,
-                                  pdfFonts: Map<File, PDFont>): List<PDDocument> {
-        val progress = AtomicInteger()
-        val pdfPages = mutableListOf<PDDocument>()
-
+    private suspend fun renderFramesToPdf(frameGroups: List<FrameGroup>,
+                                          pdfImages: Map<ImageData, PDImageXObject>,
+                                          pdfFonts: Map<File, PDFont>): List<PDDocument> {
         print("Rendered frame 0 / ${frameGroups.size}\r")
-        val jobs = frameGroups.map { frameGroup ->
-            val job = coroutineScope.async {
-                val pdfPage = PDDocument(MemoryUsageSetting.setupTempFileOnly())
-                val renderer = pdfFrameRendererProvider.get()
-                renderer.renderFrame(pdfPage, frameGroup, pdfImages, pdfFonts)
+        val pdfPages = frameGroups.mapInParallel(config.parallelFrameRendering) { frameGroup, progress ->
+            val pdfPage = PDDocument(MemoryUsageSetting.setupTempFileOnly())
+            val renderer = pdfFrameRendererProvider.get()
+            renderer.renderFrame(pdfPage, frameGroup, pdfImages, pdfFonts)
 
-                val done = progress.incrementAndGet()
-                print("Rendered frame $done / ${frameGroups.size}\r")
-                pdfPage
-            }
-            if (!config.parallelFrameRendering) {
-                pdfPages += runBlocking { job.await() }
-            }
-            job
+            print("Rendered frame $progress / ${frameGroups.size}\r")
+            pdfPage
         }
-
-        if (config.parallelFrameRendering) {
-            pdfPages += runBlocking { jobs.awaitAll() }
-        }
-
+        println()
         return pdfPages
     }
 

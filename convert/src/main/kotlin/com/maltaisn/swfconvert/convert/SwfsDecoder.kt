@@ -17,9 +17,10 @@
 package com.maltaisn.swfconvert.convert
 
 import com.flagstone.transform.Movie
-import kotlinx.coroutines.*
+import com.maltaisn.swfconvert.core.mapInParallel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
-import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 
 
@@ -27,36 +28,21 @@ import javax.inject.Inject
  * Decodes SWF files with `transform-swf` in parallel.
  */
 internal class SwfsDecoder @Inject constructor(
-        private val coroutineScope: CoroutineScope,
         private val config: ConvertConfiguration
 ) {
 
-    fun decodeFiles(files: List<File>): List<Movie> {
-        val swfs = arrayOfNulls<Movie>(files.size)
-        val progress = AtomicInteger()
-
+    suspend fun decodeFiles(files: List<File>): List<Movie> {
         print("Decoded SWF file 0 / ${files.size}\r")
-        val jobs = files.mapIndexed { i, file ->
-            val job = coroutineScope.async(Dispatchers.IO) {
-                val swf = Movie()
+        val swfs = files.mapInParallel(config.parallelSwfDecoding) { file, progress ->
+            val swf = Movie()
+            withContext(Dispatchers.IO) {
                 swf.decodeFromFile(file)
-                swfs[i] = swf
-
-                val done = progress.incrementAndGet()
-                print("Decoded SWF file $done / ${files.size}\r")
             }
-            if (!config.parallelSwfDecoding) {
-                runBlocking { job.await() }
-            }
-            job
+            print("Decoded SWF file $progress / ${files.size}\r")
+            swf
         }
-        if (config.parallelSwfDecoding) {
-            runBlocking { jobs.awaitAll() }
-        }
-
         println()
-
-        return swfs.filterNotNull()
+        return swfs
     }
 
 }

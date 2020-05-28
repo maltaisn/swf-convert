@@ -19,18 +19,15 @@ package com.maltaisn.swfconvert.render.core.di
 import com.maltaisn.swfconvert.render.core.RenderConfiguration
 import dagger.BindsInstance
 import dagger.Component
-import kotlinx.coroutines.CoroutineScope
 
 
 @Component
 interface RenderCoreComponent {
 
     val configuration: RenderConfiguration
-    val coroutineScope: CoroutineScope
 
     @Component.Factory
     interface Factory {
-        fun create(@BindsInstance coroutineScope: CoroutineScope,
-                   @BindsInstance config: RenderConfiguration): RenderCoreComponent
+        fun create(@BindsInstance config: RenderConfiguration): RenderCoreComponent
     }
 }

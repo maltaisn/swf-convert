@@ -19,14 +19,10 @@ package com.maltaisn.swfconvert.convert.frame
 import com.flagstone.transform.Movie
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
 import com.maltaisn.swfconvert.core.FrameGroup
+import com.maltaisn.swfconvert.core.mapInParallel
 import com.maltaisn.swfconvert.core.text.Font
 import com.maltaisn.swfconvert.core.text.FontId
 import com.maltaisn.swfconvert.core.use
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
-import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Provider
 
@@ -35,37 +31,23 @@ import javax.inject.Provider
  * Converts a collection of SWF files to the [FrameGroup] intermediate representation.
  */
 internal class SwfsConverter @Inject constructor(
-        private val coroutineScope: CoroutineScope,
         private val config: ConvertConfiguration,
         private val swfConverterProvider: Provider<SwfConverter>
 ) {
 
-    fun createFrameGroups(swfs: List<Movie>, fontsMap: Map<FontId, Font>): List<FrameGroup> {
-        val frameGroups = arrayOfNulls<FrameGroup>(swfs.size)
-        val progress = AtomicInteger()
-
+    suspend fun createFrameGroups(swfs: List<Movie>,
+                                  fontsMap: Map<FontId, Font>): List<FrameGroup> {
         print("Converted SWF 0 / ${swfs.size}\r")
-        val jobs = swfs.mapIndexed { i, swf ->
-            val job = coroutineScope.async {
-                frameGroups[i] = swfConverterProvider.get().use {
-                    it.createFrameGroup(swf, fontsMap, i)
-                }
-
-                val done = progress.incrementAndGet()
-                print("Converted SWF $done / ${swfs.size}\r")
+        val frameGroups = swfs.withIndex().mapInParallel(
+                config.parallelSwfConversion) { (i, swf), progress ->
+            val frameGroup = swfConverterProvider.get().use {
+                it.createFrameGroup(swf, fontsMap, i)
             }
-            if (!config.parallelSwfConversion) {
-                runBlocking { job.await() }
-            }
-            job
+            print("Converted SWF $progress / ${swfs.size}\r")
+            frameGroup
         }
-        if (config.parallelSwfConversion) {
-            runBlocking { jobs.awaitAll() }
-        }
-
         println()
-
-        return frameGroups.filterNotNull()
+        return frameGroups
     }
 
 }

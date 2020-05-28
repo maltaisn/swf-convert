@@ -22,15 +22,14 @@ import com.maltaisn.swfconvert.core.GroupObject
 import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.core.image.ImageData
 import com.maltaisn.swfconvert.core.image.ImageDataCreator
+import com.maltaisn.swfconvert.core.mapInParallel
 import com.maltaisn.swfconvert.core.shape.Path
 import com.maltaisn.swfconvert.core.shape.PathElement.*
 import com.maltaisn.swfconvert.core.shape.PathFillStyle
 import com.maltaisn.swfconvert.core.shape.ShapeObject
 import com.maltaisn.swfconvert.core.text.TextObject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.font.PDFont
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject
@@ -38,7 +37,6 @@ import org.apache.pdfbox.rendering.ImageType
 import org.apache.pdfbox.rendering.PDFRenderer
 import java.awt.geom.AffineTransform
 import java.io.File
-import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Provider
 
@@ -47,13 +45,12 @@ import javax.inject.Provider
  * Rasterizes frame groups to optimize their size, if needed and enabled.
  */
 internal class FramesRasterizer @Inject constructor(
-        private val coroutineScope: CoroutineScope,
         private val config: PdfConfiguration,
         private val pdfFrameRendererProvider: Provider<PdfFrameRenderer>,
         private val imageDataCreatorProvider: Provider<ImageDataCreator>
 ) {
 
-    fun rasterizeFramesIfNeeded(pdfDoc: PDDocument,
+    suspend fun rasterizeFramesIfNeeded(pdfDoc: PDDocument,
                                 frameGroups: List<FrameGroup>, imagesDir: File,
                                 pdfImages: MutableMap<ImageData, PDImageXObject>,
                                 pdfFonts: Map<File, PDFont>): List<FrameGroup> {
@@ -79,29 +76,17 @@ internal class FramesRasterizer @Inject constructor(
         }
 
         val newFrameGroups = frameGroups.toTypedArray()
-        val progress = AtomicInteger()
 
         print("Rasterizing frames: rasterized frame 0 / ${framesToRasterize.size}\r")
-        val jobs = framesToRasterize.map { i ->
-            val job = coroutineScope.async {
-                val frameGroup = frameGroups[i]
-                val frameImagesDir = File(imagesDir, i.toString())
+        framesToRasterize.mapInParallel(config.parallelRasterization) { i, progress ->
+            val frameGroup = frameGroups[i]
+            val frameImagesDir = File(imagesDir, i.toString())
 
-                newFrameGroups[i] = rasterizeFrame(pdfDoc, frameGroup,
-                        frameImagesDir, pdfImages, pdfFonts)
+            newFrameGroups[i] = rasterizeFrame(pdfDoc, frameGroup,
+                    frameImagesDir, pdfImages, pdfFonts)
 
-                val done = progress.incrementAndGet()
-                print("Rasterizing frames: rasterized frame $done / ${framesToRasterize.size}\r")
-            }
-            if (!config.parallelRasterization) {
-                runBlocking { job.await() }
-            }
-            job
+            print("Rasterizing frames: rasterized frame $progress / ${framesToRasterize.size}\r")
         }
-        if (config.parallelRasterization) {
-            runBlocking { jobs.awaitAll() }
-        }
-
         println()
 
         return newFrameGroups.toList()
@@ -140,7 +125,7 @@ internal class FramesRasterizer @Inject constructor(
      * them with an image. Texts are made transparent to hide them but allow selection.
      * Images created during rasterization are saved to [imagesDir].
      */
-    private fun rasterizeFrame(pdfDoc: PDDocument,
+    private suspend fun rasterizeFrame(pdfDoc: PDDocument,
                                frameGroup: FrameGroup, imagesDir: File,
                                pdfImages: MutableMap<ImageData, PDImageXObject>,
                                pdfFonts: Map<File, PDFont>): FrameGroup {
@@ -162,20 +147,24 @@ internal class FramesRasterizer @Inject constructor(
         pdfFrameRenderer.renderFrame(frameDoc, croppedFrame, pdfImages, pdfFonts)
 
         // Render the image
-        val pdfRenderer = PDFRenderer(frameDoc)
-        val pdfImage = pdfRenderer.renderImageWithDPI(
-                0, config.rasterizationDpi, ImageType.RGB)
-        frameDoc.close()
+        val imageData = withContext(Dispatchers.IO) {
+            val pdfRenderer = PDFRenderer(frameDoc)
+            val pdfImage = pdfRenderer.renderImageWithDPI(
+                    0, config.rasterizationDpi, ImageType.RGB)
+            frameDoc.close()
 
-        // Create image data
-        val imageData = imageDataCreatorProvider.get().createImageData(pdfImage,
-                config.rasterizationFormat, config.rasterizationJpegQuality)
+            // Create image data
+            val imageData = imageDataCreatorProvider.get().createImageData(pdfImage,
+                    config.rasterizationFormat, config.rasterizationJpegQuality)
 
-        // Create PDF image
-        val imageFile = File(imagesDir, "frame.${imageData.format.extension}")
-        imageFile.writeBytes(imageData.data)
-        imageData.dataFile = imageFile
-        pdfImages[imageData] = PDImageXObject.createFromFileByContent(imageFile, pdfDoc)
+            // Create PDF image
+            val imageFile = File(imagesDir, "frame.${imageData.format.extension}")
+            imageFile.writeBytes(imageData.data)
+            imageData.dataFile = imageFile
+            pdfImages[imageData] = PDImageXObject.createFromFileByContent(imageFile, pdfDoc)
+
+            imageData
+        }
 
         // Add that image add the start of the text group.
         val imageObj = createRootImageObject(textFrame, imageData)

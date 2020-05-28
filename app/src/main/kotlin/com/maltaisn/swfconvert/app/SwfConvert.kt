@@ -24,15 +24,13 @@ import com.maltaisn.swfconvert.render.core.RenderConfiguration
 import com.maltaisn.swfconvert.render.core.di.DaggerRenderCoreComponent
 import com.maltaisn.swfconvert.render.ir.di.DaggerRenderIrComponent
 import com.maltaisn.swfconvert.render.pdf.di.DaggerRenderPdfComponent
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Provider
 
 
 class SwfConvert(private val config: Configuration) {
-
-    private val coroutineScope = CoroutineScope(Dispatchers.Default)
 
     @Inject lateinit var converterProvider: Provider<SwfCollectionConverter>
     @Inject lateinit var framesRenderers: Map<Class<out RenderConfiguration>,
@@ -41,9 +39,9 @@ class SwfConvert(private val config: Configuration) {
     init {
         // Create components
         val convertComponent = DaggerConvertComponent.factory()
-                .create(coroutineScope, config.convert)
+                .create(config.convert)
         val renderCoreComponent = DaggerRenderCoreComponent.factory()
-                .create(coroutineScope, config.render)
+                .create(config.render)
         DaggerRenderIrComponent.builder()
                 .renderCoreComponent(renderCoreComponent)
                 .build()
@@ -58,7 +56,7 @@ class SwfConvert(private val config: Configuration) {
         appComponent.inject(this)
     }
 
-    fun convert() {
+    suspend fun convert() {
         // Convert SWF to intermediate representation.
         val converter = converterProvider.get()
         val frameGroups = converter.convert()
@@ -70,7 +68,9 @@ class SwfConvert(private val config: Configuration) {
         framesRenderer.renderFrames(frameGroups)
 
         // Remove temp files
-        converter.cleanup()
+        withContext(Dispatchers.IO) {
+            converter.cleanup()
+        }
     }
 
 }
