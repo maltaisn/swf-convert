@@ -223,7 +223,8 @@ internal class TextConverter @Inject constructor(
                 val actualAdvance = glyphEntry.advance.toFloat() / (scale.unscaleX * fontSize) * GlyphData.EM_SQUARE_SIZE
                 val diff = actualAdvance - defaultAdvance
                 glyphOffsets += diff
-                if (diff.absoluteValue >= CUSTOM_POSITIONING_THRESHOLD) {
+                if (diff.absoluteValue >= config.ignoreGlyphOffsetsThreshold
+                        && diff.absoluteValue > 0) {
                     ignoreCustomPos = false
                 }
             }
@@ -273,13 +274,5 @@ internal class TextConverter @Inject constructor(
     }
 
     private fun Font.getGlyph(index: GlyphIndex) = this.glyphs[index.glyphIndex]
-
-    companion object {
-        /**
-         * Value under which custom glyph advance differences are ignored.
-         * This value is in glyph space units.
-         */
-        private const val CUSTOM_POSITIONING_THRESHOLD = 5f
-    }
 
 }

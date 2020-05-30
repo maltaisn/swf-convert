@@ -118,8 +118,8 @@ internal class FontConverter @Inject constructor(
         for (obj in swf.objects) {
             val wfont = when (obj) {
                 is DefineFont -> conversionError("Unsupported define font tag")
-                is DefineFont2 -> WDefineFont(obj)
-                is DefineFont3 -> WDefineFont(obj)
+                is DefineFont2 -> WDefineFont(obj, config.fontScale2)
+                is DefineFont3 -> WDefineFont(obj, config.fontScale3)
                 is DefineFont4 -> conversionError("Unsupported define font tag")
                 else -> null
             }

@@ -19,6 +19,7 @@ package com.maltaisn.swfconvert.convert
 import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.maltaisn.swfconvert.core.shape.PathLineStyle
+import com.maltaisn.swfconvert.core.text.FontScale
 import com.mortennobel.imagescaling.ResampleFilter
 import java.awt.BasicStroke
 import java.io.File
@@ -119,6 +120,18 @@ data class ConvertConfiguration(
 
         /** Padding added around output, in inches. */
         val framePadding: Float,
+
+        /** Font scale options for DefineFont2 tag. */
+        val fontScale2: FontScale,
+        /** FOnt scale options for DefineFont3 tag. */
+        val fontScale3: FontScale,
+
+        /**
+         * If all glyph offsets are under this threshold, they are ignored.
+         * This can allow for reduced size since no extra information has to be specified.
+         * Value is in glyph space units.
+         */
+        val ignoreGlyphOffsetsThreshold: Float,
 
         // Debug line style options
         val debugLineWidth: Float,

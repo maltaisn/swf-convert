@@ -21,6 +21,7 @@ import com.beust.jcommander.Parameters
 import com.beust.jcommander.ParametersDelegate
 import com.maltaisn.swfconvert.app.checkNoOptionsInArgs
 import com.maltaisn.swfconvert.app.configError
+import com.maltaisn.swfconvert.app.toBooleanOrNull
 import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.maltaisn.swfconvert.render.pdf.PdfConfiguration
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfMetadata
@@ -111,7 +112,7 @@ class RenderPdfParams : RenderParams<PdfConfiguration> {
         configError(rasterizationDpi in 10f..2000f) { "Rasterization density must be between 10 and 2000 DPI." }
         configError(rasterizationThreshold >= 0) { "Rasterization threshold complexity must be greater or equal to 0." }
 
-        val parallelRasterization = params.params[OPT_PARALLEL_RASTERIZATION]?.toBoolean() ?: true
+        val parallelRasterization = params.params[OPT_PARALLEL_RASTERIZATION]?.toBooleanOrNull() ?: true
 
         return inputs.mapIndexed { i, input ->
             val tempDir = params.getTempDirForInput(input)

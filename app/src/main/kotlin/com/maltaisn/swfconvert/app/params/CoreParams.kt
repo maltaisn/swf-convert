@@ -18,13 +18,11 @@ package com.maltaisn.swfconvert.app.params
 
 import com.beust.jcommander.DynamicParameter
 import com.beust.jcommander.Parameter
-import com.maltaisn.swfconvert.app.checkNoOptionsInArgs
-import com.maltaisn.swfconvert.app.configError
-import com.maltaisn.swfconvert.app.isSwfFile
-import com.maltaisn.swfconvert.app.toColorOrNull
+import com.maltaisn.swfconvert.app.*
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
 import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.core.image.ImageFormat
+import com.maltaisn.swfconvert.core.text.FontScale
 import com.mortennobel.imagescaling.ResampleFilter
 import com.mortennobel.imagescaling.ResampleFilters
 import java.io.File
@@ -199,7 +197,7 @@ class CoreParams(private val singleFileOutput: Boolean,
     }
 
     val parallelFrameRendering by lazy {
-        params[OPT_PARALLEL_FRAME_RENDERING]?.toBoolean() ?: true
+        params[OPT_PARALLEL_FRAME_RENDERING]?.toBooleanOrNull() ?: true
     }
 
     fun getTempDirForInput(input: List<File>) =
@@ -211,21 +209,26 @@ class CoreParams(private val singleFileOutput: Boolean,
         configError(maxDpi in 10f..2000f) { "Maximum image density must be between 10 and 2000 DPI." }
 
         // Additional options
-        val parallelSwfDecoding = params[OPT_PARALLEL_SWF_DECODING]?.toBoolean() ?: true
-        val parallelSwfConversion = params[OPT_PARALLEL_SWF_CONVERSION]?.toBoolean() ?: true
-        val parallelImageCreation = params[OPT_PARALLEL_IMAGE_CREATION]?.toBoolean() ?: true
-        val keepFonts = params[OPT_KEEP_FONTS]?.toBoolean() ?: false
-        val keepImages = params[OPT_KEEP_IMAGES]?.toBoolean() ?: false
-        val outputOcrGlyphs = params[OPT_OUTPUT_OCR_GLYPHS]?.toBoolean() ?: false
-        val drawShapeBounds = params[OPT_DRAW_SHAPE_BOUNDS]?.toBoolean() ?: false
-        val drawTextBounds = params[OPT_DRAW_TEXT_BOUNDS]?.toBoolean() ?: false
-        val drawClipBounds = params[OPT_DRAW_CLIP_BOUNDS]?.toBoolean() ?: false
-        val disableClipping = params[OPT_DISABLE_CLIPPING]?.toBoolean() ?: false
-        val disableBlending = params[OPT_DISABLE_BLENDING]?.toBoolean() ?: false
-        val disableMasking = params[OPT_DISABLE_MASKING]?.toBoolean() ?: false
+        val parallelSwfDecoding = params[OPT_PARALLEL_SWF_DECODING]?.toBooleanOrNull() ?: true
+        val parallelSwfConversion = params[OPT_PARALLEL_SWF_CONVERSION]?.toBooleanOrNull() ?: true
+        val parallelImageCreation = params[OPT_PARALLEL_IMAGE_CREATION]?.toBooleanOrNull() ?: true
+        val keepFonts = params[OPT_KEEP_FONTS]?.toBooleanOrNull() ?: false
+        val keepImages = params[OPT_KEEP_IMAGES]?.toBooleanOrNull() ?: false
+        val outputOcrGlyphs = params[OPT_OUTPUT_OCR_GLYPHS]?.toBooleanOrNull() ?: false
+        val drawShapeBounds = params[OPT_DRAW_SHAPE_BOUNDS]?.toBooleanOrNull() ?: false
+        val drawTextBounds = params[OPT_DRAW_TEXT_BOUNDS]?.toBooleanOrNull() ?: false
+        val drawClipBounds = params[OPT_DRAW_CLIP_BOUNDS]?.toBooleanOrNull() ?: false
+        val disableClipping = params[OPT_DISABLE_CLIPPING]?.toBooleanOrNull() ?: false
+        val disableBlending = params[OPT_DISABLE_BLENDING]?.toBooleanOrNull() ?: false
+        val disableMasking = params[OPT_DISABLE_MASKING]?.toBooleanOrNull() ?: false
         val framePadding = params[OPT_FRAME_PADDING]?.toFloatOrNull() ?: 0f
         val debugLineWidth = params[OPT_DEBUG_LINE_WIDTH]?.toFloatOrNull() ?: 20f
         val debugLineColor = params[OPT_DEBUG_LINE_COLOR]?.toColorOrNull() ?: Color(0, 255, 0)
+        val fontScale2 = params[OPT_FONT_SCALE_2]?.toFontScaleOrNull()
+                ?: FontScale(1f, -1f, 1f, 1f)
+        val fontScale3 = params[OPT_FONT_SCALE_3]?.toFontScaleOrNull()
+                ?: FontScale(0.05f, -0.05f, 1f, 1f)
+        val ignoreGlyphOffsetsThreshold = params[OPT_IGNORE_GLYPH_OFFSETS_THRESHOLD]?.toFloatOrNull() ?: 5f
 
         return inputFileCollections.map { input ->
             val tempDir = getTempDirForInput(input)
@@ -254,6 +257,9 @@ class CoreParams(private val singleFileOutput: Boolean,
                     disableBlending,
                     disableMasking,
                     framePadding,
+                    fontScale2,
+                    fontScale3,
+                    ignoreGlyphOffsetsThreshold,
                     debugLineWidth,
                     debugLineColor)
         }
@@ -292,6 +298,12 @@ class CoreParams(private val singleFileOutput: Boolean,
         }
     }
 
+    private fun String.toFontScaleOrNull(): FontScale? {
+        val vals = this.toListOrNull(String::toFloatOrNull)
+                ?.takeIf { it.size == 4 } ?: return null
+        return FontScale(vals[0], vals[1], vals[2], vals[3])
+    }
+
     companion object {
         private val NUMBER_FMT = DecimalFormat()
 
@@ -309,6 +321,9 @@ class CoreParams(private val singleFileOutput: Boolean,
         const val OPT_DISABLE_BLENDING = "disableBlending"
         const val OPT_DISABLE_MASKING = "disableMasking"
         const val OPT_FRAME_PADDING = "framePadding"
+        const val OPT_FONT_SCALE_2 = "fontScale2"
+        const val OPT_FONT_SCALE_3 = "fontScale3"
+        const val OPT_IGNORE_GLYPH_OFFSETS_THRESHOLD = "ignoreGlyphOffsetsThreshold"
         const val OPT_DEBUG_LINE_WIDTH = "debugLineWidth"
         const val OPT_DEBUG_LINE_COLOR = "debugLineColor"
     }

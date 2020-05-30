@@ -19,7 +19,6 @@ package com.maltaisn.swfconvert.core
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.runBlocking
 import java.util.concurrent.atomic.AtomicInteger
 
 
@@ -43,9 +42,7 @@ suspend fun <T, R> Iterable<T>.mapInParallel(parallel: Boolean = true,
         }
     } else {
         this.mapIndexed { i, e ->
-            runBlocking {
-                block(e, i)
-            }
+            block(e, i)
         }
     }
 }

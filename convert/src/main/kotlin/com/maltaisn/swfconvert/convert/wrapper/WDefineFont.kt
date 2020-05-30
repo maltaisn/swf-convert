@@ -33,16 +33,10 @@ internal data class WDefineFont(val identifier: Int,
                                 val kernings: List<Kerning>,
                                 val scale: FontScale) {
 
-    constructor(font: DefineFont2) : this(font.identifier, font.name, font.ascent, font.descent,
-            font.codes, font.shapes, font.advances, font.kernings, DEFINEFONT2_SCALE)
+    constructor(font: DefineFont2, scale: FontScale) : this(font.identifier, font.name, font.ascent, font.descent,
+            font.codes, font.shapes, font.advances, font.kernings, scale)
 
-    constructor(font: DefineFont3) : this(font.identifier, font.name, font.ascent, font.descent,
-            font.codes, font.shapes, font.advances, font.kernings, DEFINEFONT3_SCALE)
-
-    companion object {
-        // TODO allow custom values
-        private val DEFINEFONT2_SCALE = FontScale(0.05f, 0.05f, 20f, -20f)
-        private val DEFINEFONT3_SCALE = FontScale(0.05f, -0.05f, 1f, 1f)
-    }
+    constructor(font: DefineFont3, scale: FontScale) : this(font.identifier, font.name, font.ascent, font.descent,
+            font.codes, font.shapes, font.advances, font.kernings, scale)
 
 }

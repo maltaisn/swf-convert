@@ -43,3 +43,17 @@ fun String.toColorOrNull(): Color? = when (this.length) {
     9 -> this.substring(1).toIntOrNull(16)?.let { Color(it) }
     else -> null
 }
+
+/**
+ * Try to parse [this] string as a list with [parseElement] lambda. Lambda should
+ * return null if element can't be parsed. List must be delimited with square brackets
+ * and elements must be separated with commas.
+ */
+inline fun <T> String.toListOrNull(crossinline parseElement: (String) -> T?): List<T>? {
+    if (this.first() != '[' || this.last() != ']') {
+        return null
+    }
+    return this.substring(1, this.length - 1)
+            .split(',')
+            .map { parseElement(it.trim()) ?: return null }
+}
