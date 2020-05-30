@@ -37,6 +37,7 @@ import org.apache.pdfbox.rendering.ImageType
 import org.apache.pdfbox.rendering.PDFRenderer
 import java.awt.geom.AffineTransform
 import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Provider
 
@@ -77,15 +78,16 @@ internal class FramesRasterizer @Inject constructor(
 
         val newFrameGroups = frameGroups.toTypedArray()
 
+        val progress = AtomicInteger()
         print("Rasterizing frames: rasterized frame 0 / ${framesToRasterize.size}\r")
-        framesToRasterize.mapInParallel(config.parallelRasterization) { i, progress ->
+        framesToRasterize.mapInParallel(config.parallelRasterization) { i ->
             val frameGroup = frameGroups[i]
             val frameImagesDir = File(imagesDir, i.toString())
 
             newFrameGroups[i] = rasterizeFrame(pdfDoc, frameGroup,
                     frameImagesDir, pdfImages, pdfFonts)
 
-            print("Rasterizing frames: rasterized frame $progress / ${framesToRasterize.size}\r")
+            print("Rasterizing frames: rasterized frame ${progress.incrementAndGet()} / ${framesToRasterize.size}\r")
         }
         println()
 

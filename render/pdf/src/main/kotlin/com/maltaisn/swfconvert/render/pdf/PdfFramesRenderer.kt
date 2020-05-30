@@ -36,6 +36,7 @@ import org.apache.pdfbox.pdmodel.font.PDType0Font
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Provider
 
@@ -169,13 +170,14 @@ class PdfFramesRenderer @Inject internal constructor(
     private suspend fun renderFramesToPdf(frameGroups: List<FrameGroup>,
                                           pdfImages: Map<ImageData, PDImageXObject>,
                                           pdfFonts: Map<File, PDFont>): List<PDDocument> {
+        val progress = AtomicInteger()
         print("Rendered frame 0 / ${frameGroups.size}\r")
-        val pdfPages = frameGroups.mapInParallel(config.parallelFrameRendering) { frameGroup, progress ->
+        val pdfPages = frameGroups.mapInParallel(config.parallelFrameRendering) { frameGroup ->
             val pdfPage = PDDocument(MemoryUsageSetting.setupTempFileOnly())
             val renderer = pdfFrameRendererProvider.get()
             renderer.renderFrame(pdfPage, frameGroup, pdfImages, pdfFonts)
 
-            print("Rendered frame $progress / ${frameGroups.size}\r")
+            print("Rendered frame ${progress.incrementAndGet()} / ${frameGroups.size}\r")
             pdfPage
         }
         println()

@@ -19,6 +19,7 @@ package com.maltaisn.swfconvert.render.ir
 import com.maltaisn.swfconvert.core.FrameGroup
 import com.maltaisn.swfconvert.core.mapInParallel
 import com.maltaisn.swfconvert.render.core.FramesRenderer
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Provider
 
@@ -32,12 +33,13 @@ class IrFramesRenderer @Inject internal constructor(
 ) : FramesRenderer {
 
     override suspend fun renderFrames(frameGroups: List<FrameGroup>) {
+        val progress = AtomicInteger()
         print("Rendered frame 0 / ${frameGroups.size}\r")
-        frameGroups.withIndex().mapInParallel(config.parallelFrameRendering) { (i, frameGroup), progress ->
+        frameGroups.withIndex().mapInParallel(config.parallelFrameRendering) { (i, frameGroup) ->
             val renderer = irFrameRendererProvider.get()
             renderer.renderFrame(i, frameGroup)
 
-            print("Rendered frame $progress / ${frameGroups.size}\r")
+            print("Rendered frame ${progress.incrementAndGet()} / ${frameGroups.size}\r")
         }
         println()
     }

@@ -19,30 +19,27 @@ package com.maltaisn.swfconvert.core
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import java.util.concurrent.atomic.AtomicInteger
 
 
 /**
  * Map the values of [this] iterable to a list of type [R] with [block] value.
- * The [block] lambda also has a progress counter.
  *
  * @param parallel Whether to map in parallel or not. The current coroutine context is used.
  * Parallelization provides better performance but it can be unwanted during debugging for example.
  */
 suspend fun <T, R> Iterable<T>.mapInParallel(parallel: Boolean = true,
-                                             block: suspend (element: T, progress: Int) -> R): List<R> {
-    val progress = AtomicInteger()
+                                             block: suspend (T) -> R): List<R> {
     return if (parallel) {
         coroutineScope {
             this@mapInParallel.map {
                 async {
-                    block(it, progress.incrementAndGet())
+                    block(it)
                 }
             }.awaitAll()
         }
     } else {
-        this.mapIndexed { i, e ->
-            block(e, i)
+        this.map { e ->
+            block(e)
         }
     }
 }

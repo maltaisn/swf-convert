@@ -21,6 +21,7 @@ import com.maltaisn.swfconvert.core.mapInParallel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 
 
@@ -32,13 +33,14 @@ internal class SwfsDecoder @Inject constructor(
 ) {
 
     suspend fun decodeFiles(files: List<File>): List<Movie> {
+        val progress = AtomicInteger()
         print("Decoded SWF file 0 / ${files.size}\r")
-        val swfs = files.mapInParallel(config.parallelSwfDecoding) { file, progress ->
+        val swfs = files.mapInParallel(config.parallelSwfDecoding) { file ->
             val swf = Movie()
             withContext(Dispatchers.IO) {
                 swf.decodeFromFile(file)
             }
-            print("Decoded SWF file $progress / ${files.size}\r")
+            print("Decoded SWF file ${progress.incrementAndGet()} / ${files.size}\r")
             swf
         }
         println()

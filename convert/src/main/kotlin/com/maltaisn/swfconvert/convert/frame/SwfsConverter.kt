@@ -23,6 +23,7 @@ import com.maltaisn.swfconvert.core.mapInParallel
 import com.maltaisn.swfconvert.core.text.Font
 import com.maltaisn.swfconvert.core.text.FontId
 import com.maltaisn.swfconvert.core.use
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Provider
 
@@ -37,13 +38,14 @@ internal class SwfsConverter @Inject constructor(
 
     suspend fun createFrameGroups(swfs: List<Movie>,
                                   fontsMap: Map<FontId, Font>): List<FrameGroup> {
+        val progress = AtomicInteger()
         print("Converted SWF 0 / ${swfs.size}\r")
         val frameGroups = swfs.withIndex().mapInParallel(
-                config.parallelSwfConversion) { (i, swf), progress ->
+                config.parallelSwfConversion) { (i, swf) ->
             val frameGroup = swfConverterProvider.get().use {
                 it.createFrameGroup(swf, fontsMap, i)
             }
-            print("Converted SWF $progress / ${swfs.size}\r")
+            print("Converted SWF ${progress.incrementAndGet()} / ${swfs.size}\r")
             frameGroup
         }
         println()

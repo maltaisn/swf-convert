@@ -24,6 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.NumberFormat
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 
 
@@ -80,11 +81,14 @@ internal class ImageCreator @Inject constructor(
 
         // Create image files
         print("Creating images: created file 0 / ${allImages.size}\r")
-        allImages.mapInParallel(config.parallelImageCreation) { imageData, progress ->
+        val progress = AtomicInteger()
+        val idCounter = AtomicInteger()
+        allImages.mapInParallel(config.parallelImageCreation) { imageData ->
+            val id = idCounter.getAndIncrement()
             withContext(Dispatchers.IO) {
-                createImageFiles(imageData, (progress - 1).toString())
+                createImageFiles(imageData, id.toString())
             }
-            print("Creating images: created file $progress / ${allImages.size}\r")
+            print("Creating images: created file ${progress.incrementAndGet()} / ${allImages.size}\r")
         }
         println()
     }
