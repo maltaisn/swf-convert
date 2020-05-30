@@ -21,6 +21,9 @@ dependencies {
     implementation "com.beust:jcommander:$jcommanderVersion"
 
     implementation "com.mortennobel:java-image-scaling:$scalingLibVersion"
+
+    testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+    testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
 }
 
 sourceSets {
