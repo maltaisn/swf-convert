@@ -22,6 +22,7 @@ import com.beust.jcommander.ParametersDelegate
 import com.maltaisn.swfconvert.app.checkNoOptionsInArgs
 import com.maltaisn.swfconvert.app.configError
 import com.maltaisn.swfconvert.app.toBooleanOrNull
+import com.maltaisn.swfconvert.core.YAxisDirection
 import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.maltaisn.swfconvert.render.pdf.PdfConfiguration
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfMetadata
@@ -69,6 +70,9 @@ class RenderPdfParams : RenderParams<PdfConfiguration> {
     @Parameter(names = ["--rasterization-jpeg-quality"], description = "JPEG image quality for rasterization, between 0 and 100.", order = 1240)
     var rasterizationJpegQuality = 75
 
+
+    override val yAxisDirection: YAxisDirection
+        get() = YAxisDirection.UP
 
     private val pdfMetadata: List<PdfMetadata> by lazy {
         if (metadata.isEmpty()) {

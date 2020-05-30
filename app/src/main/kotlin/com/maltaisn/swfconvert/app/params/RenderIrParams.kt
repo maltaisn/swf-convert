@@ -19,6 +19,8 @@ package com.maltaisn.swfconvert.app.params
 import com.beust.jcommander.Parameter
 import com.beust.jcommander.Parameters
 import com.beust.jcommander.ParametersDelegate
+import com.maltaisn.swfconvert.app.configError
+import com.maltaisn.swfconvert.core.YAxisDirection
 import com.maltaisn.swfconvert.render.ir.IrConfiguration
 import java.io.File
 
@@ -33,8 +35,20 @@ class RenderIrParams : RenderParams<IrConfiguration> {
         this.params[CoreParams.OPT_KEEP_IMAGES] = true.toString()
     }
 
-    @Parameter(names = ["--pretty"], description = "Whether to pretty print JSON or not.", order = 1000)
+    @Parameter(names = ["-y-direction"], description = "Y axis direction: up | down.", order = 1000)
+    var yAxisDirectionName = "up"
+
+    @Parameter(names = ["--pretty"], description = "Whether to pretty print JSON or not.", order = 1010)
     var prettyPrint: Boolean = false
+
+
+    override val yAxisDirection by lazy {
+        when (yAxisDirectionName.toLowerCase()) {
+            "up" -> YAxisDirection.UP
+            "down" -> YAxisDirection.DOWN
+            else -> configError("Invalid Y axis direction '$yAxisDirectionName'.")
+        }
+    }
 
 
     override fun createConfigurations(inputs: List<List<File>>) = inputs.mapIndexed { i, input ->

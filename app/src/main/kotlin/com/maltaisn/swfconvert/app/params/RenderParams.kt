@@ -17,12 +17,15 @@
 package com.maltaisn.swfconvert.app.params
 
 import com.maltaisn.swfconvert.app.ConfigException
+import com.maltaisn.swfconvert.core.YAxisDirection
 import java.io.File
 
 
 interface RenderParams<T> {
 
     val params: CoreParams
+
+    val yAxisDirection: YAxisDirection
 
     /**
      * Validate and create the configurations associated to the parameters.

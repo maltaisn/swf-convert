@@ -72,7 +72,7 @@ internal class StyledShapeConverter @Inject constructor(
 
             val image = objectsMap[fillStyle.identifier] as? ImageTag ?: error("Invalid image ID")
 
-            val tr = fillStyle.transform.toAffineTransform()
+            val tr = fillStyle.transform.toAffineTransform(config.yAxisDirection)
             tr.scale(image.width.toDouble(), image.height.toDouble())
 
             // Create image data
@@ -86,7 +86,7 @@ internal class StyledShapeConverter @Inject constructor(
             conversionError(fillStyle.interpolation == Interpolation.NORMAL) { "Unsupported interpolation mode" }
 
             // SWF gradients have a size of 32768, offset of 16384 and a transform.
-            val transform = fillStyle.transform.toAffineTransform()
+            val transform = fillStyle.transform.toAffineTransform(config.yAxisDirection)
             transform.concatenate(AffineTransform(32768f, 0f, 0f, 32768f, -16384f, -16384f))
 
             val colors = fillStyle.gradients.map {

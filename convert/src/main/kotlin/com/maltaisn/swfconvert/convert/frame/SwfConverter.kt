@@ -33,7 +33,6 @@ import com.maltaisn.swfconvert.convert.conversionError
 import com.maltaisn.swfconvert.convert.image.CompositeColorTransform
 import com.maltaisn.swfconvert.convert.shape.StyledShapeConverter
 import com.maltaisn.swfconvert.convert.toAffineTransformOrIdentity
-import com.maltaisn.swfconvert.convert.toPlaceTagOrNull
 import com.maltaisn.swfconvert.convert.wrapper.WDefineShape
 import com.maltaisn.swfconvert.convert.wrapper.WPlace
 import com.maltaisn.swfconvert.core.*
@@ -90,9 +89,10 @@ internal class SwfConverter @Inject constructor(
 
         // Create frame group
         val movieHeader = swf.objects.find { it is MovieHeader } as MovieHeader
-        val frameGroup = FrameGroup(movieHeader.frameSize.width.toFloat(),
+        val frameGroup = FrameGroup.create(movieHeader.frameSize.width.toFloat(),
                 movieHeader.frameSize.height.toFloat(),
-                config.framePadding / Units.TWIPS_TO_INCH)
+                config.framePadding / Units.TWIPS_TO_INCH,
+                config.yAxisDirection)
 
         // Create root frame
         groupStack.push(frameGroup)
@@ -145,7 +145,7 @@ internal class SwfConverter @Inject constructor(
         val id = objTag.identifier
 
         val wshape = objTag.toShapeTagOrNull()
-        val transform = placeTag.transform.toAffineTransformOrIdentity()
+        val transform = placeTag.transform.toAffineTransformOrIdentity(config.yAxisDirection)
 
         // Check if all filters are supported
         for (filter in placeTag.filters) {
@@ -291,7 +291,8 @@ internal class SwfConverter @Inject constructor(
     private fun createShape(shapeTag: WDefineShape, placeTag: WPlace) {
         // If the shape is for clipping, the transform must be pre-applied because it only applies 
         // to the clipping shape while the clip applies to many objects.
-        val transform = placeTag.transform.takeIf { placeTag.hasClip }.toAffineTransformOrIdentity()
+        val transform = placeTag.transform.takeIf { placeTag.hasClip }
+                .toAffineTransformOrIdentity(config.yAxisDirection)
 
         // Parse the shape into paths and images.
         val paths = shapeParser.parseShape(shapeTag.shape,
@@ -340,6 +341,13 @@ internal class SwfConverter @Inject constructor(
     private fun addGroup(group: GroupObject) {
         currentGroup.objects += group
         groupStack.push(group)
+    }
+
+    private fun MovieTag.toPlaceTagOrNull() = when (this) {
+        is Place -> WPlace(this)
+        is Place2 -> WPlace(this)
+        is Place3 -> WPlace(this)
+        else -> null
     }
 
     private fun MovieTag.toShapeTagOrNull() = when (this) {

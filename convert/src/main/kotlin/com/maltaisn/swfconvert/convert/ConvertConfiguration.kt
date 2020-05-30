@@ -16,6 +16,7 @@
 
 package com.maltaisn.swfconvert.convert
 
+import com.maltaisn.swfconvert.core.YAxisDirection
 import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.maltaisn.swfconvert.core.shape.PathLineStyle
@@ -26,8 +27,7 @@ import java.io.File
 
 
 /**
- * Configuration for the conversion to the intermediate format.
- * Not all these options are relevant for all formats however.
+ * Configuration for the conversion to the intermediate representation.
  */
 data class ConvertConfiguration(
         // FILES CONFIGURATION
@@ -37,6 +37,14 @@ data class ConvertConfiguration(
 
         /** Directory to which temp and debug files are written. */
         val tempDir: File,
+
+        /**
+         * Direction of the Y axis, either up or down. In SWF, Y axis goes down, but in
+         * some output formats, Y axis goes up, so IR is generated in the right direction immediately.
+         * Reversing Y axis involves flipping images and fonts vertically and swapping transformation
+         * matrices rotation.
+         */
+        val yAxisDirection: YAxisDirection,
 
         // TEXT & FONT CONFIGURATION
 

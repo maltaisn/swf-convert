@@ -25,16 +25,17 @@ import java.awt.geom.AffineTransform
  *
  * In SWF, all coordinates are in twips (1 / 1440 of an inch) and Y positive goes down.
  * In the intermediate representation, all coordinates are in points (1 / 72 of an inch),
- * and Y positive goes up.
+ * and Y positive can go in either direction.
  *
  * @param width Frame width in twips.
  * @param height Frame height in twips.
- * @param padding Padding added around frame in twips .
+ * @param padding Padding added around frame in twips.
  */
-data class FrameGroup(val width: Float, val height: Float, val padding: Float) :
-        GroupObject.Transform(0, AffineTransform(Units.TWIPS_TO_POINT, 0f, 0f,
-                -Units.TWIPS_TO_POINT, padding * Units.TWIPS_TO_POINT,
-                (height + padding) * Units.TWIPS_TO_POINT)) {
+data class FrameGroup(val width: Float,
+                      val height: Float,
+                      val padding: Float,
+                      override val transform: AffineTransform) :
+        GroupObject.Transform(0, transform) {
 
     // Scaled frame dimensions in points (including padding).
     val actualWidth get() = (width + padding * 2) * Units.TWIPS_TO_POINT
@@ -45,5 +46,26 @@ data class FrameGroup(val width: Float, val height: Float, val padding: Float) :
 
     override fun toString() = "FrameGroup(width=$width, height=$height, " +
             super.toString().substringAfter('(')
+
+    companion object {
+
+        fun create(width: Float, height: Float, padding: Float,
+                   yAxisDirection: YAxisDirection): FrameGroup {
+            val scale =  Units.TWIPS_TO_POINT
+            val scaleY = when (yAxisDirection) {
+                YAxisDirection.DOWN -> 1f
+                YAxisDirection.UP -> -1f
+            } * scale
+            val translateX = padding * scale
+            val translateY = (when (yAxisDirection) {
+                YAxisDirection.UP -> height
+                YAxisDirection.DOWN -> 0f
+            } + padding) * scale
+
+            val transform = AffineTransform(scale, 0f, 0f, scaleY, translateX, translateY)
+            return FrameGroup(width, height, padding, transform)
+        }
+
+    }
 
 }

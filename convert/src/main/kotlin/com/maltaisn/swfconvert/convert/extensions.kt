@@ -16,12 +16,9 @@
 
 package com.maltaisn.swfconvert.convert
 
-import com.flagstone.transform.MovieTag
-import com.flagstone.transform.Place
-import com.flagstone.transform.Place2
-import com.flagstone.transform.Place3
 import com.flagstone.transform.datatype.CoordTransform
-import com.maltaisn.swfconvert.convert.wrapper.WPlace
+import com.maltaisn.swfconvert.core.FrameGroup
+import com.maltaisn.swfconvert.core.YAxisDirection
 import com.maltaisn.swfconvert.core.image.Color
 import java.awt.geom.AffineTransform
 import java.io.ByteArrayInputStream
@@ -33,21 +30,33 @@ internal fun FColor.toColor() = Color(this.red, this.green, this.blue, this.alph
 
 /**
  * Convert [this] transform to an [AffineTransform].
- * The skewing parameters are reversed to reverse rotation direction since
- * everything is flipped vertically.
+ * @param yAxisDirection If direction is [YAxisDirection.UP], the shearing components are
+ * swapped to reverse the rotation direction back, because the flipping of the [FrameGroup]
+ * has inverted the rotation once.
  */
-internal fun CoordTransform.toAffineTransform() = AffineTransform(
-        this.scaleX, this.shearX, this.shearY, this.scaleY,
-        this.translateX.toFloat(), this.translateY.toFloat())
-
-internal fun CoordTransform?.toAffineTransformOrIdentity() = this?.toAffineTransform() ?: AffineTransform()
-
-internal fun MovieTag.toPlaceTagOrNull() = when (this) {
-    is Place -> WPlace(this)
-    is Place2 -> WPlace(this)
-    is Place3 -> WPlace(this)
-    else -> null
+internal fun CoordTransform.toAffineTransform(yAxisDirection: YAxisDirection) = when (yAxisDirection) {
+    YAxisDirection.UP -> AffineTransform(
+            this.scaleX,
+            this.shearX,
+            this.shearY,
+            this.scaleY,
+            this.translateX.toFloat(),
+            this.translateY.toFloat())
+    YAxisDirection.DOWN -> AffineTransform(
+            this.scaleX,
+            this.shearY,
+            this.shearX,
+            this.scaleY,
+            this.translateX.toFloat(),
+            this.translateY.toFloat())
 }
+
+/**
+ * Null-safe alternative to [toAffineTransform] that returns the identity matrix if [this] is `null`.
+ */
+internal fun CoordTransform?.toAffineTransformOrIdentity(yAxisDirection: YAxisDirection) =
+        this?.toAffineTransform(yAxisDirection) ?: AffineTransform()
+
 
 internal fun ByteArray.zlibDecompress(): ByteArray {
     val inflaterStream = InflaterInputStream(ByteArrayInputStream(this))

@@ -67,7 +67,7 @@ class ParamsParser {
             println()
 
             // Create configuration
-            val mainConfigs = command.params.createConfigurations()
+            val mainConfigs = command.params.createConfigurations(command.yAxisDirection)
             val formatConfigs = command.createConfigurations(mainConfigs.map { it.input })
             return mainConfigs.zip(formatConfigs) { convert, render ->
                 Configuration(convert, render)

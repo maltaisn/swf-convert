@@ -26,6 +26,7 @@ import com.maltaisn.swfconvert.convert.toAffineTransformOrIdentity
 import com.maltaisn.swfconvert.convert.toColor
 import com.maltaisn.swfconvert.core.FrameObject
 import com.maltaisn.swfconvert.core.GroupObject
+import com.maltaisn.swfconvert.core.YAxisDirection
 import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.core.shape.Path
 import com.maltaisn.swfconvert.core.shape.PathElement
@@ -54,6 +55,13 @@ internal class TextConverter @Inject constructor(
     private var color: Color? = null
     private var offsetX = 0f
     private var offsetY = 0f
+
+    private val yAxisMultiplier = when (config.yAxisDirection) {
+        // The Y scale is negated because glyphs in font files are upright,
+        // and they must be flipped back because frame is already flipped.
+        YAxisDirection.UP -> -1
+        YAxisDirection.DOWN -> 1
+    }
 
 
     fun parseText(textTag: StaticTextTag,
@@ -131,11 +139,9 @@ internal class TextConverter @Inject constructor(
 
     /** Creates the text transform used to draw the text. */
     private fun getTextTransform(scale: FontScale): AffineTransform {
-        val tagTr = textTag.transform.toAffineTransformOrIdentity()
+        val tagTr = textTag.transform.toAffineTransformOrIdentity(config.yAxisDirection)
         val usx = scale.unscaleX.toDouble()
-        // The Y scale is negated because glyphs in font files are upright, and they must be flipped
-        // since frame is already flipped, the same way images are flipped.
-        val usy = -scale.unscaleY.toDouble()
+        val usy = scale.unscaleY.toDouble() * yAxisMultiplier
         // Scale the transform except for translation components.
         // (this is a pre-scale transformation but AffineTransform doesn't have it)
         return AffineTransform(
@@ -269,7 +275,7 @@ internal class TextConverter @Inject constructor(
             offsetX = span.offsetX.toFloat() / scale.unscaleX
         }
         if (span.offsetY != null) {
-            offsetY = span.offsetY.toFloat() / -scale.unscaleY
+            offsetY = span.offsetY.toFloat() / scale.unscaleY * yAxisMultiplier
         }
     }
 

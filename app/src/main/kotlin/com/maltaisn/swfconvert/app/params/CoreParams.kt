@@ -20,6 +20,7 @@ import com.beust.jcommander.DynamicParameter
 import com.beust.jcommander.Parameter
 import com.maltaisn.swfconvert.app.*
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
+import com.maltaisn.swfconvert.core.YAxisDirection
 import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.maltaisn.swfconvert.core.text.FontScale
@@ -204,7 +205,7 @@ class CoreParams(private val singleFileOutput: Boolean,
             File(tempDir ?: input.first().parent)
 
 
-    fun createConfigurations(): List<ConvertConfiguration> {
+    fun createConfigurations(yAxisDirection: YAxisDirection): List<ConvertConfiguration> {
         configError(downsampleMinSize >= 3) { "Minimum downsampling size must be at least 3 px." }
         configError(maxDpi in 10f..2000f) { "Maximum image density must be between 10 and 2000 DPI." }
 
@@ -235,6 +236,7 @@ class CoreParams(private val singleFileOutput: Boolean,
             ConvertConfiguration(
                     input,
                     tempDir,
+                    yAxisDirection,
                     ocrDetectGlyphs,
                     groupFonts,
                     removeDuplicateImages,
