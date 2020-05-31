@@ -16,6 +16,7 @@
 
 package com.maltaisn.swfconvert.render.core.di
 
+import com.maltaisn.swfconvert.core.ProgressCallback
 import com.maltaisn.swfconvert.render.core.RenderConfiguration
 import dagger.BindsInstance
 import dagger.Component
@@ -25,9 +26,11 @@ import dagger.Component
 interface RenderCoreComponent {
 
     val configuration: RenderConfiguration
+    val progressCallback: ProgressCallback
 
     @Component.Factory
     interface Factory {
-        fun create(@BindsInstance config: RenderConfiguration): RenderCoreComponent
+        fun create(@BindsInstance config: RenderConfiguration,
+                   @BindsInstance progressCallback: ProgressCallback): RenderCoreComponent
     }
 }

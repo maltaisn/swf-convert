@@ -24,6 +24,9 @@ import com.flagstone.transform.font.DefineFont4
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
 import com.maltaisn.swfconvert.convert.conversionError
 import com.maltaisn.swfconvert.convert.wrapper.WDefineFont
+import com.maltaisn.swfconvert.core.ProgressCallback
+import com.maltaisn.swfconvert.core.showProgress
+import com.maltaisn.swfconvert.core.showStep
 import com.maltaisn.swfconvert.core.text.*
 import dagger.Lazy
 import java.io.File
@@ -34,6 +37,7 @@ import javax.inject.Inject
 
 internal class FontConverter @Inject constructor(
         private val config: ConvertConfiguration,
+        private val progressCb: ProgressCallback,
         private val glyphPathParser: GlyphPathParser,
         private val glyphOcr: Lazy<GlyphOcr>,
         private val fontBuilder: FontBuilder
@@ -55,12 +59,13 @@ internal class FontConverter @Inject constructor(
         val allFonts = createAllFonts(swfs)
 
         // Merge fonts with the same name if they are compatible.
-        print("Creating fonts: merging fonts\r")
-        val groups = mergeFonts(allFonts)
+        val groups = progressCb.showStep("merging fonts", false) {
+            mergeFonts(allFonts)
+        }
         if (config.groupFonts) {
             val ratio = (allFonts.size - groups.size) / allFonts.size.toFloat()
-            println("Creating fonts: ${groups.size} font groups created from ${allFonts.size} " +
-                    "fonts (-${PERCENT_FMT.format(ratio)})")
+            progressCb.showStep("${groups.size} font groups created from " +
+                    "${allFonts.size} fonts (-${PERCENT_FMT.format(ratio)})", false) {}
         }
 
         // Assign unique name to each group
@@ -73,14 +78,14 @@ internal class FontConverter @Inject constructor(
      * Create the TTF font files for a list of font groups.
      */
     fun createFontFiles(fonts: List<BaseFont>) {
-        print("Creating fonts: building TTF fonts\r")
-        val tempDir = File(config.fontsDir, "temp")
-        tempDir.mkdirs()
-        for (font in fonts) {
-            fontBuilder.buildFont(font, config.fontsDir, tempDir)
+        progressCb.showStep("building TTF fonts", false) {
+            val tempDir = File(config.fontsDir, "temp")
+            tempDir.mkdirs()
+            for (font in fonts) {
+                fontBuilder.buildFont(font, config.fontsDir, tempDir)
+            }
+            tempDir.deleteRecursively()
         }
-        tempDir.deleteRecursively()
-        println()
     }
 
     /**
@@ -105,11 +110,15 @@ internal class FontConverter @Inject constructor(
         unknownCharsMap.clear()
         nextUnknownCharCode = FIRST_CODE_FOR_UNKNOWN
 
-        for ((i, swf) in swfs.withIndex()) {
-            fonts += createSwfFonts(swf, i)
-            print("Creating fonts: parsing all fonts, file ${i + 1} / ${swfs.size}\r")
+        progressCb.showStep("parsing all fonts", false) {
+            progressCb.showProgress(swfs.size) {
+                for ((i, swf) in swfs.withIndex()) {
+                    fonts += createSwfFonts(swf, i)
+                    progressCb.incrementProgress()
+                }
+            }
         }
-        println()
+
         return fonts
     }
 

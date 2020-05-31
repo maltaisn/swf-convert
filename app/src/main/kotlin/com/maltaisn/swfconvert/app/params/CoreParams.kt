@@ -276,8 +276,8 @@ class CoreParams(private val singleFileOutput: Boolean,
             """.trimMargin())
         if (downsampleImages) {
             println("""
-                |Downsample filter: ${downsampleFilterName.toLowerCase()}
-                |Downsample min size: ${NUMBER_FMT.format(downsampleMinSize)} px
+                |  Downsample filter: ${downsampleFilterName.toLowerCase()}
+                |  Downsample min size: ${NUMBER_FMT.format(downsampleMinSize)} px
             """.trimMargin())
         }
         println("""

@@ -47,9 +47,9 @@ internal class IrFrameRenderer @Inject constructor(
         val frameJson = json.stringify(IrObject.serializer(), serializableFrame)
 
         // Save output to file.
-        // TODO handle error
         withContext(Dispatchers.IO) {
-            config.output[index].writeText(frameJson)
+            val output = config.output[index]
+            output.writeText(frameJson)
         }
     }
 

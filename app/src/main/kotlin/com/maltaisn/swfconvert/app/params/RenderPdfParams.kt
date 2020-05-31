@@ -74,7 +74,7 @@ class RenderPdfParams : RenderParams<PdfConfiguration> {
     override val yAxisDirection: YAxisDirection
         get() = YAxisDirection.UP
 
-    private val pdfMetadata: List<PdfMetadata> by lazy {
+    private val pdfMetadata: List<PdfMetadata?> by lazy {
         if (metadata.isEmpty()) {
             return@lazy emptyList()
         }
@@ -83,18 +83,22 @@ class RenderPdfParams : RenderParams<PdfConfiguration> {
 
         val json = Json(JsonConfiguration.Stable)
         return@lazy metadata.map { filename ->
-            val file = File(filename)
-            configError(file.exists()) { "PDF metadata file '$filename' doesn't exist." }
-            configError(file.extension.toLowerCase() == "json") {
-                "PDF metadata file '$filename' is not a JSON file."
-            }
+            if (filename == "_") {
+                null
+            } else {
+                val file = File(filename)
+                configError(file.exists()) { "PDF metadata file '$filename' doesn't exist." }
+                configError(file.extension.toLowerCase() == "json") {
+                    "PDF metadata file '$filename' is not a JSON file."
+                }
 
-            try {
-                json.parse(PdfMetadata.serializer(), file.readText())
-            } catch (e: SerializationException) {
-                configError("Error while parsing PDF metadata file at '$filename'", e)
-            } catch (e: IOException) {
-                configError("Could not read PDF metadata file at '$filename'", e)
+                try {
+                    json.parse(PdfMetadata.serializer(), file.readText())
+                } catch (e: SerializationException) {
+                    configError("Error while parsing PDF metadata file at '$filename'", e)
+                } catch (e: IOException) {
+                    configError("Could not read PDF metadata file at '$filename'", e)
+                }
             }
         }
     }
@@ -140,12 +144,15 @@ class RenderPdfParams : RenderParams<PdfConfiguration> {
         println("Compress PDF: $compress")
         println("Add metadata: ${metadata.isNotEmpty()}")
         if (metadata.isNotEmpty()) {
-            println("Optimize page labels: $optimizePageLabels")
+            println("  Optimize page labels: $optimizePageLabels")
         }
+        println("Rasterization enabled: $rasterizationEnabled")
         if (rasterizationEnabled) {
             println("""
-                |Rasterization threshold : ${NUMBER_FMT.format(rasterizationThreshold)}
-                |Rasterization DPI : ${NUMBER_FMT.format(rasterizationDpi)}
+                |  Rasterization threshold : ${NUMBER_FMT.format(rasterizationThreshold)}
+                |  Rasterization DPI : ${NUMBER_FMT.format(rasterizationDpi)}
+                |  Rasterization JPEG quality: $rasterizationJpegQuality %
+                |  Rasterization format : ${rasterizationFormat.name.toLowerCase()}
             """.trimMargin())
         }
     }

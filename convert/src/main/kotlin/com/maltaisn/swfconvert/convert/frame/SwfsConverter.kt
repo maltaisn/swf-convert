@@ -18,12 +18,9 @@ package com.maltaisn.swfconvert.convert.frame
 
 import com.flagstone.transform.Movie
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
-import com.maltaisn.swfconvert.core.FrameGroup
-import com.maltaisn.swfconvert.core.mapInParallel
+import com.maltaisn.swfconvert.core.*
 import com.maltaisn.swfconvert.core.text.Font
 import com.maltaisn.swfconvert.core.text.FontId
-import com.maltaisn.swfconvert.core.use
-import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Provider
 
@@ -33,23 +30,24 @@ import javax.inject.Provider
  */
 internal class SwfsConverter @Inject constructor(
         private val config: ConvertConfiguration,
+        private val progressCb: ProgressCallback,
         private val swfConverterProvider: Provider<SwfConverter>
 ) {
 
     suspend fun createFrameGroups(swfs: List<Movie>,
                                   fontsMap: Map<FontId, Font>): List<FrameGroup> {
-        val progress = AtomicInteger()
-        print("Converted SWF 0 / ${swfs.size}\r")
-        val frameGroups = swfs.withIndex().mapInParallel(
-                config.parallelSwfConversion) { (i, swf) ->
-            val frameGroup = swfConverterProvider.get().use {
-                it.createFrameGroup(swf, fontsMap, i)
+        return progressCb.showStep("Converting SWFs", true) {
+            progressCb.showProgress(swfs.size) {
+                swfs.withIndex().mapInParallel(
+                        config.parallelSwfConversion) { (i, swf) ->
+                    val frameGroup = swfConverterProvider.get().use {
+                        it.createFrameGroup(swf, fontsMap, i)
+                    }
+                    progressCb.incrementProgress()
+                    frameGroup
+                }
             }
-            print("Converted SWF ${progress.incrementAndGet()} / ${swfs.size}\r")
-            frameGroup
         }
-        println()
-        return frameGroups
     }
 
 }

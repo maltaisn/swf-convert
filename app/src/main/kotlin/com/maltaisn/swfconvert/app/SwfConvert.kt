@@ -36,12 +36,14 @@ class SwfConvert(private val config: Configuration) {
     @Inject lateinit var framesRenderers: Map<Class<out RenderConfiguration>,
             @JvmSuppressWildcards Provider<FramesRenderer>>
 
+    private val progressCb = ProgressPrinter()
+
     init {
         // Create components
         val convertComponent = DaggerConvertComponent.factory()
-                .create(config.convert)
+                .create(config.convert, progressCb)
         val renderCoreComponent = DaggerRenderCoreComponent.factory()
-                .create(config.render)
+                .create(config.render, progressCb)
         DaggerRenderIrComponent.builder()
                 .renderCoreComponent(renderCoreComponent)
                 .build()

@@ -17,6 +17,7 @@
 package com.maltaisn.swfconvert.convert.di
 
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
+import com.maltaisn.swfconvert.core.ProgressCallback
 import dagger.BindsInstance
 import dagger.Component
 
@@ -28,6 +29,7 @@ interface ConvertComponent {
 
     @Component.Factory
     interface Factory {
-        fun create(@BindsInstance config: ConvertConfiguration): ConvertComponent
+        fun create(@BindsInstance config: ConvertConfiguration,
+                   @BindsInstance progressCallback: ProgressCallback): ConvertComponent
     }
 }

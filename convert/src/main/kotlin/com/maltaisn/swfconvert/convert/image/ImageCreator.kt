@@ -17,9 +17,10 @@
 package com.maltaisn.swfconvert.convert.image
 
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
-import com.maltaisn.swfconvert.core.FrameGroup
+import com.maltaisn.swfconvert.core.*
 import com.maltaisn.swfconvert.core.image.ImageData
-import com.maltaisn.swfconvert.core.mapInParallel
+import com.maltaisn.swfconvert.core.shape.PathFillStyle
+import com.maltaisn.swfconvert.core.shape.ShapeObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -29,7 +30,8 @@ import javax.inject.Inject
 
 
 internal class ImageCreator @Inject constructor(
-        private val config: ConvertConfiguration
+        private val config: ConvertConfiguration,
+        private val progressCb: ProgressCallback
 ) {
 
     /**
@@ -38,39 +40,46 @@ internal class ImageCreator @Inject constructor(
      * data is removed to optimize output size.
      */
     suspend fun createAndOptimizeImages(frameGroups: List<FrameGroup>) {
+        progressCb.beginStep("Creating images", true)
+
         // Find all images in all frames
-        val allImageFills = frameGroups.flatMap { it.findAllImagesTo(mutableListOf()) }
+        val allImageFills = mutableListOf<PathFillStyle.Image>()
+        for (frameGroup in frameGroups) {
+            frameGroup.findAllImagesTo(allImageFills)
+        }
 
         val allImages = if (config.removeDuplicateImages) {
             // Remove duplicate images in all frames.
             val total = allImageFills.size
             val allImageData = mutableMapOf<ImageData, ImageData>()
-            print("Creating images: checking for duplicates 0 / $total\r")
-            for ((i, imageFill) in allImageFills.withIndex()) {
-                // Check if image already exists.
-                val data = imageFill.imageData
+            progressCb.showStep("checking for duplicates", false) {
+                progressCb.showProgress(allImageFills.size) {
+                    for (imageFill in allImageFills) {
+                        // Check if image already exists.
+                        val data = imageFill.imageData
 
-                val existingData = allImageData[data]
-                if (existingData == null) {
-                    // Image doesn't exist, add it.
-                    allImageData[data] = data
-                } else {
-                    // Image already exists, use existing identical data in fill object.
-                    imageFill.imageData = existingData
+                        val existingData = allImageData[data]
+                        if (existingData == null) {
+                            // Image doesn't exist, add it.
+                            allImageData[data] = data
+                        } else {
+                            // Image already exists, use existing identical data in fill object.
+                            imageFill.imageData = existingData
+                        }
+
+                        progressCb.incrementProgress()
+                    }
                 }
-
-                print("Creating images: checking for duplicates ${i + 1} / $total\r")
             }
-            println()
 
             // Show number of duplicate images
             val removed = total - allImageData.size
-            print("Creating images: removed $removed duplicates from $total images")
+            var step = "removed $removed duplicates from $total images"
             val ratio = removed.toFloat() / total
             if (ratio.isFinite()) {
-                print(" (-${PERCENT_FMT.format(ratio)})")
+                step += " (-${PERCENT_FMT.format(ratio)})"
             }
-            println()
+            progressCb.showStep(step, false) {}
 
             allImageData.keys
 
@@ -80,17 +89,20 @@ internal class ImageCreator @Inject constructor(
         }
 
         // Create image files
-        print("Creating images: created file 0 / ${allImages.size}\r")
-        val progress = AtomicInteger()
-        val idCounter = AtomicInteger()
-        allImages.mapInParallel(config.parallelImageCreation) { imageData ->
-            val id = idCounter.getAndIncrement()
-            withContext(Dispatchers.IO) {
-                createImageFiles(imageData, id.toString())
+        progressCb.showStep("writing files", false) {
+            progressCb.showProgress(allImages.size) {
+                val idCounter = AtomicInteger()
+                allImages.mapInParallel(config.parallelImageCreation) { imageData ->
+                    val id = idCounter.getAndIncrement()
+                    withContext(Dispatchers.IO) {
+                        createImageFiles(imageData, id.toString())
+                    }
+                    progressCb.incrementProgress()
+                }
             }
-            print("Creating images: created file ${progress.incrementAndGet()} / ${allImages.size}\r")
         }
-        println()
+
+        progressCb.endStep()
     }
 
     private fun createImageFiles(data: ImageData, name: String) {
@@ -106,6 +118,22 @@ internal class ImageCreator @Inject constructor(
             alphaDataFile.writeBytes(data.alphaData)
             data.alphaDataFile = alphaDataFile
         }
+    }
+
+    /** Find all images recursively in children of this group, adding them to the [destination] collection. */
+    private fun <C : MutableCollection<PathFillStyle.Image>> GroupObject.findAllImagesTo(destination: C): C {
+        for (obj in this.objects) {
+            if (obj is ShapeObject) {
+                for (path in obj.paths) {
+                    if (path.fillStyle is PathFillStyle.Image) {
+                        destination += path.fillStyle as PathFillStyle.Image
+                    }
+                }
+            } else if (obj is GroupObject) {
+                obj.findAllImagesTo(destination)
+            }
+        }
+        return destination
     }
 
     companion object {

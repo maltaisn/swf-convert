@@ -61,7 +61,10 @@ class RenderIrParams : RenderParams<IrConfiguration> {
     }
 
     override fun print() {
-        println("Pretty print JSON: $prettyPrint")
+        println("""
+            |Y axis direction: ${yAxisDirection.name.toLowerCase()}
+            |Pretty print JSON: $prettyPrint
+        """.trimMargin())
     }
 
 }

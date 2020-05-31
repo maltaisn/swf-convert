@@ -20,6 +20,7 @@ import com.maltaisn.swfconvert.convert.font.FontConverter
 import com.maltaisn.swfconvert.convert.frame.SwfsConverter
 import com.maltaisn.swfconvert.convert.image.ImageCreator
 import com.maltaisn.swfconvert.core.FrameGroup
+import com.maltaisn.swfconvert.core.ProgressCallback
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -30,6 +31,7 @@ import javax.inject.Inject
  */
 class SwfCollectionConverter @Inject internal constructor(
         private val config: ConvertConfiguration,
+        private val progressCb: ProgressCallback,
         private val swfsDecoder: SwfsDecoder,
         private val swfsConverter: SwfsConverter,
         private val fontConverter: FontConverter,
@@ -46,6 +48,7 @@ class SwfCollectionConverter @Inject internal constructor(
         val swfs = swfsDecoder.decodeFiles(config.input)
 
         // Create font files
+        progressCb.beginStep("Creating fonts", true)
         val fontGroups = fontConverter.createFontGroups(swfs)
 
         // Create font files and ungroup them.
@@ -53,6 +56,7 @@ class SwfCollectionConverter @Inject internal constructor(
             fontConverter.createFontFiles(fontGroups)
         }
         val fontsMap = fontConverter.ungroupFonts(fontGroups)
+        progressCb.endStep()
 
         // Convert SWF to intermediate representation.
         val frameGroups = swfsConverter.createFrameGroups(swfs, fontsMap)

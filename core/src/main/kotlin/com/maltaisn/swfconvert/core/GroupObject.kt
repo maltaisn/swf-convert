@@ -17,8 +17,6 @@
 package com.maltaisn.swfconvert.core
 
 import com.maltaisn.swfconvert.core.shape.Path
-import com.maltaisn.swfconvert.core.shape.PathFillStyle
-import com.maltaisn.swfconvert.core.shape.ShapeObject
 import java.awt.geom.AffineTransform
 import java.awt.geom.Rectangle2D
 
@@ -31,25 +29,6 @@ sealed class GroupObject(override val id: Int) : FrameObject(id) {
     val objects = mutableListOf<FrameObject>()
 
     abstract fun copyWithoutObjects(): GroupObject
-
-    /**
-     * Find all images recursively in children of this group,
-     * adding them to the [destination] collection.
-     */
-    fun <C : MutableCollection<PathFillStyle.Image>> findAllImagesTo(destination: C): C {
-        for (obj in this.objects) {
-            if (obj is ShapeObject) {
-                for (path in obj.paths) {
-                    if (path.fillStyle is PathFillStyle.Image) {
-                        destination += path.fillStyle
-                    }
-                }
-            } else if (obj is GroupObject) {
-                obj.findAllImagesTo(destination)
-            }
-        }
-        return destination
-    }
 
     override fun toString(): String {
         val sb = StringBuilder()

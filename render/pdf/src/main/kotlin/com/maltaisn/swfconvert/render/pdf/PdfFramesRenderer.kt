@@ -16,11 +16,10 @@
 
 package com.maltaisn.swfconvert.render.pdf
 
-import com.maltaisn.swfconvert.core.FrameGroup
-import com.maltaisn.swfconvert.core.GroupObject
+import com.maltaisn.swfconvert.core.*
 import com.maltaisn.swfconvert.core.image.ImageData
-import com.maltaisn.swfconvert.core.mapInParallel
 import com.maltaisn.swfconvert.core.shape.PathFillStyle
+import com.maltaisn.swfconvert.core.shape.ShapeObject
 import com.maltaisn.swfconvert.core.text.TextObject
 import com.maltaisn.swfconvert.render.core.FramesRenderer
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfMetadata
@@ -35,8 +34,8 @@ import org.apache.pdfbox.pdmodel.font.PDFont
 import org.apache.pdfbox.pdmodel.font.PDType0Font
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Provider
 
@@ -46,6 +45,7 @@ import javax.inject.Provider
  */
 class PdfFramesRenderer @Inject internal constructor(
         private val config: PdfConfiguration,
+        private val progressCb: ProgressCallback,
         private val pdfFrameRendererProvider: Provider<PdfFrameRenderer>,
         private val framesRasterizer: FramesRasterizer,
         private val pdfOutlineCreator: PdfOutlineCreator,
@@ -81,44 +81,50 @@ class PdfFramesRenderer @Inject internal constructor(
         }
 
         // Add metadata
-        println("Exporting PDF")
         val metadata = config.metadata
         if (metadata != null) {
             addMetadataToPdf(pdfDoc, metadata)
         }
 
         // Export PDF
-        // TODO handle errors
+        progressCb.showStep("Exporting PDF", true) {}
         withContext(Dispatchers.IO) {
-            pdfDoc.save(config.output.first())
-            pdfDoc.close()
-            for (pdfPage in pdfPages) {
-                pdfPage.close()
+            val output = config.output.first()
+            trySave(output) {
+                pdfDoc.save(output)
+                pdfDoc.close()
+                for (pdfPage in pdfPages) {
+                    pdfPage.close()
+                }
             }
         }
-
-        println()
     }
 
     private fun createPdfImages(pdfDoc: PDDocument,
                                 frameGroups: List<FrameGroup>): MutableMap<ImageData, PDImageXObject> {
+        progressCb.beginStep("Creating PDF images", true)
+
         // Find all images in all frames.
-        print("Creating PDF images: finding all images")
-        val allImages = mutableSetOf<PathFillStyle.Image>()
-        for (frameGroup in frameGroups) {
-            frameGroup.findAllImagesTo(allImages)
+        val allImageData = mutableSetOf<ImageData>()
+        progressCb.showStep("finding all images", false) {
+            for (frameGroup in frameGroups) {
+                frameGroup.findAllImageDataTo(allImageData)
+            }
         }
 
         // Create PDF image for each image.
-        print("Creating PDF images: created image 0 / ${allImages.size}\r")
         val pdfImagesMap = ConcurrentHashMap<ImageData, PDImageXObject>()
-        for ((i, image) in allImages.withIndex()) {
-            val data = image.imageData
-            pdfImagesMap[data] = createPdfImage(pdfDoc, data)
-            print("Creating PDF images: created image ${i + 1} / ${allImages.size}\r")
+        progressCb.showStep("creating images", false) {
+            progressCb.showProgress(allImageData.size) {
+                for (imageData in allImageData) {
+                    val data = imageData
+                    pdfImagesMap[data] = createPdfImage(pdfDoc, data)
+                    progressCb.incrementProgress()
+                }
+            }
         }
 
-        println()
+        progressCb.endStep()
         return pdfImagesMap
     }
 
@@ -135,24 +141,47 @@ class PdfFramesRenderer @Inject internal constructor(
     }
 
     private fun createPdfFonts(pdfDoc: PDDocument, frameGroups: List<FrameGroup>): Map<File, PDFont> {
-        print("Creating PDF fonts: finding all fonts")
+        progressCb.beginStep("Creating PDF fonts", true)
+
+        // Find all fonts in all frames.
         val allFonts = mutableSetOf<File>()
-        for (frameGroup in frameGroups) {
-            frameGroup.findAllFontFilesTo(allFonts)
+        progressCb.showStep("finding all fonts", false) {
+            for (frameGroup in frameGroups) {
+                frameGroup.findAllFontFilesTo(allFonts)
+            }
         }
 
         // Create PDF image for each image.
-        print("Creating PDF fonts: created font 0 / ${allFonts.size}\r")
         val pdfFontsMap = mutableMapOf<File, PDFont>()
-        for ((i, file) in allFonts.withIndex()) {
-            // Load file as PDF font. Don't subset since it's already been done. Also, subsetting
-            // produces garbage text: https://stackoverflow.com/q/47699665/5288316
-            pdfFontsMap[file] = PDType0Font.load(pdfDoc, file.inputStream(), false)
-            print("Creating PDF fonts: created font ${i + 1} / ${allFonts.size}\r")
+        progressCb.showStep("creating fonts", false) {
+            progressCb.showProgress(allFonts.size) {
+                for (file in allFonts) {
+                    // Load file as PDF font. Don't subset since it's already been done. Also, subsetting
+                    // produces garbage text: https://stackoverflow.com/q/47699665/5288316
+                    pdfFontsMap[file] = PDType0Font.load(pdfDoc, file.inputStream(), false)
+                    progressCb.incrementProgress()
+                }
+            }
         }
 
-        println()
+        progressCb.endStep()
         return pdfFontsMap
+    }
+
+    /** Find all image data recursively in children of this group, adding them to the [destination] collection. */
+    private fun <C : MutableCollection<ImageData>> GroupObject.findAllImageDataTo(destination: C): C {
+        for (obj in this.objects) {
+            if (obj is ShapeObject) {
+                for (path in obj.paths) {
+                    if (path.fillStyle is PathFillStyle.Image) {
+                        destination += (path.fillStyle as PathFillStyle.Image).imageData
+                    }
+                }
+            } else if (obj is GroupObject) {
+                obj.findAllImageDataTo(destination)
+            }
+        }
+        return destination
     }
 
     /** Find all fonts recursively in children of this group, adding them to the [destination] collection. */
@@ -170,18 +199,18 @@ class PdfFramesRenderer @Inject internal constructor(
     private suspend fun renderFramesToPdf(frameGroups: List<FrameGroup>,
                                           pdfImages: Map<ImageData, PDImageXObject>,
                                           pdfFonts: Map<File, PDFont>): List<PDDocument> {
-        val progress = AtomicInteger()
-        print("Rendered frame 0 / ${frameGroups.size}\r")
-        val pdfPages = frameGroups.mapInParallel(config.parallelFrameRendering) { frameGroup ->
-            val pdfPage = PDDocument(MemoryUsageSetting.setupTempFileOnly())
-            val renderer = pdfFrameRendererProvider.get()
-            renderer.renderFrame(pdfPage, frameGroup, pdfImages, pdfFonts)
+        return progressCb.showStep("Rendering PDF frames", true) {
+            progressCb.showProgress(frameGroups.size) {
+                frameGroups.mapInParallel(config.parallelFrameRendering) { frameGroup ->
+                    val pdfPage = PDDocument(MemoryUsageSetting.setupTempFileOnly())
+                    val renderer = pdfFrameRendererProvider.get()
+                    renderer.renderFrame(pdfPage, frameGroup, pdfImages, pdfFonts)
 
-            print("Rendered frame ${progress.incrementAndGet()} / ${frameGroups.size}\r")
-            pdfPage
+                    progressCb.incrementProgress()
+                    pdfPage
+                }
+            }
         }
-        println()
-        return pdfPages
     }
 
     private fun addMetadataToPdf(pdfDoc: PDDocument, metadata: PdfMetadata) {
@@ -195,6 +224,28 @@ class PdfFramesRenderer @Inject internal constructor(
         val pdfInfo = pdfDoc.documentInformation
         for ((key, value) in metadata.metadata) {
             pdfInfo.setCustomMetadataValue(key, value)
+        }
+    }
+
+    /**
+     * Try to save a [file] by executing [save] block.
+     * If [IOException] is thrown, ask user to retry in console.
+     */
+    private inline fun trySave(file: File, save: () -> Unit) {
+        save@ while (true) {
+            try {
+                save()
+                return
+            } catch (e: IOException) {
+                retry@ while (true) {
+                    print("Could not save file '${file.path}'. Retry (Y/N)? ")
+                    when (readLine()?.toLowerCase()) {
+                        "y" -> continue@save
+                        "n" -> return
+                        else -> continue@retry
+                    }
+                }
+            }
         }
     }
 

@@ -16,13 +16,10 @@
 
 package com.maltaisn.swfconvert.render.pdf
 
-import com.maltaisn.swfconvert.core.FrameGroup
-import com.maltaisn.swfconvert.core.FrameObject
-import com.maltaisn.swfconvert.core.GroupObject
+import com.maltaisn.swfconvert.core.*
 import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.core.image.ImageData
 import com.maltaisn.swfconvert.core.image.ImageDataCreator
-import com.maltaisn.swfconvert.core.mapInParallel
 import com.maltaisn.swfconvert.core.shape.Path
 import com.maltaisn.swfconvert.core.shape.PathElement.*
 import com.maltaisn.swfconvert.core.shape.PathFillStyle
@@ -36,8 +33,9 @@ import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject
 import org.apache.pdfbox.rendering.ImageType
 import org.apache.pdfbox.rendering.PDFRenderer
 import java.awt.geom.AffineTransform
+import java.awt.image.BufferedImage
+import java.io.EOFException
 import java.io.File
-import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Provider
 
@@ -47,6 +45,7 @@ import javax.inject.Provider
  */
 internal class FramesRasterizer @Inject constructor(
         private val config: PdfConfiguration,
+        private val progressCb: ProgressCallback,
         private val pdfFrameRendererProvider: Provider<PdfFrameRenderer>,
         private val imageDataCreatorProvider: Provider<ImageDataCreator>
 ) {
@@ -59,38 +58,33 @@ internal class FramesRasterizer @Inject constructor(
             return frameGroups
         }
 
+        progressCb.beginStep("Rasterizing frames", true)
+
         // Find which frames to optimize
-        print("Rasterizing frames: evaluating which frames need rasterization\r")
-
         val framesToRasterize = mutableListOf<Int>()
-        for ((i, frameGroup) in frameGroups.withIndex()) {
-            val complexity = evaluateShapeComplexity(frameGroup)
-            if (complexity >= config.rasterizationThreshold) {
-                // Frame is too complex, rasterize.
-                framesToRasterize += i
+        progressCb.showStep("evaluating which frames need rasterization", false) {
+            for ((i, frameGroup) in frameGroups.withIndex()) {
+                val complexity = evaluateShapeComplexity(frameGroup)
+                if (complexity >= config.rasterizationThreshold) {
+                    // Frame is too complex, rasterize.
+                    framesToRasterize += i
+                }
             }
-        }
-
-        if (framesToRasterize.isEmpty()) {
-            println("Rasterizing frames: found no frames to rasterize")
-            return frameGroups
         }
 
         val newFrameGroups = frameGroups.toTypedArray()
 
-        val progress = AtomicInteger()
-        print("Rasterizing frames: rasterized frame 0 / ${framesToRasterize.size}\r")
-        framesToRasterize.mapInParallel(config.parallelRasterization) { i ->
-            val frameGroup = frameGroups[i]
-            val frameImagesDir = File(imagesDir, i.toString())
-
-            newFrameGroups[i] = rasterizeFrame(pdfDoc, frameGroup,
-                    frameImagesDir, pdfImages, pdfFonts)
-
-            print("Rasterizing frames: rasterized frame ${progress.incrementAndGet()} / ${framesToRasterize.size}\r")
+        progressCb.showProgress(framesToRasterize.size) {
+            framesToRasterize.mapInParallel(config.parallelRasterization) { i ->
+                val frameGroup = frameGroups[i]
+                val frameImagesDir = File(imagesDir, i.toString())
+                newFrameGroups[i] = rasterizeFrame(pdfDoc, frameGroup,
+                        frameImagesDir, pdfImages, pdfFonts)
+                progressCb.incrementProgress()
+            }
         }
-        println()
 
+        progressCb.endStep()
         return newFrameGroups.toList()
     }
 
@@ -151,8 +145,20 @@ internal class FramesRasterizer @Inject constructor(
         // Render the image
         val imageData = withContext(Dispatchers.IO) {
             val pdfRenderer = PDFRenderer(frameDoc)
-            val pdfImage = pdfRenderer.renderImageWithDPI(
-                    0, config.rasterizationDpi, ImageType.RGB)
+            lateinit var pdfImage: BufferedImage
+            for (i in 0 until 3) {
+                try {
+                    pdfImage = pdfRenderer.renderImageWithDPI(
+                            0, config.rasterizationDpi, ImageType.RGB)
+                    break
+                } catch (e: EOFException) {
+                    // Retry another time, this happens for seemingly no reason.
+                    if (i == 2) {
+                        println("Failed to rasterize frame after 2 tries.")
+                        throw e
+                    }
+                }
+            }
             frameDoc.close()
 
             // Create image data

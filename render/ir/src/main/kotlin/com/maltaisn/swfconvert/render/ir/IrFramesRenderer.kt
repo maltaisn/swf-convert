@@ -16,10 +16,10 @@
 
 package com.maltaisn.swfconvert.render.ir
 
-import com.maltaisn.swfconvert.core.FrameGroup
-import com.maltaisn.swfconvert.core.mapInParallel
+import com.maltaisn.swfconvert.core.*
 import com.maltaisn.swfconvert.render.core.FramesRenderer
-import java.util.concurrent.atomic.AtomicInteger
+import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Provider
 
@@ -29,19 +29,56 @@ import javax.inject.Provider
  */
 class IrFramesRenderer @Inject internal constructor(
         private val config: IrConfiguration,
+        private val progressCb: ProgressCallback,
         private val irFrameRendererProvider: Provider<IrFrameRenderer>
 ) : FramesRenderer {
 
     override suspend fun renderFrames(frameGroups: List<FrameGroup>) {
-        val progress = AtomicInteger()
-        print("Rendered frame 0 / ${frameGroups.size}\r")
-        frameGroups.withIndex().mapInParallel(config.parallelFrameRendering) { (i, frameGroup) ->
-            val renderer = irFrameRendererProvider.get()
-            renderer.renderFrame(i, frameGroup)
+        var frames = frameGroups.withIndex().associate { (k, v) -> k to v }
 
-            print("Rendered frame ${progress.incrementAndGet()} / ${frameGroups.size}\r")
+        save@ while (true) {
+            frames = renderFrames(frames)
+
+            if (frames.isNotEmpty()) {
+                // Some files couldn't be saved. Ask to retry.
+                print("Could not save ${frames.size} files. Retry (Y/N)? ")
+                retry@ while (true) {
+                    when (readLine()?.toLowerCase()) {
+                        "y" -> continue@save
+                        "n" -> return
+                        else -> continue@retry
+                    }
+                }
+            } else {
+                return
+            }
         }
-        println()
+    }
+
+    /**
+     * Render [frameGroups], a map of frame by file index.
+     * Returns a similar map for frames that couldn't be saved.
+     */
+    private suspend fun renderFrames(frameGroups: Map<Int, FrameGroup>): Map<Int, FrameGroup> {
+        return progressCb.showStep("Writing JSON frames", true) {
+            progressCb.showProgress(frameGroups.size) {
+                val failed = ConcurrentHashMap<Int, FrameGroup>()
+
+                frameGroups.entries.mapInParallel(config.parallelFrameRendering) { (i, frameGroup) ->
+                    val renderer = irFrameRendererProvider.get()
+
+                    try {
+                        renderer.renderFrame(i, frameGroup)
+                    } catch (e: IOException) {
+                        failed[i] = frameGroup
+                    }
+
+                    progressCb.incrementProgress()
+                }
+
+                failed
+            }
+        }
     }
 
 }
