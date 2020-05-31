@@ -18,16 +18,11 @@ package com.maltaisn.swfconvert.convert.di
 
 import dagger.Module
 import dagger.Provides
-import net.sourceforge.tess4j.Tesseract
 import org.doubletype.ossa.Engine
 
 
 @Module
 object ConvertModule {
-
-    @Provides
-    @JvmStatic
-    fun providesTesseract() = Tesseract()
 
     @Provides
     @JvmStatic

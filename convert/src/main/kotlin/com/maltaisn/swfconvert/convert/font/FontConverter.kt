@@ -28,7 +28,6 @@ import com.maltaisn.swfconvert.core.ProgressCallback
 import com.maltaisn.swfconvert.core.showProgress
 import com.maltaisn.swfconvert.core.showStep
 import com.maltaisn.swfconvert.core.text.*
-import dagger.Lazy
 import java.io.File
 import java.text.NumberFormat
 import java.util.*
@@ -39,14 +38,11 @@ internal class FontConverter @Inject constructor(
         private val config: ConvertConfiguration,
         private val progressCb: ProgressCallback,
         private val glyphPathParser: GlyphPathParser,
-        private val glyphOcr: Lazy<GlyphOcr>,
         private val fontBuilder: FontBuilder
 ) {
 
     private val unknownCharsMap = mutableMapOf<GlyphData, Char>()
     private var nextUnknownCharCode = 0
-
-    private val ocrTempDir = File(config.fontsDir, "ocr")
 
     /**
      * Each SWF file has its own fonts, which are sometimes subsetted.
@@ -185,29 +181,17 @@ internal class FontConverter @Inject constructor(
                     if (assigned !in assignedCodes) {
                         char = assigned
                     } else {
-                        // The existingly used code for this data can be used for this font,
+                        // The existingly used code for this data cannot be used for this font,
                         // because it's already assigned. Use a new code.
                         char = nextUnknownCharCode.toChar()
                         nextUnknownCharCode++
                     }
 
                 } else {
-                    val ocrChar = if (config.ocrDetectGlyphs) {
-                        // Try to recognize char with OCR
-                        glyphOcr.get().recognizeGlyphData(data, ocrTempDir)
-                    } else {
-                        null
-                    }
-                    if (ocrChar == null || ocrChar in assignedCodes) {
-                        // Char couldn't be recognized or recognized char is already assigned.
-                        // Use a new code.
-                        char = nextUnknownCharCode.toChar()
-                        nextUnknownCharCode++
-                    } else {
-                        char = ocrChar
-                    }
-                    // Remember the char assigned for this data so the work doesn't have to be
-                    // done for another identical char. This also increases mergeability.
+                    // Char couldn't be recognized or recognized char is already assigned. Use a new
+                    // code. Remember the code assigned for this data to increase mergeability.
+                    char = nextUnknownCharCode.toChar()
+                    nextUnknownCharCode++
                     unknownCharsMap[data] = char
                 }
             }

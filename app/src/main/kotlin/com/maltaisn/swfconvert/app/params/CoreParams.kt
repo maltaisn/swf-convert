@@ -49,9 +49,6 @@ class CoreParams(private val singleFileOutput: Boolean,
 
     // Text & font configuration
 
-    @Parameter(names = ["--enable-glyph-ocr"], description = "Whether to enable OCR to detect glyphs with unknown code.", order = 30)
-    private var ocrDetectGlyphs: Boolean = false
-
     /** Whether to group fonts that can be merged into a single one. */
     @Parameter(names = ["--group-fonts"], arity = 1, description = "Whether to group fonts that can be merged into a single one.", order = 40)
     private var groupFonts: Boolean = true
@@ -215,7 +212,6 @@ class CoreParams(private val singleFileOutput: Boolean,
         val parallelImageCreation = params[OPT_PARALLEL_IMAGE_CREATION]?.toBooleanOrNull() ?: true
         val keepFonts = params[OPT_KEEP_FONTS]?.toBooleanOrNull() ?: false
         val keepImages = params[OPT_KEEP_IMAGES]?.toBooleanOrNull() ?: false
-        val outputOcrGlyphs = params[OPT_OUTPUT_OCR_GLYPHS]?.toBooleanOrNull() ?: false
         val drawShapeBounds = params[OPT_DRAW_SHAPE_BOUNDS]?.toBooleanOrNull() ?: false
         val drawTextBounds = params[OPT_DRAW_TEXT_BOUNDS]?.toBooleanOrNull() ?: false
         val drawClipBounds = params[OPT_DRAW_CLIP_BOUNDS]?.toBooleanOrNull() ?: false
@@ -237,7 +233,6 @@ class CoreParams(private val singleFileOutput: Boolean,
                     input,
                     tempDir,
                     yAxisDirection,
-                    ocrDetectGlyphs,
                     groupFonts,
                     removeDuplicateImages,
                     downsampleImages,
@@ -251,7 +246,6 @@ class CoreParams(private val singleFileOutput: Boolean,
                     parallelImageCreation,
                     keepFonts,
                     keepImages,
-                    outputOcrGlyphs,
                     drawShapeBounds,
                     drawTextBounds,
                     drawClipBounds,
@@ -269,7 +263,6 @@ class CoreParams(private val singleFileOutput: Boolean,
 
     fun print() {
         println("""
-            |OCR detect glyphs: $ocrDetectGlyphs
             |Group fonts: $groupFonts
             |Remove duplicate images: $removeDuplicateImages
             |Downsample images: $downsampleImages
@@ -315,7 +308,6 @@ class CoreParams(private val singleFileOutput: Boolean,
         const val OPT_PARALLEL_IMAGE_CREATION = "parallelImageCreation"
         const val OPT_KEEP_FONTS = "keepFonts"
         const val OPT_KEEP_IMAGES = "keepImages"
-        const val OPT_OUTPUT_OCR_GLYPHS = "outputOcrGlyphs"
         const val OPT_DRAW_SHAPE_BOUNDS = "drawShapeBounds"
         const val OPT_DRAW_TEXT_BOUNDS = "drawTextBounds"
         const val OPT_DRAW_CLIP_BOUNDS = "drawClipBounds"

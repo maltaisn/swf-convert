@@ -48,9 +48,6 @@ data class ConvertConfiguration(
 
         // TEXT & FONT CONFIGURATION
 
-        /** Whether to use OCR to detect glyphs with unknown char. */
-        val ocrDetectGlyphs: Boolean,
-
         /** Whether to group fonts that can be merged into a single one. */
         val groupFonts: Boolean,
 
@@ -104,9 +101,6 @@ data class ConvertConfiguration(
 
         /** Whether to keep the `images/` sub-directory after conversion. */
         val keepImages: Boolean,
-
-        /** Whether to output glyph images used to run OCR to the `fonts/glyphs/` directory. */
-        val outputOcrGlyphs: Boolean,
 
         /** Whether to draw shape bounds to output. */
         val drawShapeBounds: Boolean,
