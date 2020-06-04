@@ -19,6 +19,7 @@ package com.maltaisn.swfconvert.convert.shape
 import com.flagstone.transform.fillstyle.FillStyle
 import com.flagstone.transform.linestyle.LineStyle
 import com.flagstone.transform.shape.*
+import com.maltaisn.swfconvert.convert.context.SwfObjectContext
 import com.maltaisn.swfconvert.convert.shape.ShapeConverter.Edge.CurveEdge
 import com.maltaisn.swfconvert.convert.shape.ShapeConverter.Edge.LineEdge
 import com.maltaisn.swfconvert.convert.wrapper.WShapeStyle
@@ -40,6 +41,8 @@ import javax.inject.Inject
  */
 internal open class ShapeConverter @Inject constructor() {
 
+    protected lateinit var context: SwfObjectContext
+
     private lateinit var shape: Shape
     private lateinit var transform: AffineTransform
     private var ignoreStyles = false
@@ -59,13 +62,15 @@ internal open class ShapeConverter @Inject constructor() {
     private val paths = mutableListOf<Path>()
 
 
-    fun parseShape(shape: Shape,
+    fun parseShape(context: SwfObjectContext,
+                   shape: Shape,
                    fillStyles: List<FillStyle>,
                    lineStyles: List<LineStyle>,
                    transform: AffineTransform,
                    currentTransform: AffineTransform,
                    ignoreStyles: Boolean,
                    allowRectangles: Boolean): List<Path> {
+        this.context = context
         this.shape = shape
 
         this.fillStyles.clear()

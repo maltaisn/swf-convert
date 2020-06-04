@@ -16,6 +16,7 @@
 
 package com.maltaisn.swfconvert.convert
 
+import com.maltaisn.swfconvert.convert.context.ConvertContext
 import com.maltaisn.swfconvert.convert.font.FontConverter
 import com.maltaisn.swfconvert.convert.frame.SwfsConverter
 import com.maltaisn.swfconvert.convert.image.ImageCreator
@@ -23,6 +24,7 @@ import com.maltaisn.swfconvert.core.FrameGroup
 import com.maltaisn.swfconvert.core.ProgressCallback
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.apache.logging.log4j.kotlin.logger
 import javax.inject.Inject
 
 
@@ -38,18 +40,20 @@ class SwfCollectionConverter @Inject internal constructor(
         private val imageCreator: ImageCreator
 ) {
 
-    suspend fun convert(): List<FrameGroup> {
+    private val logger = logger()
+
+    suspend fun convert(context: ConvertContext): List<FrameGroup> {
         config.imagesDir.deleteRecursively()
         config.fontsDir.deleteRecursively()
         config.imagesDir.mkdirs()
         config.fontsDir.mkdirs()
 
         // Decode SWFs files
-        val swfs = swfsDecoder.decodeFiles(config.input)
+        val swfs = swfsDecoder.decodeFiles(context, config.input)
 
         // Create font files
         progressCb.beginStep("Creating fonts", true)
-        val fontGroups = fontConverter.createFontGroups(swfs)
+        val fontGroups = fontConverter.createFontGroups(context, swfs)
 
         // Create font files and ungroup them.
         withContext(Dispatchers.IO) {
@@ -59,7 +63,7 @@ class SwfCollectionConverter @Inject internal constructor(
         progressCb.endStep()
 
         // Convert SWF to intermediate representation.
-        val frameGroups = swfsConverter.createFrameGroups(swfs, fontsMap)
+        val frameGroups = swfsConverter.createFrameGroups(context, swfs, fontsMap)
 
         // Create images and remove duplicates if needed.
         imageCreator.createAndOptimizeImages(frameGroups)
@@ -70,10 +74,16 @@ class SwfCollectionConverter @Inject internal constructor(
     fun cleanup() {
         // Remove temporary files if needed
         if (!config.keepImages) {
-            config.imagesDir.deleteRecursively()
+            logger.info { "Deleting temp image files at ${config.imagesDir}" }
+            if (!config.imagesDir.deleteRecursively()) {
+                logger.error { "Failed to delete temp image files" }
+            }
         }
         if (!config.keepFonts) {
-            config.fontsDir.deleteRecursively()
+            logger.info { "Deleting temp font files at ${config.fontsDir}" }
+            if (!config.fontsDir.deleteRecursively()) {
+                logger.error { "Failed to delete temp font files" }
+            }
         }
     }
 

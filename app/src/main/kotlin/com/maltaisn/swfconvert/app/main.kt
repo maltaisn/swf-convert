@@ -20,7 +20,9 @@ import com.maltaisn.swfconvert.app.params.ParamsParser
 import com.maltaisn.swfconvert.convert.ConversionError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import org.apache.logging.log4j.kotlin.logger
 import java.text.DecimalFormat
+import kotlin.system.exitProcess
 import kotlin.system.measureTimeMillis
 
 
@@ -33,17 +35,29 @@ fun main(args: Array<String>) {
     try {
         for ((i, config) in configs.withIndex()) {
             println("Converting collection ${i + 1} / ${configs.size}")
+            logger.info {"Started conversion of collection ${i + 1}, config: $config" }
             val duration = measureTimeMillis {
                 runBlocking(Dispatchers.Default) {
-                    SwfConvert(config).convert()
+                    SwfConvert(config).convert(SwfCollectionContext(i))
                 }
             }
             println("Done in ${DURATION_FMT.format(duration / 1000.0)} s\n")
+            logger.info { "Finished conversion of collection ${i + 1}" }
         }
+        exitProcess(0)
+
     } catch (e: ConversionError) {
-        // TODO
-        println()
+        logger.fatal("Conversion error", e)
+        println("Conversion error: ${e.message}")
+
+    } catch (e: Exception) {
+        logger.fatal("Unknown error", e)
+        println("Unknown error occurred")
+        e.printStackTrace()
     }
+    exitProcess(1)
 }
+
+private val logger = logger(object {}.javaClass.name)
 
 private val DURATION_FMT = DecimalFormat("0.00")

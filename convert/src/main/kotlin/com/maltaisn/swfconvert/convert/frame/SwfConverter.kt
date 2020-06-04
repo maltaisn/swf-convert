@@ -17,8 +17,6 @@
 package com.maltaisn.swfconvert.convert.frame
 
 import com.flagstone.transform.*
-import com.flagstone.transform.button.DefineButton
-import com.flagstone.transform.button.DefineButton2
 import com.flagstone.transform.datatype.Blend
 import com.flagstone.transform.datatype.CoordTransform
 import com.flagstone.transform.filter.ColorMatrixFilter
@@ -29,6 +27,8 @@ import com.flagstone.transform.shape.DefineShape3
 import com.flagstone.transform.shape.DefineShape4
 import com.flagstone.transform.text.StaticTextTag
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
+import com.maltaisn.swfconvert.convert.context.SwfFileContext
+import com.maltaisn.swfconvert.convert.context.SwfObjectContext
 import com.maltaisn.swfconvert.convert.conversionError
 import com.maltaisn.swfconvert.convert.image.CompositeColorTransform
 import com.maltaisn.swfconvert.convert.shape.StyledShapeConverter
@@ -41,6 +41,7 @@ import com.maltaisn.swfconvert.core.shape.PathElement
 import com.maltaisn.swfconvert.core.shape.ShapeObject
 import com.maltaisn.swfconvert.core.text.Font
 import com.maltaisn.swfconvert.core.text.FontId
+import org.apache.logging.log4j.kotlin.logger
 import java.awt.Rectangle
 import java.awt.geom.AffineTransform
 import java.util.*
@@ -56,8 +57,10 @@ internal class SwfConverter @Inject constructor(
         private val shapeParser: StyledShapeConverter
 ) : Disposable {
 
+    private val logger = logger()
+
+    private lateinit var context: SwfFileContext
     private lateinit var fontsMap: Map<FontId, Font>
-    private var fileIndex: Int = 0
 
     private val groupStack = LinkedList<GroupObject>()
     private val currentGroup: GroupObject
@@ -66,14 +69,15 @@ internal class SwfConverter @Inject constructor(
     private var objectsMap: Map<Int, DefineTag> = emptyMap()
     private val colorTransform = CompositeColorTransform()
 
+    private val idStack = LinkedList<Int>()
     private val blendStack = LinkedList<BlendMode>()
     private val clipStack = LinkedList<Int>()
     private val transformStack = LinkedList<AffineTransform>()
 
 
-    fun createFrameGroup(swf: Movie, fontsMap: Map<FontId, Font>,
-                         fileIndex: Int): FrameGroup {
-        this.fileIndex = fileIndex
+    fun createFrameGroup(context: SwfFileContext, swf: Movie,
+                         fontsMap: Map<FontId, Font>): FrameGroup {
+        this.context = context
         this.fontsMap = fontsMap
 
         objectsMap = swf.objects.filterIsInstance<DefineTag>().associateBy { it.identifier }
@@ -112,13 +116,16 @@ internal class SwfConverter @Inject constructor(
                 }
             }
         }
-        createFrame(frameTags)
+        val rootFrameContext = SwfObjectContext(context, listOf(0))
+        createFrame(rootFrameContext, frameTags)
 
-        check(currentGroup === frameGroup) { "Expected only frame in group stack" }
+        conversionError( currentGroup === frameGroup, context) {
+            "Expected only frame group in group stack"
+        }
         return frameGroup
     }
 
-    private fun createFrame(frameTags: List<MovieTag>) {
+    private fun createFrame(frameContext: SwfObjectContext, frameTags: List<MovieTag>) {
         //conversionError(frameTags.last() is ShowFrame) { "Frame last object must be ShowFrame" }
 
         // Draw frame objects
@@ -127,20 +134,23 @@ internal class SwfConverter @Inject constructor(
             val placeTag = frameTag.toPlaceTagOrNull()
             if (placeTag != null && placeTag.ratio == null) {
                 // Remove tags and frames with ratios are ignored.
-                conversionError(placeTag.type == PlaceType.NEW)
+                conversionError(placeTag.type == PlaceType.NEW, frameContext) { "Unsupported place tag type" }
 
                 // Check if tags are sorted by depth
-                conversionError(placeTag.depth >= lastDepth) { "Frame objects not sorted by depth" }
+                conversionError(placeTag.depth >= lastDepth, frameContext) { "Frame objects not sorted by depth" }
                 lastDepth = placeTag.depth
 
                 // Place object
-                val obj = objectsMap[placeTag.identifier] ?: conversionError("Invalid object ID")
-                createObject(placeTag, obj)
+                idStack.addLast(placeTag.identifier)
+                val objContext = SwfObjectContext(context, idStack.toList())
+                val obj = objectsMap[placeTag.identifier] ?: conversionError(objContext, "Invalid object ID")
+                createObject(objContext, placeTag, obj)
+                idStack.removeLast()
             }
         }
     }
 
-    private fun createObject(placeTag: WPlace, objTag: DefineTag) {
+    private fun createObject(objContext: SwfObjectContext, placeTag: WPlace, objTag: DefineTag) {
         var groupsBefore = groupStack.size
         val id = objTag.identifier
 
@@ -151,7 +161,7 @@ internal class SwfConverter @Inject constructor(
         for (filter in placeTag.filters) {
             if (filter !is ColorMatrixFilter
                     || filter.matrix?.contentEquals(IDENTITY_COLOR_MATRIX) == false) {
-                conversionError("Unsupported filter")
+                conversionError(objContext, "Unsupported place filter $filter")
             }
         }
 
@@ -167,7 +177,10 @@ internal class SwfConverter @Inject constructor(
         if (blendMode != null) {
             if (blendMode == Blend.ALPHA) {
                 if (!config.disableMasking) {
-                    conversionError(wshape != null) { "Unsupported mask object" }
+                    if (wshape == null) {
+                        // Using text as soft mask is unsupported for example.
+                        conversionError(objContext, "Unsupported mask object ${objTag.javaClass.simpleName}" )
+                    }
 
                     // Find mask object bounds
                     val boundsRect = Rectangle(wshape.bounds.minX, wshape.bounds.minY,
@@ -201,7 +214,9 @@ internal class SwfConverter @Inject constructor(
                     Blend.HARDLIGHT -> BlendMode.HARD_LIGHT
                     Blend.SCREEN -> BlendMode.SCREEN  // Not exactly the same?
                     Blend.OVERLAY -> BlendMode.OVERLAY  // Not exactly the same?
-                    else -> conversionError("Unsupported blend mode ${blendMode.name}")
+                    else -> {
+                        conversionError(objContext, "Unsupported blend mode ${blendMode.name}")
+                    }
                 }
                 if (blend != blendStack.peek()) {
                     addGroup(GroupObject.Blend(id, blend))
@@ -224,13 +239,13 @@ internal class SwfConverter @Inject constructor(
         // Create object
         when {
             wshape != null -> {
-                createShape(wshape, placeTag)
+                createShape(objContext, wshape, placeTag)
                 if (placeTag.hasClip) {
                     // To avoid removing clip group when restoring group stack.
                     groupsBefore++
                 }
             }
-            objTag is StaticTextTag -> createText(objTag)
+            objTag is StaticTextTag -> createText(objContext, objTag)
             objTag is DefineMovieClip -> {
                 if (groupStack.size == groupsBefore) {
                     // No special groups added for frame, add simple group. This is important for
@@ -238,11 +253,11 @@ internal class SwfConverter @Inject constructor(
                     // and a frame without special blending or transform is still a frame.
                     addGroup(GroupObject.Simple(id))
                 }
-                createFrame(objTag.objects)
+                createFrame(objContext, objTag.objects)
             }
-            objTag is DefineButton || objTag is DefineButton2 -> Unit  // Ignore buttons
             else -> {
-                conversionError("Unknown place object: $objTag")
+                // Unsupported types are ignored.
+                logger.error { "Unsupported object type ${objTag.javaClass.simpleName} ($objContext)" }
             }
         }
 
@@ -270,8 +285,8 @@ internal class SwfConverter @Inject constructor(
             clipStack.pop()
 
             if (groupStack.peek() !is GroupObject.Clip) {
-                println("WARNING: Expected clip group, ignoring")
-                break
+                conversionError(objContext, "Expected clip group")
+                // TODO: clips are per frame, not per file.
             }
 
             val group = groupStack.pop()
@@ -288,14 +303,14 @@ internal class SwfConverter @Inject constructor(
         }
     }
 
-    private fun createShape(shapeTag: WDefineShape, placeTag: WPlace) {
+    private fun createShape(objContext: SwfObjectContext, shapeTag: WDefineShape, placeTag: WPlace) {
         // If the shape is for clipping, the transform must be pre-applied because it only applies 
         // to the clipping shape while the clip applies to many objects.
         val transform = placeTag.transform.takeIf { placeTag.hasClip }
                 .toAffineTransformOrIdentity(config.yAxisDirection)
 
         // Parse the shape into paths and images.
-        val paths = shapeParser.parseShape(shapeTag.shape,
+        val paths = shapeParser.parseShape(objContext, shapeTag.shape,
                 shapeTag.fillStyles, shapeTag.lineStyles, transform,
                 transformStack.peek(), placeTag.hasClip, true)
         val shapeObject = ShapeObject(shapeTag.identifier, paths)
@@ -305,8 +320,7 @@ internal class SwfConverter @Inject constructor(
             // Clips cannot be interlaced in intermediate representation, although SWF supports it.
             // Also, empty clips (i.e with no paths), must be kept since they represent a frame
             // and masked group only applies to last frame.
-            // TODO clips are per frame, not per file.
-            conversionError(clipStack.isEmpty() || placeTag.clipDepth <= clipStack.peek()) {
+            conversionError(clipStack.isEmpty() || placeTag.clipDepth <= clipStack.peek(), objContext) {
                 "Unsupported interlaced clips"
             }
 
@@ -334,8 +348,8 @@ internal class SwfConverter @Inject constructor(
         }
     }
 
-    private fun createText(textTag: StaticTextTag) {
-        currentGroup.objects += textConverter.parseText(textTag, colorTransform, fontsMap, fileIndex)
+    private fun createText(objContext: SwfObjectContext, textTag: StaticTextTag) {
+        currentGroup.objects += textConverter.parseText(objContext, textTag, colorTransform, fontsMap)
     }
 
     private fun addGroup(group: GroupObject) {

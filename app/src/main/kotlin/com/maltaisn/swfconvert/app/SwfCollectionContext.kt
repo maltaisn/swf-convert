@@ -14,25 +14,17 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.convert
+package com.maltaisn.swfconvert.app
 
 import com.maltaisn.swfconvert.convert.context.ConvertContext
-import kotlin.contracts.contract
 
 
-class ConversionError(
-        val context: ConvertContext,
-        message: String? = ""
-) : IllegalStateException(message + ", context: $context")
+/**
+ * Context for a SWF collection being converted.
+ */
+class SwfCollectionContext(val collectionIndex: Int) : ConvertContext(null) {
 
-fun conversionError(context: ConvertContext, message: String): Nothing =
-        throw ConversionError(context, message)
+    override val description: String
+        get() = "collection #$collectionIndex"
 
-inline fun conversionError(condition: Boolean, context: ConvertContext, message: () -> String) {
-    contract {
-        returns() implies condition
-    }
-    if (!condition) {
-        throw ConversionError(context, message())
-    }
 }

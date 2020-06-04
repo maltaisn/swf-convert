@@ -24,6 +24,22 @@ data class GlyphData(val advanceWidth: Float,
     val isWhitespace: Boolean
         get() = contours.isEmpty()
 
+
+    override fun toString() = buildString {
+        append("GlyphData(advance=")
+        append(advanceWidth)
+        append(", path='")
+        for (contour in contours) {
+            append(contour.toSvg())
+            append(' ')
+        }
+        if (contours.isNotEmpty()) {
+            deleteCharAt(length - 1)
+        }
+        append("')")
+    }
+
+
     companion object {
         /**
          * The size of the EM square in the intermediate representation.

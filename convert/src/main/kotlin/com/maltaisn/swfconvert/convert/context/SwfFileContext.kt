@@ -14,14 +14,19 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.core
+package com.maltaisn.swfconvert.convert.context
+
+import java.io.File
 
 
-object Units {
+/**
+ * Context for a SWF [file] at index [fileIndex] being converted.
+ */
+internal class SwfFileContext(parent: ConvertContext?,
+                              val file: File,
+                              val fileIndex: Int) : ConvertContext(parent) {
 
-    const val TWIPS_TO_INCH = 1 / 1440f
-    const val TWIPS_TO_POINT = 1 / 20f
-
-    const val INCH_TO_POINTS = 72f
+    override val description: String
+        get() = "file #$fileIndex ($file)"
 
 }

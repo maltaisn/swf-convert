@@ -28,6 +28,7 @@ import com.maltaisn.swfconvert.convert.toAffineTransform
 import com.maltaisn.swfconvert.convert.toColor
 import com.maltaisn.swfconvert.convert.wrapper.WLineStyle
 import com.maltaisn.swfconvert.core.Disposable
+import com.maltaisn.swfconvert.core.Units
 import com.maltaisn.swfconvert.core.shape.GradientColor
 import com.maltaisn.swfconvert.core.shape.PathFillStyle
 import com.maltaisn.swfconvert.core.shape.PathLineStyle
@@ -66,24 +67,29 @@ internal class StyledShapeConverter @Inject constructor(
         }
         is BitmapFill -> {
             // Only bitmap fill of type 0x41 is supported, i.e, clipped non-smoothed.
-            conversionError(fillStyle.isTiled && !fillStyle.isSmoothed) {
+            conversionError(fillStyle.isTiled && !fillStyle.isSmoothed, context) {
                 "Unsupported bitmap fill type"
             }
 
-            val image = objectsMap[fillStyle.identifier] as? ImageTag ?: error("Invalid image ID")
+            val image = objectsMap[fillStyle.identifier] as? ImageTag
+                    ?: conversionError(context, "Invalid image ID ${fillStyle.identifier}")
 
             val tr = fillStyle.transform.toAffineTransform(config.yAxisDirection)
             tr.scale(image.width.toDouble(), image.height.toDouble())
 
             // Create image data
             val density = findImageDensity(image, tr)
-            val imageData = imageDecoder.convertImage(image, colorTransform, density)
+            val imageData = imageDecoder.convertImage(context, image, colorTransform, density)
 
             PathFillStyle.Image(image.identifier, tr, imageData, !config.disableClipping)
         }
         is GradientFill -> {
-            conversionError(fillStyle.spread == Spread.PAD) { "Unsupported spread mode" }
-            conversionError(fillStyle.interpolation == Interpolation.NORMAL) { "Unsupported interpolation mode" }
+            conversionError(fillStyle.spread == Spread.PAD, context) {
+                "Unsupported gradient spread mode ${fillStyle.spread}"
+            }
+            conversionError(fillStyle.interpolation == Interpolation.NORMAL, context) {
+                "Unsupported gradient interpolation mode ${fillStyle.interpolation}"
+            }
 
             // SWF gradients have a size of 32768, offset of 16384 and a transform.
             val transform = fillStyle.transform.toAffineTransform(config.yAxisDirection)
@@ -98,7 +104,7 @@ internal class StyledShapeConverter @Inject constructor(
             PathFillStyle.Gradient(colors, transform)
         }
         else -> {
-            conversionError("Unsupported shape fill style")
+            conversionError(context, "Unsupported shape fill style ${fillStyle.javaClass.simpleName}")
         }
     }
 
@@ -112,8 +118,8 @@ internal class StyledShapeConverter @Inject constructor(
         tr.preConcatenate(imageTransform)
 
         // Find length of vectors [0 1] and [1 0], in other words, image width and height (in inches).
-        val width = sqrt(tr.scaleX * tr.scaleX + tr.shearY * tr.shearY) / POINTS_PER_INCH
-        val height = sqrt(tr.scaleY * tr.scaleY + tr.shearX * tr.shearX) / POINTS_PER_INCH
+        val width = sqrt(tr.scaleX * tr.scaleX + tr.shearY * tr.shearY) / Units.INCH_TO_POINTS
+        val height = sqrt(tr.scaleY * tr.scaleY + tr.shearX * tr.shearX) / Units.INCH_TO_POINTS
 
         // Find minimum density. Not sure if these are always equal.
         val xDensity = image.width / width
@@ -126,11 +132,15 @@ internal class StyledShapeConverter @Inject constructor(
         val wstyle = when (lineStyle) {
             is LineStyle1 -> WLineStyle(lineStyle)
             is LineStyle2 -> {
-                conversionError(lineStyle.fillStyle == null) { "Unsupported line fill style" }
-                conversionError(lineStyle.startCap == lineStyle.endCap) { "Unsupported different start and end caps" }
+                conversionError(lineStyle.fillStyle == null, context) {
+                    "Unsupported line fill style"
+                }
+                conversionError(lineStyle.startCap == lineStyle.endCap, context) {
+                    "Unsupported different start and end caps on line style"
+                }
                 WLineStyle(lineStyle)
             }
-            else -> conversionError("Unknown line style")
+            else -> conversionError(context, "Unknown line style ${lineStyle.javaClass.simpleName}")
         }
         return PathLineStyle(wstyle.color.toColor(), wstyle.width.toFloat(),
                 wstyle.capStyle?.toBasicStrokeConstant() ?: BasicStroke.CAP_BUTT,
@@ -148,10 +158,6 @@ internal class StyledShapeConverter @Inject constructor(
         JoinStyle.BEVEL -> BasicStroke.JOIN_BEVEL
         JoinStyle.ROUND -> BasicStroke.JOIN_ROUND
         JoinStyle.MITER -> BasicStroke.JOIN_MITER
-    }
-
-    companion object {
-        private const val POINTS_PER_INCH = 72
     }
 
 }

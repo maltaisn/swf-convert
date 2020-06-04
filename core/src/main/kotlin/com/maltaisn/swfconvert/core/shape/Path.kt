@@ -33,21 +33,19 @@ data class Path(val elements: List<PathElement>,
         return svg.toString()
     }
 
-    override fun toString(): String {
-        val sb = StringBuilder()
-        sb.append("Path(path='")
-        sb.append(toSvg())
-        sb.append("'")
+    override fun toString() = buildString {
+        append("Path(path='")
+        append(toSvg())
+        append("'")
         if (lineStyle != null) {
-            sb.append(", line=")
-            sb.append(lineStyle)
+            append(", line=")
+            append(lineStyle)
         }
         if (fillStyle != null) {
-            sb.append(", fill=")
-            sb.append(fillStyle)
+            append(", fill=")
+            append(fillStyle)
         }
-        sb.append(")")
-        return sb.toString()
+        append(")")
     }
 
 }

@@ -17,6 +17,8 @@
 package com.maltaisn.swfconvert.convert
 
 import com.flagstone.transform.Movie
+import com.maltaisn.swfconvert.convert.context.ConvertContext
+import com.maltaisn.swfconvert.convert.context.SwfFileContext
 import com.maltaisn.swfconvert.core.ProgressCallback
 import com.maltaisn.swfconvert.core.mapInParallel
 import com.maltaisn.swfconvert.core.showProgress
@@ -35,19 +37,28 @@ internal class SwfsDecoder @Inject constructor(
         private val progressCb: ProgressCallback
 ) {
 
-    suspend fun decodeFiles(files: List<File>): List<Movie> {
+    suspend fun decodeFiles(context: ConvertContext, files: List<File>): List<Movie> {
         return progressCb.showStep("Decoding SWFs", true) {
             progressCb.showProgress(files.size) {
-                files.mapInParallel(config.parallelSwfDecoding) { file ->
-                    val swf = Movie()
-                    withContext(Dispatchers.IO) {
-                        swf.decodeFromFile(file)
-                    }
+                files.withIndex().mapInParallel(config.parallelSwfDecoding) { (i, file) ->
+                    val swf = decodeFile(SwfFileContext(context, file, i), file)
                     progressCb.incrementProgress()
                     swf
                 }
             }
         }
+    }
+
+    private suspend fun decodeFile(fileContext: SwfFileContext, file: File): Movie {
+        val swf = Movie()
+        withContext(Dispatchers.IO) {
+            try {
+                swf.decodeFromFile(file)
+            } catch (e: Exception) {
+                conversionError(fileContext, "Error while decoding SWF file")
+            }
+        }
+        return swf
     }
 
 }

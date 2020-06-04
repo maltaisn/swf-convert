@@ -18,6 +18,7 @@ package com.maltaisn.swfconvert.render.ir
 
 import com.maltaisn.swfconvert.core.*
 import com.maltaisn.swfconvert.render.core.FramesRenderer
+import org.apache.logging.log4j.kotlin.logger
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -32,6 +33,8 @@ class IrFramesRenderer @Inject internal constructor(
         private val progressCb: ProgressCallback,
         private val irFrameRendererProvider: Provider<IrFrameRenderer>
 ) : FramesRenderer {
+
+    private val logger = logger()
 
     override suspend fun renderFrames(frameGroups: List<FrameGroup>) {
         var frames = frameGroups.withIndex().associate { (k, v) -> k to v }
@@ -70,6 +73,7 @@ class IrFramesRenderer @Inject internal constructor(
                     try {
                         renderer.renderFrame(i, frameGroup)
                     } catch (e: IOException) {
+                        logger.warn { "Failed to save file ${config.output[i]}" }
                         failed[i] = frameGroup
                     }
 

@@ -14,14 +14,23 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.core
+package com.maltaisn.swfconvert.convert.context
 
 
-object Units {
+/**
+ * Context for an object in SWF being converted.
+ * Object ID is the last of [ids], which form the tree of object IDs leading to this object.
+ */
+internal class SwfObjectContext(parent: SwfFileContext,
+                                val ids: List<Int>) : ConvertContext(parent) {
 
-    const val TWIPS_TO_INCH = 1 / 1440f
-    const val TWIPS_TO_POINT = 1 / 20f
-
-    const val INCH_TO_POINTS = 72f
+    override val description: String
+        get() = buildString {
+            append("object ID ")
+            append(ids.last())
+            if (ids.size > 1) {
+                append(" (${ids.joinToString(" > ")})")
+            }
+        }
 
 }

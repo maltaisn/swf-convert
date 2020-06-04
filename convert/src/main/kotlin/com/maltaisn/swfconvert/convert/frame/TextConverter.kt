@@ -20,6 +20,8 @@ import com.flagstone.transform.text.GlyphIndex
 import com.flagstone.transform.text.StaticTextTag
 import com.flagstone.transform.text.TextSpan
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
+import com.maltaisn.swfconvert.convert.context.SwfFileContext
+import com.maltaisn.swfconvert.convert.context.SwfObjectContext
 import com.maltaisn.swfconvert.convert.conversionError
 import com.maltaisn.swfconvert.convert.image.CompositeColorTransform
 import com.maltaisn.swfconvert.convert.toAffineTransformOrIdentity
@@ -44,10 +46,11 @@ internal class TextConverter @Inject constructor(
         private val config: ConvertConfiguration
 ) {
 
+    private lateinit var context: SwfObjectContext
+
     private lateinit var textTag: StaticTextTag
     private lateinit var colorTransform: CompositeColorTransform
     private lateinit var fontsMap: Map<FontId, Font>
-    private var fileIndex: Int = 0
 
     // Text span style
     private var font: Font? = null
@@ -64,13 +67,14 @@ internal class TextConverter @Inject constructor(
     }
 
 
-    fun parseText(textTag: StaticTextTag,
+    fun parseText(context: SwfObjectContext,
+                  textTag: StaticTextTag,
                   colorTransform: CompositeColorTransform,
-                  fontsMap: Map<FontId, Font>, fileIndex: Int): List<FrameObject> {
+                  fontsMap: Map<FontId, Font>): List<FrameObject> {
+        this.context = context
         this.textTag = textTag
         this.colorTransform = colorTransform
         this.fontsMap = fontsMap
-        this.fileIndex = fileIndex
 
         // Reset styles
         font = null
@@ -125,11 +129,11 @@ internal class TextConverter @Inject constructor(
         var lastScale: FontScale? = null
         for (span in textTag.spans) {
             if (span.identifier != null) {
-                val fontId = FontId(fileIndex, span.identifier)
+                val fontId = createFontId(span.identifier)
                 val font = fontsMap[fontId] ?: error("Unknown font ID")
                 val scale = font.metrics.scale
-                conversionError(lastScale == null || scale == lastScale) {
-                    "Different scale fonts in same text tag"
+                conversionError(lastScale == null || scale == lastScale, context) {
+                    "Font tags with different scale in same text tag"
                 }
                 lastScale = scale
             }
@@ -249,23 +253,24 @@ internal class TextConverter @Inject constructor(
     private fun parseTextSpanStyle(span: TextSpan) {
         // Font
         if (span.identifier != null) {
-            val fontId = FontId(fileIndex, span.identifier)
-            this.font = fontsMap[fontId] ?: error("Unknown font ID")
+            val fontId = createFontId(span.identifier)
+            this.font = fontsMap[fontId]
+                    ?: conversionError(context, "Unknown font ID ${span.identifier}")
         }
         val font = this.font
-        conversionError(font != null) { "No font specified" }
+        conversionError(font != null, context) { "No font specified" }
 
         // Font size
         if (span.height != null) {
             fontSize = span.height.toFloat()
         }
-        conversionError(fontSize != null) { "No font size specified" }
+        conversionError(fontSize != null, context) { "No font size specified" }
 
         // Text color
         if (span.color != null) {
             color = colorTransform.transform(span.color.toColor())
         }
-        conversionError(color != null) { "No text color specified" }
+        conversionError(color != null, context) { "No text color specified" }
 
         // Offsets
         // Although SWF specification says that unspecified offset is like setting it to 0,
@@ -280,5 +285,11 @@ internal class TextConverter @Inject constructor(
     }
 
     private fun Font.getGlyph(index: GlyphIndex) = this.glyphs[index.glyphIndex]
+
+    /**
+     * Create a font ID to uniquely identify a font across a SWF file collection.
+     * [context] could've been used directly but it's too tied to SWF to be part of IR.
+     */
+    private fun createFontId(id: Int) = FontId((context.parent as SwfFileContext).fileIndex, id)
 
 }

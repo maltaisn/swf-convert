@@ -21,6 +21,8 @@ import com.beust.jcommander.ParameterException
 import com.maltaisn.swfconvert.app.ConfigException
 import com.maltaisn.swfconvert.app.Configuration
 import com.maltaisn.swfconvert.app.configError
+import org.apache.logging.log4j.Level
+import org.apache.logging.log4j.core.config.Configurator
 import kotlin.system.exitProcess
 
 
@@ -58,6 +60,7 @@ class ParamsParser {
 
             showVersionIfNeeded()
             showHelpIfNeeded()
+            setupLogging()
 
             val command = commands[jc.parsedCommand] ?: return emptyList()
 
@@ -101,6 +104,18 @@ class ParamsParser {
             jc.findCommandByAlias(commandHelp).usage()
             exitProcess(0)
         }
+    }
+
+    private fun setupLogging() {
+        Configurator.setRootLevel(when (mainParams.logLevel) {
+            0 -> Level.OFF
+            1 -> Level.FATAL
+            2 -> Level.ERROR
+            3 -> Level.WARN
+            4 -> Level.INFO
+            5 -> Level.DEBUG
+            else -> if (mainParams.logLevel < 0) Level.OFF else Level.ALL
+        })
     }
 
 }

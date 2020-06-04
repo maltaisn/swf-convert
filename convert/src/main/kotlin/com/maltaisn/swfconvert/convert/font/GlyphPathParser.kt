@@ -18,6 +18,7 @@ package com.maltaisn.swfconvert.convert.font
 
 import com.flagstone.transform.shape.Shape
 import com.flagstone.transform.shape.ShapeData
+import com.maltaisn.swfconvert.convert.context.SwfObjectContext
 import com.maltaisn.swfconvert.convert.shape.ShapeConverter
 import com.maltaisn.swfconvert.convert.wrapper.WDefineFont
 import com.maltaisn.swfconvert.core.shape.Path
@@ -35,7 +36,7 @@ internal class GlyphPathParser @Inject constructor(
         private val converter: ShapeConverter
 ) {
 
-    fun createFontGlyphsData(wfont: WDefineFont): List<GlyphData> {
+    fun createFontGlyphsData(context: SwfObjectContext, wfont: WDefineFont): List<GlyphData> {
         val transform = AffineTransform.getScaleInstance(
                 wfont.scale.scaleX.toDouble() * SWF_TO_TTF_EM_SCALE,
                 wfont.scale.scaleY.toDouble() * SWF_TO_TTF_EM_SCALE)
@@ -44,14 +45,16 @@ internal class GlyphPathParser @Inject constructor(
             val advance = wfont.advances[i] * wfont.scale.scaleX
             val shapeData = wfont.shapes[i].objects.first() as ShapeData
             val shape = Shape.shapeFromData(shapeData)
-            val contours = parseGlyphShape(shape, transform)
+            val contours = parseGlyphShape(context, shape, transform)
             GlyphData(advance, contours)
         }
     }
 
-    private fun parseGlyphShape(shape: Shape, transform: AffineTransform): List<Path> {
+    private fun parseGlyphShape(context: SwfObjectContext,
+                                shape: Shape,
+                                transform: AffineTransform): List<Path> {
         // Create the glyph shape from SWF shape records
-        val paths = converter.parseShape(shape,
+        val paths = converter.parseShape(context, shape,
                 emptyList(), emptyList(),
                 transform, IDENTITY_TRANSFORM,
                 ignoreStyles = true, allowRectangles = false)

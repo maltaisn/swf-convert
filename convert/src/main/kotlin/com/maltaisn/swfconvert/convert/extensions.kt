@@ -64,8 +64,3 @@ internal fun ByteArray.zlibDecompress(): ByteArray {
     inflaterStream.close()
     return decompressed
 }
-
-internal fun validateFilename(filename: String) =
-        filename.replace(INVALID_FILENAME_CHARS_PATTERN, "")
-
-private val INVALID_FILENAME_CHARS_PATTERN = """[/\\:*?"<>|]""".toRegex()

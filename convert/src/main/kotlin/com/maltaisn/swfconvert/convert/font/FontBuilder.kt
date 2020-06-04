@@ -16,11 +16,11 @@
 
 package com.maltaisn.swfconvert.convert.font
 
-import com.maltaisn.swfconvert.convert.validateFilename
 import com.maltaisn.swfconvert.core.shape.PathElement.ClosePath
 import com.maltaisn.swfconvert.core.shape.PathElement.QuadTo
 import com.maltaisn.swfconvert.core.text.BaseFont
 import com.maltaisn.swfconvert.core.text.GlyphData
+import org.apache.logging.log4j.kotlin.logger
 import org.doubletype.ossa.Engine
 import org.doubletype.ossa.adapter.EContour
 import org.doubletype.ossa.adapter.EContourPoint
@@ -39,6 +39,8 @@ internal class FontBuilder @Inject constructor(
         private val doubletypeEngine: Engine
 ) {
 
+    private val logger = logger()
+
     /**
      * Build a TTF file for a [font] instance, setting the [BaseFont.fontFile] field.
      * @param destination Directory to create the file in.
@@ -47,6 +49,9 @@ internal class FontBuilder @Inject constructor(
     fun buildFont(font: BaseFont, destination: File, tempDir: File) {
         // Make sure font name is a valid file name because doubletype uses temp files.
         val name = validateFilename(font.name)
+        if (name != font.name) {
+            logger.debug { "Renamed font '${font.name}' to valid filename '$name'" }
+        }
 
         // Build font
         doubletypeEngine.buildNewTypeface(name, tempDir)
@@ -110,6 +115,12 @@ internal class FontBuilder @Inject constructor(
         }
         doubletypeEngine.typeface.addRequiredGlyphs()
     }
+
+    private fun validateFilename(filename: String) =
+            filename.replace(INVALID_FILENAME_CHARS_PATTERN, "")
+
+    private val INVALID_FILENAME_CHARS_PATTERN = """[/\\:*?"<>|]""".toRegex()
+
 
     companion object {
         // These metadata values aren't found in SWF files, so generic ones are used instead.

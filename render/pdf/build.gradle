@@ -15,6 +15,10 @@ dependencies {
     implementation "com.google.dagger:dagger:$daggerVersion"
     kapt "com.google.dagger:dagger-compiler:$daggerVersion"
 
+    implementation "org.apache.logging.log4j:log4j-api:$log4jVersion"
+    implementation "org.apache.logging.log4j:log4j-core:$log4jVersion"
+    implementation "org.apache.logging.log4j:log4j-api-kotlin:$log4jKotlinVersion"
+
     implementation "org.apache.pdfbox:pdfbox:$pdfBoxVersion"
 
     testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"

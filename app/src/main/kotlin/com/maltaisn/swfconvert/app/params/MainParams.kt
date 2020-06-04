@@ -30,4 +30,7 @@ class MainParams {
     @Parameter(names = ["-v", "--version"], description = "Show version.", order = 1010)
     var version = false
 
+    @Parameter(names = ["--log"], description = "Log level from 0 (none) to 5 (all).", order = 1020)
+    var logLevel = 3
+
 }

@@ -26,11 +26,14 @@ import com.maltaisn.swfconvert.render.ir.di.DaggerRenderIrComponent
 import com.maltaisn.swfconvert.render.pdf.di.DaggerRenderPdfComponent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.apache.logging.log4j.kotlin.logger
 import javax.inject.Inject
 import javax.inject.Provider
 
 
 class SwfConvert(private val config: Configuration) {
+
+    private val logger = logger()
 
     @Inject lateinit var converterProvider: Provider<SwfCollectionConverter>
     @Inject lateinit var framesRenderers: Map<Class<out RenderConfiguration>,
@@ -58,10 +61,10 @@ class SwfConvert(private val config: Configuration) {
         appComponent.inject(this)
     }
 
-    suspend fun convert() {
+    suspend fun convert(context: SwfCollectionContext) {
         // Convert SWF to intermediate representation.
         val converter = converterProvider.get()
-        val frameGroups = converter.convert()
+        val frameGroups = converter.convert(context)
 
         // Conver intermediate representation to output format.
         val framesRenderer = (framesRenderers.entries.find { (key, _) ->
@@ -70,6 +73,7 @@ class SwfConvert(private val config: Configuration) {
         framesRenderer.renderFrames(frameGroups)
 
         // Remove temp files
+        logger.info { "Cleaning up temp files" }
         withContext(Dispatchers.IO) {
             converter.cleanup()
         }

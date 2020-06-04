@@ -27,6 +27,7 @@ import com.maltaisn.swfconvert.render.pdf.metadata.PdfOutlineCreator
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfPageLabelsCreator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.apache.logging.log4j.kotlin.logger
 import org.apache.pdfbox.cos.COSName
 import org.apache.pdfbox.io.MemoryUsageSetting
 import org.apache.pdfbox.pdmodel.PDDocument
@@ -51,6 +52,8 @@ class PdfFramesRenderer @Inject internal constructor(
         private val pdfOutlineCreator: PdfOutlineCreator,
         private val pdfPageLabelsCreator: PdfPageLabelsCreator
 ) : FramesRenderer {
+
+    private val logger = logger()
 
     override suspend fun renderFrames(frameGroups: List<FrameGroup>) {
         var currFrameGroups = frameGroups
@@ -238,6 +241,7 @@ class PdfFramesRenderer @Inject internal constructor(
                 return
             } catch (e: IOException) {
                 retry@ while (true) {
+                    logger.warn { "Failed to save file to $file" }
                     print("Could not save file '${file.path}'. Retry (Y/N)? ")
                     when (readLine()?.toLowerCase()) {
                         "y" -> continue@save

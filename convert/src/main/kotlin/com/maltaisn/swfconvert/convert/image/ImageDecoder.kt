@@ -18,6 +18,7 @@ package com.maltaisn.swfconvert.convert.image
 
 import com.flagstone.transform.image.*
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
+import com.maltaisn.swfconvert.convert.context.SwfObjectContext
 import com.maltaisn.swfconvert.convert.conversionError
 import com.maltaisn.swfconvert.convert.wrapper.WDefineImage
 import com.maltaisn.swfconvert.convert.zlibDecompress
@@ -39,7 +40,7 @@ import kotlin.math.roundToInt
  * Doesn't support [DefineJPEGImage4] for now. (deblocking filter)
  * See [https://www.adobe.com/content/dam/acom/en/devnet/pdf/swf-file-format-spec.pdf].
  */
-class ImageDecoder @Inject constructor(
+internal class ImageDecoder @Inject constructor(
         private val config: ConvertConfiguration,
         private val imageDataCreator: ImageDataCreator
 ) : Disposable {
@@ -48,16 +49,17 @@ class ImageDecoder @Inject constructor(
         imageDataCreator.dispose()
     }
 
-    fun convertImage(image: ImageTag, colorTransform: CompositeColorTransform,
-                     density: Float) = when (image) {
-        is DefineImage -> convertDefineImage(WDefineImage(image), colorTransform, density)
-        is DefineImage2 -> convertDefineImage2(WDefineImage(image), colorTransform, density)
-        is DefineJPEGImage2 -> convertJpegImage2(image, colorTransform, density)
-        is DefineJPEGImage3 -> convertJpegImage3(image, colorTransform, density)
-        else -> {
-            conversionError("Unsupported image type")
-        }
-    }
+    fun convertImage(context: SwfObjectContext,
+                     image: ImageTag,
+                     colorTransform: CompositeColorTransform,
+                     density: Float) =
+            when (image) {
+                is DefineImage -> convertDefineImage(context, WDefineImage(image), colorTransform, density)
+                is DefineImage2 -> convertDefineImage2(context, WDefineImage(image), colorTransform, density)
+                is DefineJPEGImage2 -> convertJpegImage2(image, colorTransform, density)
+                is DefineJPEGImage3 -> convertJpegImage3(image, colorTransform, density)
+                else -> conversionError(context, "Unsupported image type ${image.javaClass.simpleName}")
+            }
 
     // DEFINE BITS LOSSLESS DECODING
 
@@ -67,14 +69,16 @@ class ImageDecoder @Inject constructor(
      * - RGB555 (16 bits) encoded bitmap.
      * - RGB888 (24 bits) encoded bitmap.
      */
-    private fun convertDefineImage(image: WDefineImage, colorTransform: CompositeColorTransform,
+    private fun convertDefineImage(context: SwfObjectContext,
+                                   image: WDefineImage,
+                                   colorTransform: CompositeColorTransform,
                                    density: Float): ImageData {
         // Create buffered image. RGB channels only, no alpha.
         val buffImage = when (image.bits) {
             8 -> convertIndexedImage(image, BufferedImage.TYPE_INT_RGB, 3, (Color)::fromRgbBytes)
             16 -> convertRawImage(image, BufferedImage.TYPE_INT_RGB, 2, (Color)::fromPix15Bytes)
             24 -> convertRawImage(image, BufferedImage.TYPE_INT_RGB, 4, (Color)::fromPix24Bytes)
-            else -> conversionError("Invalid number of image bits")
+            else -> conversionError(context, "Invalid number of image bits ${image.bits}")
         }
         return createTransformedImageData(buffImage, colorTransform, density, ImageFormat.PNG)
     }
@@ -84,13 +88,15 @@ class ImageDecoder @Inject constructor(
      * - An indexed bitmap image with 256 32-bit colors table. (RGBA)
      * - ARGB8888 (32 bits) encoded bitmap.
      */
-    private fun convertDefineImage2(image: WDefineImage, colorTransform: CompositeColorTransform,
+    private fun convertDefineImage2(context: SwfObjectContext,
+                                    image: WDefineImage,
+                                    colorTransform: CompositeColorTransform,
                                     density: Float): ImageData {
         // Create buffered image. RGB channels + alpha channel.
         val buffImage = when (image.bits) {
             8 -> convertIndexedImage(image, BufferedImage.TYPE_INT_ARGB, 4, (Color)::fromRgbaBytes)
             32 -> convertRawImage(image, BufferedImage.TYPE_INT_ARGB, 4, (Color)::fromArgbBytes)
-            else -> conversionError("Invalid number of image bits")
+            else -> conversionError(context, "Invalid number of image bits ${image.bits}")
         }
         return createTransformedImageData(buffImage, colorTransform, density, ImageFormat.PNG)
     }

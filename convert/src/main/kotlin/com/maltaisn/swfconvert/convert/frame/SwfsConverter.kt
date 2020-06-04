@@ -18,6 +18,8 @@ package com.maltaisn.swfconvert.convert.frame
 
 import com.flagstone.transform.Movie
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
+import com.maltaisn.swfconvert.convert.context.ConvertContext
+import com.maltaisn.swfconvert.convert.context.SwfFileContext
 import com.maltaisn.swfconvert.core.*
 import com.maltaisn.swfconvert.core.text.Font
 import com.maltaisn.swfconvert.core.text.FontId
@@ -34,14 +36,16 @@ internal class SwfsConverter @Inject constructor(
         private val swfConverterProvider: Provider<SwfConverter>
 ) {
 
-    suspend fun createFrameGroups(swfs: List<Movie>,
+    suspend fun createFrameGroups(context: ConvertContext,
+                                  swfs: List<Movie>,
                                   fontsMap: Map<FontId, Font>): List<FrameGroup> {
         return progressCb.showStep("Converting SWFs", true) {
             progressCb.showProgress(swfs.size) {
                 swfs.withIndex().mapInParallel(
                         config.parallelSwfConversion) { (i, swf) ->
+                    val swfContext = SwfFileContext(context, config.input[i], i)
                     val frameGroup = swfConverterProvider.get().use {
-                        it.createFrameGroup(swf, fontsMap, i)
+                        it.createFrameGroup(swfContext, swf, fontsMap)
                     }
                     progressCb.incrementProgress()
                     frameGroup

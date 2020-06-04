@@ -17,11 +17,14 @@
 package com.maltaisn.swfconvert.app
 
 import com.maltaisn.swfconvert.core.ProgressCallback
+import org.apache.logging.log4j.kotlin.logger
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 
 class ProgressPrinter : ProgressCallback {
+
+    private val logger = logger()
 
     private val stepStack = LinkedList<Step>()
 
@@ -40,6 +43,7 @@ class ProgressPrinter : ProgressCallback {
         stepStack.addLast(Step(name, important))
         actionAfterEnd = true
         updateLine()
+        logger.info { stepStack.joinToString(": ") { it.name } }
     }
 
     override fun endStep() {
