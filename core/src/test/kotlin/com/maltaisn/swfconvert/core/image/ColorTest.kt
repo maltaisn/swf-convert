@@ -50,6 +50,12 @@ class ColorTest {
     }
 
     @Test
+    fun `should give hex value without alpha`() {
+        val color = Color(0x5E3F09AD)
+        assertEquals("#3F09AD", color.toStringNoAlpha())
+    }
+
+    @Test
     fun `should give color with different alpha`() {
         val color = Color(0x5E3F09AD)
         assertEquals(Color(0x013F09AD), color.withAlpha(0x01))

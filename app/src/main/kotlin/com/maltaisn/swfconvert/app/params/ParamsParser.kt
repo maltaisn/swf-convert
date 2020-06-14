@@ -32,10 +32,12 @@ class ParamsParser {
 
     private val irParams = RenderIrParams()
     private val pdfParams = RenderPdfParams()
+    private val svgParams = RenderSvgParams()
 
     private val commands = mapOf(
             "ir" to irParams,
-            "pdf" to pdfParams
+            "pdf" to pdfParams,
+            "svg" to svgParams
     )
 
     private val jc = JCommander.newBuilder().run {

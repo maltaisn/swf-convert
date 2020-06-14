@@ -46,6 +46,7 @@ inline class Color(val value: Int) {
 
     override fun toString() = '#' + value.toUInt().toString(16).toUpperCase()
 
+    fun toStringNoAlpha() = '#' + value.toUInt().toString(16).substring(2).toUpperCase()
 
     companion object {
 

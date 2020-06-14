@@ -10,6 +10,7 @@ dependencies {
     implementation project(":render:core")
     implementation project(":render:ir")
     implementation project(":render:pdf")
+    implementation project(":render:svg")
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
