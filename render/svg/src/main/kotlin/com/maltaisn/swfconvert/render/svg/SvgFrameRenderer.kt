@@ -48,7 +48,7 @@ internal class SvgFrameRenderer @Inject constructor(
     private var currentDefId = 0
     private val nextDefId: String
         get() {
-            val id = "d" + currentDefId.toString(16)
+            val id = currentDefId.toDefId()
             currentDefId++
             return id
         }
@@ -284,6 +284,20 @@ internal class SvgFrameRenderer @Inject constructor(
         }
     }
 
+    private fun Int.toDefId(): String {
+        var v = this
+        return buildString(4) {
+            // Use base 52 for first char to use only letters.
+            append(BASE_64_ALPHABET[v % 52])
+            v /= 52
+            while (v > 0) {
+                // Use base 64 for following chars.
+                append(BASE_64_ALPHABET[v % 64])
+                v /= 64
+            }
+        }
+    }
+
     private val Color.floatAlpha: Float
         get() = this.a / 255f
 
@@ -334,5 +348,10 @@ internal class SvgFrameRenderer @Inject constructor(
 
     private fun getImagesFile(name: String) = File(imagesDir, name).invariantSeparatorsPath
     private fun getFontsFile(name: String) = File(fontsDir, name).invariantSeparatorsPath
+
+
+    companion object {
+        private const val BASE_64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"
+    }
 
 }
