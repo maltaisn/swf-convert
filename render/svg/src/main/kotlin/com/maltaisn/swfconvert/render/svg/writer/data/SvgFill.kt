@@ -20,12 +20,19 @@ import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.render.svg.writer.toSvgUrlReference
 
 
-sealed class SvgFill
+sealed class SvgFill {
+    abstract fun toSvg(): String
+    override fun toString() = toSvg()
+}
 
 data class SvgFillColor(val color: Color): SvgFill() {
-    override fun toString() = color.toStringNoAlpha()
+    override fun toSvg() = color.toStringNoAlpha()
 }
 
 data class SvgFillId(val id: String): SvgFill() {
-    override fun toString() = id.toSvgUrlReference()
+    override fun toSvg() = id.toSvgUrlReference()
+}
+
+object SvgFillNone : SvgFill() {
+    override fun toSvg() = "none"
 }

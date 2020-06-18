@@ -336,6 +336,7 @@ internal class SvgFrameRenderer @Inject constructor(
     }
 
     private fun PathLineStyle.toSvgGraphicsState() = SvgGraphicsState(
+            fill = SvgFillNone,
             stroke = SvgFillColor(this.color),
             strokeOpacity = this.color.floatAlpha,
             strokeWidth = this.width,

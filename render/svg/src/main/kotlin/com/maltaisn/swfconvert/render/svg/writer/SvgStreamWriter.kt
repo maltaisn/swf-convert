@@ -254,7 +254,7 @@ internal class SvgStreamWriter(outputStream: OutputStream,
                         *getNewGraphicsStateAttrs()) {
                     for (stop in stops) {
                         TAG_STOP(ATTR_OFFSET to stop.offset.format(percentPrecision),
-                                ATTR_STOP_COLOR to SvgFillColor(stop.color),
+                                ATTR_STOP_COLOR to SvgFillColor(stop.color).toSvg(),
                                 ATTR_STOP_OPACITY to stop.opacity.takeIf { it != 1f }?.format(percentPrecision))
                     }
                 }
@@ -304,9 +304,10 @@ internal class SvgStreamWriter(outputStream: OutputStream,
      * pushed [SvgGraphicsState] compared to the previous graphics state.
      */
     private fun getNewGraphicsStateAttrs() = arrayOf(
-            ATTR_FILL to getNewGraphicsStateProperty { fill },
+            ATTR_FILL to getNewGraphicsStateProperty { fill }?.toSvg(),
             ATTR_FILL_OPACITY to getNewGraphicsStateProperty { fillOpacity }?.format(percentPrecision),
-            ATTR_STROKE to getNewGraphicsStateProperty { stroke },
+            ATTR_FILL_RULE to getNewGraphicsStateProperty { fillRule }?.svgName,
+            ATTR_STROKE to getNewGraphicsStateProperty { stroke }?.toSvg(),
             ATTR_STROKE_OPACITY to getNewGraphicsStateProperty { strokeOpacity }?.format(percentPrecision),
             ATTR_STROKE_WIDTH to getNewGraphicsStateProperty { strokeWidth },
             ATTR_STROKE_LINE_JOIN to getNewGraphicsStateProperty { strokeLineJoin }?.svgName,
@@ -384,6 +385,7 @@ internal class SvgStreamWriter(outputStream: OutputStream,
         private const val ATTR_ENCODING = "encoding"
         private const val ATTR_FILL = "fill"
         private const val ATTR_FILL_OPACITY = "fill-opacity"
+        private const val ATTR_FILL_RULE = "fill-rule"
         private const val ATTR_FONT_FAMILY = "font-family"
         private const val ATTR_FONT_SIZE = "font-size"
         private const val ATTR_GRADIENT_TRANSFORM = "gradientTransform"
@@ -424,7 +426,7 @@ internal class SvgStreamWriter(outputStream: OutputStream,
                 fill = SvgFillColor(Color.BLACK),
                 fillOpacity = 1f,
                 fillRule = SvgFillRule.NON_ZERO,
-                stroke = SvgFillColor(Color.BLACK),
+                stroke = SvgFillNone,
                 strokeOpacity = 1f,
                 strokeWidth = 0f,
                 strokeLineJoin = SvgStrokeLineJoin.Miter,

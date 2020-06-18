@@ -20,6 +20,8 @@ package com.maltaisn.swfconvert.render.svg.writer.data
 /**
  * Represents the "graphics state" at a position in a SVG document.
  * These attributes inherit their values from the parent tags. Here `null` means inherit.
+ * These are called the "presentation attributes" in the reference:
+ * [https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/Presentation]
  */
 internal data class SvgGraphicsState(
         val fill: SvgFill? = null,
