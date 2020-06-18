@@ -250,7 +250,7 @@ internal class SvgStreamWriter(outputStream: OutputStream,
                         ATTR_X2 to x2.takeIf { x2 != 1f }?.format(precision),
                         ATTR_Y2 to y2.takeIf { y2 != 0f }?.format(precision),
                         ATTR_GRADIENT_UNITS to units.takeIf { it != SvgGradientUnits.OBJECT_BOUNDING_BOX }?.svgName,
-                        ATTR_GRADIENT_TRANSFORM to transforms?.toSvgTransformList(transformPrecision),
+                        ATTR_GRADIENT_TRANSFORM to transforms?.toSvgTransformList(transformPrecision, !prettyPrint),
                         *getNewGraphicsStateAttrs()) {
                     for (stop in stops) {
                         TAG_STOP(ATTR_OFFSET to stop.offset.format(percentPrecision),
@@ -275,7 +275,7 @@ internal class SvgStreamWriter(outputStream: OutputStream,
     fun text(x: SvgNumber, y: SvgNumber, dx: FloatArray = floatArrayOf(),
              fontId: String? = null, fontSize: Float? = null, text: String,
              grState: SvgGraphicsState = NULL_GRAPHICS_STATE) {
-        val dxValue = if (dx.isEmpty()) null else buildString { appendValuesList(precision, *dx) }
+        val dxValue = if (dx.isEmpty()) null else createSvgValuesList(precision, dx)
         val xmlWriter = checkIfStarted()
         withGraphicsState(grState) {
             xmlWriter {
@@ -315,7 +315,7 @@ internal class SvgStreamWriter(outputStream: OutputStream,
             ATTR_CLIP_PATH to getNewGraphicsStateProperty { clipPathId }?.toSvgUrlReference(),
             ATTR_CLIP_RULE to getNewGraphicsStateProperty { clipPathRule }?.svgName,
             ATTR_MASK to getNewGraphicsStateProperty { maskId }?.toSvgUrlReference(),
-            ATTR_TRANSFORM to getNewGraphicsStateProperty { transforms }?.toSvgTransformList(transformPrecision),
+            ATTR_TRANSFORM to getNewGraphicsStateProperty { transforms }?.toSvgTransformList(transformPrecision, !prettyPrint),
             ATTR_PRESERVE_ASPECT_RATIO to getNewGraphicsStateProperty { preserveAspectRatio }?.toSvg(),
             ATTR_STYLE to getGraphicsStateCssStyle()
     )
@@ -356,11 +356,15 @@ internal class SvgStreamWriter(outputStream: OutputStream,
         return xmlWriter.end()
     }
 
-    private fun Rectangle2D.toSvgValuesList(): String {
-        val rect = this
-        return buildString {
-            appendValuesList(precision, rect.x.toFloat(), rect.y.toFloat(),
-                    rect.width.toFloat(), rect.height.toFloat())
+    private fun Rectangle2D.toSvgValuesList() =
+            createSvgValuesList(precision, floatArrayOf(this.x.toFloat(), this.y.toFloat(),
+                    this.width.toFloat(), this.height.toFloat()))
+
+    private fun createSvgValuesList(precision: Int, values: FloatArray) = buildString {
+        if (prettyPrint) {
+            appendValuesList(precision, values)
+        } else {
+            appendValuesListOptimized(precision, null, values)
         }
     }
 

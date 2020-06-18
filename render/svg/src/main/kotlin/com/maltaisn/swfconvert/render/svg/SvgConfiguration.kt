@@ -28,7 +28,10 @@ data class SvgConfiguration(
         override val output: List<File>,
         override val tempDir: File,
 
-        /** Whether to pretty print SVG or not. */
+        /**
+         * Whether to pretty print SVG or not. Pretty printing will also make
+         * paths and values list more readable by optimizing them less.
+         */
         val prettyPrint: Boolean,
 
         /** Whether to use the SVGZ format or not (gzip compression). */

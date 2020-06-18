@@ -40,7 +40,7 @@ class SvgStreamWriterTest {
         assertEquals("""<?xml version="1.1" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" """ +
                 """xmlns:xlink="http://www.w3.org/1999/xlink" version="2.0" width="10" height="10" viewBox="0 0 100 100" fill="#FF0000"/>""",
                 createSvg {
-                    start(SvgNumber(10f), SvgNumber(10f), Rectangle2D.Float(0f, 0f, 100f, 100f),
+                    start(SvgNumber(10f), SvgNumber(10f), Rectangle2D.Float(0f, 0f, 100f, 100f), true,
                             SvgGraphicsState(fill = SvgFillColor(Color(255, 0, 0))))
                 })
     }
@@ -90,7 +90,7 @@ class SvgStreamWriterTest {
     @Test
     fun `should only write modified graphics state attributes`() {
         assertEquals("""<g fill="#FF0000"><g fill-opacity="0.5"><g stroke-linecap="round">""" +
-                """<g style="mix-blend-mode:multiply;isolation:isolate;"/></g></g></g>""",
+                """<g style="mix-blend-mode:multiply"/></g></g></g>""",
                 createSvg(start = true) {
                     group(SvgGraphicsState(fill = SvgFillColor(Color(255, 0, 0)))) {
                         group(SvgGraphicsState(fill = SvgFillColor(Color(255, 0, 0)), fillOpacity = 0.5f)) {
@@ -144,7 +144,7 @@ class SvgStreamWriterTest {
 
     private fun createSvg(start: Boolean = false, build: SvgStreamWriter.() -> Unit): String {
         return ByteArrayOutputStream().use { outputStream ->
-            SvgStreamWriter(outputStream, 1, false)
+            SvgStreamWriter(outputStream, 1, 2, 2, false)
                     .apply {
                         if (start) {
                             start(SvgNumber(10f), SvgNumber(10f))

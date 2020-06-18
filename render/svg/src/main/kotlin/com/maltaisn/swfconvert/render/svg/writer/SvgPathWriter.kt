@@ -121,19 +121,8 @@ internal class SvgPathWriter(private val precision: Int,
         currentY = moveToY
     }
 
-    private fun getFormattedValues(vararg values: Float) = Array(values.size) { i ->
-        // Format value to string.
-        // Remove leading zero if value is -1 < n < 1 and n != 0
-        val value = values[i]
-        var str = numberFmt.format(value)
-        if (str == "-0") {
-            str = "0"
-        }
-        if (value in -1.0..1.0 && '.' in str) {
-            str = str.replaceFirst("0", "")
-        }
-        str
-    }
+    private fun getFormattedValues(vararg values: Float) =
+            Array(values.size) { values[it].formatOptimized(numberFmt) }
 
     private fun appendShortestCommand(command: Char, x: Float, y: Float,
                                       absoluteValues: Array<String>,
@@ -172,6 +161,16 @@ internal class SvgPathWriter(private val precision: Int,
 
     private fun Float.roundToPrecision() = (this * precisionMult).roundToInt() / precisionMult
 
+    private fun StringBuilder.appendCommand(command: Char,
+                                            values: Array<String>) {
+        if (this.isNotEmpty()) {
+            append(' ')
+        }
+        append(command)
+        append(' ')
+        appendValuesList(values)
+    }
+
     private fun StringBuilder.appendOptimizedCommand(command: Char,
                                                      values: Array<String>) {
         // Append command char
@@ -186,33 +185,7 @@ internal class SvgPathWriter(private val precision: Int,
         }
 
         // Append all values for that command
-        for (value in values) {
-            // Append space separator if value has no sign '-' or decimal point '.'
-            // to separate it from previous value, and if value isn't the first after command.
-            if (lastNbStr != "" && '-' !in value
-                    && ('.' !in lastNbStr || !value.startsWith('.'))) {
-                append(' ')
-            }
-
-            // Append value.
-            append(value)
-
-            lastNbStr = value
-        }
-    }
-
-    private fun StringBuilder.appendCommand(command: Char,
-                                            values: Array<String>) {
-        if (this.isNotEmpty()) {
-            append(' ')
-        }
-        append(command)
-        append(' ')
-        for (value in values) {
-            append(value)
-            append(' ')
-        }
-        deleteCharAt(length - 1)
+        appendValuesListOptimized(lastNbStr, values)
     }
 
     override fun toString() = sb.toString()

@@ -17,6 +17,9 @@
 package com.maltaisn.swfconvert.render.svg.writer.data
 
 import com.maltaisn.swfconvert.render.svg.writer.appendValuesList
+import com.maltaisn.swfconvert.render.svg.writer.appendValuesListOptimized
+import com.maltaisn.swfconvert.render.svg.writer.getNumberFormat
+import java.text.NumberFormat
 
 
 internal sealed class SvgTransform {
@@ -24,14 +27,21 @@ internal sealed class SvgTransform {
     protected abstract val name: String
     protected abstract val values: FloatArray
 
-    fun toSvg(precision: Int) = buildString {
+    fun toSvg(precision: Int, optimized: Boolean) =
+            toSvg(getNumberFormat(precision), optimized)
+
+    fun toSvg(numberFmt: NumberFormat, optimized: Boolean) = buildString {
         append(name)
         append('(')
-        appendValuesList(precision, *values)
+        if (optimized) {
+            appendValuesListOptimized(numberFmt, null, values)
+        } else {
+            appendValuesList(numberFmt, values)
+        }
         append(')')
     }
 
-    override fun toString() = toSvg(3)
+    override fun toString() = toSvg(3, false)
 
 
     data class Matrix(val a: Float, val b: Float, val c: Float,
@@ -96,5 +106,7 @@ internal sealed class SvgTransform {
     }
 }
 
-internal fun List<SvgTransform>.toSvgTransformList(precision: Int) =
-        this.joinToString("") { it.toSvg(precision) }
+internal fun List<SvgTransform>.toSvgTransformList(precision: Int, optimized: Boolean): String {
+    val numberFmt = getNumberFormat(precision)
+    return this.joinToString(if (optimized) "" else " ") { it.toSvg(numberFmt, optimized) }
+}
