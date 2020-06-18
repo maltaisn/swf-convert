@@ -19,6 +19,7 @@ package com.maltaisn.swfconvert.render.svg
 import com.maltaisn.swfconvert.core.*
 import com.maltaisn.swfconvert.render.core.FramesRenderer
 import org.apache.logging.log4j.kotlin.logger
+import java.io.File
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -37,10 +38,23 @@ class SvgFramesRenderer @Inject internal constructor(
     private val logger = logger()
 
     override suspend fun renderFrames(frameGroups: List<FrameGroup>) {
-        var frames = frameGroups.withIndex().associate { (k, v) -> k to v }
+        // Move images and fonts from temp dir to output dir
+        val outputDir = config.output.first().parentFile
+        val outputImagesDir = File(outputDir, "images")
+        val outputFontsDir = File(outputDir, "fonts")
+        progressCb.showStep("Copying images and fonts to output", false) {
 
+            val tempImagesDir = File(config.tempDir, "images")
+            tempImagesDir.copyRecursively(outputImagesDir, true)
+
+            val tempFontsDir = File(config.tempDir, "fonts")
+            tempFontsDir.copyRecursively(outputFontsDir, true)
+        }
+
+        // Write frames
+        var frames = frameGroups.withIndex().associate { (k, v) -> k to v }
         save@ while (true) {
-            frames = renderFrames(frames)
+            frames = renderFrames(frames, outputImagesDir, outputFontsDir)
 
             if (frames.isNotEmpty()) {
                 // Some files couldn't be saved. Ask to retry.
@@ -62,7 +76,8 @@ class SvgFramesRenderer @Inject internal constructor(
      * Render [frameGroups], a map of frame by file index.
      * Returns a similar map for frames that couldn't be saved.
      */
-    private suspend fun renderFrames(frameGroups: Map<Int, FrameGroup>): Map<Int, FrameGroup> {
+    private suspend fun renderFrames(frameGroups: Map<Int, FrameGroup>,
+                                     imagesDir: File, fontsDir: File): Map<Int, FrameGroup> {
         return progressCb.showStep("Writing SVG frames", true) {
             progressCb.showProgress(frameGroups.size) {
                 val failed = ConcurrentHashMap<Int, FrameGroup>()
@@ -71,7 +86,7 @@ class SvgFramesRenderer @Inject internal constructor(
                     val renderer = svgFrameRendererProvider.get()
 
                     try {
-                        renderer.renderFrame(i, frameGroup)
+                        renderer.renderFrame(i, frameGroup, imagesDir, fontsDir)
                     } catch (e: IOException) {
                         logger.warn { "Failed to save file ${config.output[i]}" }
                         failed[i] = frameGroup

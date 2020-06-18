@@ -31,6 +31,12 @@ data class SvgConfiguration(
         /** Whether to pretty print SVG or not. */
         val prettyPrint: Boolean,
 
+        /** SVG general number precision used for number attributes, number list attributes and transforms. */
+        val precision: Int,
+
+        /** SVG number precision used for path data. */
+        val pathPrecision: Int,
+
         // DEBUG OPTIONS
 
         override val parallelFrameRendering: Boolean

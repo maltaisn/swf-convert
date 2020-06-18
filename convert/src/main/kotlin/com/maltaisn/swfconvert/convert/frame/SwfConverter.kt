@@ -155,7 +155,7 @@ internal class SwfConverter @Inject constructor(
         val id = objTag.identifier
 
         val wshape = objTag.toShapeTagOrNull()
-        val transform = placeTag.transform.toAffineTransformOrIdentity(config.yAxisDirection)
+        val transform = placeTag.transform.toAffineTransformOrIdentity()
 
         // Check if all filters are supported
         for (filter in placeTag.filters) {
@@ -306,8 +306,7 @@ internal class SwfConverter @Inject constructor(
     private fun createShape(objContext: SwfObjectContext, shapeTag: WDefineShape, placeTag: WPlace) {
         // If the shape is for clipping, the transform must be pre-applied because it only applies 
         // to the clipping shape while the clip applies to many objects.
-        val transform = placeTag.transform.takeIf { placeTag.hasClip }
-                .toAffineTransformOrIdentity(config.yAxisDirection)
+        val transform = placeTag.transform.takeIf { placeTag.hasClip }.toAffineTransformOrIdentity()
 
         // Parse the shape into paths and images.
         val paths = shapeParser.parseShape(objContext, shapeTag.shape,

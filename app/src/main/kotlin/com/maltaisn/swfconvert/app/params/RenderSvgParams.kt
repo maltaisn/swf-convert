@@ -19,6 +19,7 @@ package com.maltaisn.swfconvert.app.params
 import com.beust.jcommander.Parameter
 import com.beust.jcommander.Parameters
 import com.beust.jcommander.ParametersDelegate
+import com.maltaisn.swfconvert.app.configError
 import com.maltaisn.swfconvert.core.YAxisDirection
 import com.maltaisn.swfconvert.render.svg.SvgConfiguration
 import java.io.File
@@ -33,17 +34,28 @@ class RenderSvgParams : RenderParams<SvgConfiguration> {
     @Parameter(names = ["--pretty"], description = "Whether to pretty print SVG or not.", order = 1000)
     var prettyPrint: Boolean = false
 
+    @Parameter(names = ["--precision"], description = "Precision of SVG attribute values and transforms.")
+    var precision: Int = 1
+
+    @Parameter(names = ["--path-precision"], description = "Precision of SVG path values.")
+    var pathPrecision: Int = 1
+
     override val yAxisDirection: YAxisDirection
         get() = YAxisDirection.DOWN
 
 
-    override fun createConfigurations(inputs: List<List<File>>) = inputs.mapIndexed { i, input ->
-        val tempDir = params.getTempDirForInput(input)
-        SvgConfiguration(
-                params.outputFiles[i],
-                tempDir,
-                prettyPrint,
-                params.parallelFrameRendering)
+    override fun createConfigurations(inputs: List<List<File>>): List<SvgConfiguration> {
+        configError(precision in 0..5 && pathPrecision in 0..5) { "Precision must be between 0 and 5." }
+        return inputs.mapIndexed { i, input ->
+            val tempDir = params.getTempDirForInput(input)
+            SvgConfiguration(
+                    params.outputFiles[i],
+                    tempDir,
+                    prettyPrint,
+                    precision,
+                    pathPrecision,
+                    params.parallelFrameRendering)
+        }
     }
 
     override fun print() {

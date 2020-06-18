@@ -143,7 +143,7 @@ internal class TextConverter @Inject constructor(
 
     /** Creates the text transform used to draw the text. */
     private fun getTextTransform(scale: FontScale): AffineTransform {
-        val tagTr = textTag.transform.toAffineTransformOrIdentity(config.yAxisDirection)
+        val tagTr = textTag.transform.toAffineTransformOrIdentity()
         val usx = scale.unscaleX.toDouble()
         val usy = scale.unscaleY.toDouble() * yAxisMultiplier
         // Scale the transform except for translation components.

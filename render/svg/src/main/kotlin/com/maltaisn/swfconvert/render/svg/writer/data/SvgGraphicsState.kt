@@ -16,21 +16,22 @@
 
 package com.maltaisn.swfconvert.render.svg.writer.data
 
-import com.maltaisn.swfconvert.core.image.Color
-
 
 /**
  * Represents the "graphics state" at a position in a SVG document.
  * These attributes inherit their values from the parent tags. Here `null` means inherit.
  */
 internal data class SvgGraphicsState(
-        val fillColor: Color? = null,
-        val strokeColor: Color? = null,
+        val fill: SvgFill? = null,
+        val fillOpacity: Float? = null,
+        val fillRule: SvgFillRule? = null,
+        val stroke: SvgFill? = null,
+        val strokeOpacity: Float? = null,
         val strokeWidth: Float? = null,
         val strokeLineJoin: SvgStrokeLineJoin? = null,
         val strokeLineCap: SvgStrokeLineCap? = null,
         val clipPathId: String? = null,
-        val clipPathRule: SvgClipPathRule? = null,
+        val clipPathRule: SvgFillRule? = null,
         val maskId: String? = null,
         val transforms: List<SvgTransform>? = null,
         val preserveAspectRatio: SvgPreserveAspectRatio? = null,

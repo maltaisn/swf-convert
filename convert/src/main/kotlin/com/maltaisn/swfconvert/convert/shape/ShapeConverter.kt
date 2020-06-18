@@ -191,48 +191,6 @@ internal open class ShapeConverter @Inject constructor() {
         elements.clear()
     }
 
-    private fun convertPathToRectangle(elements: List<PathElement>): Rectangle? {
-        if (elements.size != 5) {
-            return null
-        }
-
-        val first = elements[0]
-        var last: PathElement = first
-        var lastWasHorizontal: Boolean? = null
-        var width = 0f
-        var height = 0f
-        for (i in 1 until elements.size) {
-            val e = elements[i]
-            if (e !is LineTo) return null
-            val dx = e.x - last.x
-            val dy = e.y - last.y
-            when {
-                dy == 0f -> {
-                    if (lastWasHorizontal == true) return null
-                    if (width == 0f) {
-                        width = dx
-                    } else if (width != -dx) {
-                        return null
-                    }
-                    lastWasHorizontal = true
-                }
-                dx == 0f -> {
-                    if (lastWasHorizontal == false) return null
-                    if (height == 0f) {
-                        height = dy
-                    } else if (height != -dy) {
-                        return null
-                    }
-                    lastWasHorizontal = false
-                }
-                else -> return null
-            }
-            last = e
-        }
-
-        return Rectangle(first.x, first.y, width, height)
-    }
-
     private fun createEdgeMaps() {
         var xPos = 0
         var yPos = 0
@@ -466,6 +424,49 @@ internal open class ShapeConverter @Inject constructor() {
         private const val NO_STYLE_INDEX = Int.MAX_VALUE
         private val NO_POINT = Point(Int.MAX_VALUE, Int.MAX_VALUE)
         private val SOLID_BLACK_FILL = PathFillStyle.Solid(Color.BLACK)
+
+
+        internal fun convertPathToRectangle(elements: List<PathElement>): Rectangle? {
+            if (elements.size != 5) {
+                return null
+            }
+
+            val first = elements[0]
+            var last: PathElement = first
+            var lastWasHorizontal: Boolean? = null
+            var width = 0f
+            var height = 0f
+            for (i in 1 until elements.size) {
+                val e = elements[i]
+                if (e !is LineTo) return null
+                val dx = e.x - last.x
+                val dy = e.y - last.y
+                when {
+                    dy == 0f -> {
+                        if (lastWasHorizontal == true) return null
+                        if (width == 0f) {
+                            width = dx
+                        } else if (width != -dx) {
+                            return null
+                        }
+                        lastWasHorizontal = true
+                    }
+                    dx == 0f -> {
+                        if (lastWasHorizontal == false) return null
+                        if (height == 0f) {
+                            height = dy
+                        } else if (height != -dy) {
+                            return null
+                        }
+                        lastWasHorizontal = false
+                    }
+                    else -> return null
+                }
+                last = e
+            }
+
+            return Rectangle(first.x, first.y, width, height)
+        }
     }
 
 }

@@ -20,6 +20,7 @@ import com.maltaisn.swfconvert.core.*
 import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.core.image.ImageData
 import com.maltaisn.swfconvert.core.image.ImageDataCreator
+import com.maltaisn.swfconvert.core.image.flippedVertically
 import com.maltaisn.swfconvert.core.shape.Path
 import com.maltaisn.swfconvert.core.shape.PathElement.*
 import com.maltaisn.swfconvert.core.shape.PathFillStyle
@@ -162,8 +163,10 @@ internal class FramesRasterizer @Inject constructor(
             frameDoc.close()
 
             // Create image data
-            val imageData = imageDataCreatorProvider.get().createImageData(pdfImage,
-                    config.rasterizationFormat, config.rasterizationJpegQuality)
+            val imageData = imageDataCreatorProvider.get().createImageData(
+                    pdfImage.flippedVertically(),
+                    config.rasterizationFormat,
+                    config.rasterizationJpegQuality)
 
             // Create PDF image
             val imageFile = File(imagesDir, "frame.${imageData.format.extension}")

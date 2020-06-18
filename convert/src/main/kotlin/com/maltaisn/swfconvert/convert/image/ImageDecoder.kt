@@ -23,9 +23,8 @@ import com.maltaisn.swfconvert.convert.conversionError
 import com.maltaisn.swfconvert.convert.wrapper.WDefineImage
 import com.maltaisn.swfconvert.convert.zlibDecompress
 import com.maltaisn.swfconvert.core.Disposable
-import com.maltaisn.swfconvert.core.image.Color
-import com.maltaisn.swfconvert.core.image.ImageData
-import com.maltaisn.swfconvert.core.image.ImageDataCreator
+import com.maltaisn.swfconvert.core.YAxisDirection
+import com.maltaisn.swfconvert.core.image.*
 import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.mortennobel.imagescaling.ResampleOp
 import java.awt.image.BufferedImage
@@ -221,6 +220,9 @@ internal class ImageDecoder @Inject constructor(
         colorTransform?.transform(image)
         if (density != null) {
             image = image.downsampled(density, config.maxDpi)
+        }
+        if (config.yAxisDirection == YAxisDirection.UP) {
+            image = image.flippedVertically()
         }
 
         // Create image data

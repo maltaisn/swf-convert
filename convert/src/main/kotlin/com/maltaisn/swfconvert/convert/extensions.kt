@@ -17,8 +17,6 @@
 package com.maltaisn.swfconvert.convert
 
 import com.flagstone.transform.datatype.CoordTransform
-import com.maltaisn.swfconvert.core.FrameGroup
-import com.maltaisn.swfconvert.core.YAxisDirection
 import com.maltaisn.swfconvert.core.image.Color
 import java.awt.geom.AffineTransform
 import java.io.ByteArrayInputStream
@@ -30,32 +28,29 @@ internal fun FColor.toColor() = Color(this.red, this.green, this.blue, this.alph
 
 /**
  * Convert [this] transform to an [AffineTransform].
- * @param yAxisDirection If direction is [YAxisDirection.UP], the shearing components are
- * swapped to reverse the rotation direction back, because the flipping of the [FrameGroup]
- * has inverted the rotation once.
+ *
+ * transform-swf shear components are reversed compared to the ones [AffineTransform] use.
+ * The SWF reference states that the components of the `MATRIX` record are used as followed:
+ * ```
+ * x' = x * ScaleX + y * RotateSkew1 + TranslateX
+ * y' = x * RotateSkew0 + y * ScaleY + TranslateY
+ * ```
+ * With `RotateSkew0` being encoded just before `RotateSkew1`. This calculation implies
+ * `RotateSkew1` should correspond to AffineTransform's shearX and `RotateSkew0` should be shearY.
  */
-internal fun CoordTransform.toAffineTransform(yAxisDirection: YAxisDirection) = when (yAxisDirection) {
-    YAxisDirection.UP -> AffineTransform(
+internal fun CoordTransform.toAffineTransform() = AffineTransform(
             this.scaleX,
             this.shearX,
             this.shearY,
             this.scaleY,
             this.translateX.toFloat(),
             this.translateY.toFloat())
-    YAxisDirection.DOWN -> AffineTransform(
-            this.scaleX,
-            this.shearY,
-            this.shearX,
-            this.scaleY,
-            this.translateX.toFloat(),
-            this.translateY.toFloat())
-}
 
 /**
  * Null-safe alternative to [toAffineTransform] that returns the identity matrix if [this] is `null`.
  */
-internal fun CoordTransform?.toAffineTransformOrIdentity(yAxisDirection: YAxisDirection) =
-        this?.toAffineTransform(yAxisDirection) ?: AffineTransform()
+internal fun CoordTransform?.toAffineTransformOrIdentity() =
+        this?.toAffineTransform() ?: AffineTransform()
 
 
 internal fun ByteArray.zlibDecompress(): ByteArray {

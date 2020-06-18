@@ -18,14 +18,15 @@ package com.maltaisn.swfconvert.render.svg.writer
 
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
+import java.text.NumberFormat
 
 
 /**
  * Append a list of space separated [values] to [this] StringBuilder.
  */
-internal fun StringBuilder.appendValuesList(vararg values: Float) {
+internal fun StringBuilder.appendValuesList(nbFmt: NumberFormat, vararg values: Float) {
     for (value in values) {
-        this.append(NUMBER_FMT.format(value))
+        this.append(nbFmt.format(value))
         this.append(' ')
     }
     if (values.isNotEmpty()) {
@@ -33,9 +34,14 @@ internal fun StringBuilder.appendValuesList(vararg values: Float) {
     }
 }
 
-private val NUMBER_FMT = DecimalFormat().apply {
+internal fun createNumberFormat(precision: Int? = null) = DecimalFormat().apply {
+    if (precision != null) {
+        maximumFractionDigits = precision
+    }
     isGroupingUsed = false
     decimalFormatSymbols = DecimalFormatSymbols().apply {
         decimalSeparator = '.'
     }
 }
+
+internal fun String?.toSvgUrlReference() = "url(#$this)"

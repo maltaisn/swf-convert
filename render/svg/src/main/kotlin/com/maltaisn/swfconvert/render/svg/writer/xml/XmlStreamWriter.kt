@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.render.svg.writer
+package com.maltaisn.swfconvert.render.svg.writer.xml
 
+import com.maltaisn.swfconvert.render.svg.writer.createNumberFormat
 import java.io.Closeable
 import java.io.Flushable
 import java.io.OutputStream
 import java.io.OutputStreamWriter
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
 import java.util.*
 
 
@@ -33,11 +32,16 @@ import java.util.*
  * @property namespaces Namespace declarations added to root tag and that will be accepted in XML.
  * @property prettyPrint Whether to pretty print XML or not.
  */
-class XmlStreamWriter(outputStream: OutputStream,
-                      private val namespaces: Map<String?, String> = emptyMap(),
-                      private val prettyPrint: Boolean = false) : Closeable, Flushable {
+internal class XmlStreamWriter(
+        outputStream: OutputStream,
+        private val namespaces: Map<String?, String> = emptyMap(),
+        private val prettyPrint: Boolean = false,
+        private val maxLineWidth: Int = 128,
+        private val indentSize: Int = 4
+) : XmlWriter(), Closeable, Flushable {
 
     private val writer = OutputStreamWriter(outputStream).buffered()
+    private val numberFmt = createNumberFormat()
 
     /** Whether current position is currently on root or not. */
     val isRoot: Boolean
@@ -49,6 +53,9 @@ class XmlStreamWriter(outputStream: OutputStream,
 
     /** Stack of tags leading to current position. */
     private val tagStack = LinkedList<Tag>()
+
+    override val currentTag: String
+        get() = tagStack.peek().name
 
     /** Whether writer has written the root tag or not. */
     private var hasRootTag = false
@@ -72,25 +79,8 @@ class XmlStreamWriter(outputStream: OutputStream,
         writer.close()
     }
 
-    /**
-     * Write XML prolog with [attrs]
-     */
-    fun prolog(vararg attrs: Pair<String, Any?>) {
-        check(!hasRootTag) { "Prolog must be the first XML element" }
-
-        write("<")
-        write(XML_PROLOG)
-        writeAttributes(XML_PROLOG, *attrs)
-        write("?>")
-        writeLine()
-    }
-
-    /**
-     * Start a new tag with a [name] and [attrs].
-     * The started tag becomes the current tag.
-     */
-    fun start(name: String,
-              vararg attrs: Pair<String, *>) {
+    override fun start(name: String,
+                       vararg attrs: Pair<String, *>): XmlStreamWriter {
         check(!isRoot || !hasRootTag) { "There must be a single root tag" }
         name.checkXmlName()
 
@@ -105,16 +95,15 @@ class XmlStreamWriter(outputStream: OutputStream,
             hasRootTag = true
         }
         tagStack.push(Tag(name, false))
-        indentLevel += PRETTY_PRINT_INDENT_SIZE
+        indentLevel += indentSize
+
+        return this
     }
 
-    /**
-     * End the current tag, returning the name of the ended tag.
-     */
-    fun end(): String {
+    override fun end(): XmlStreamWriter {
         check(!isRoot) { "No tag started." }
 
-        indentLevel -= PRETTY_PRINT_INDENT_SIZE
+        indentLevel -= indentSize
 
         val tag = tagStack.pop()
         if (tag.hasChildren) {
@@ -129,49 +118,57 @@ class XmlStreamWriter(outputStream: OutputStream,
             writeLine()
         }
 
-        return tag.name
+        return this
     }
 
-    /**
-     * Write text at current position.
-     */
-    fun text(text: String) {
+    override fun prolog(vararg attrs: Pair<String, Any?>) {
+        check(!hasRootTag) { "Prolog must be the first XML element" }
+
+        write("<")
+        write(XML_PROLOG)
+        writeAttributes(XML_PROLOG, *attrs)
+        attrIndentLevel = 0
+        write("?>")
+        writeLine()
+    }
+
+    override fun text(text: String) {
         if (text.isEmpty()) {
             return
         }
         check(ILLEGAL_CHARS_REGEX !in text) { "Illegal chars in text" }
 
-        raw(text
-                .replace("&", "&amp;")
-                .replace("<", "&lt;"))
-    }
-
-    /**
-     * Write raw XML data at current position.
-     */
-    fun raw(xml: String) {
         closeStartTagIfNeeded()
         writeIndent()
-        write(xml)
+        write(text.replace("&", "&amp;")
+                .replace("<", "&lt;"))
         writeLine()
     }
 
-    // DSL
-
     /**
-     * [build] XML using this writer.
+     * Write a [XmlElement] to this writer. This allows for dynamic document
+     * creation with a DOM structure for subparts of the main XML document.
      */
-    inline operator fun invoke(@XmlDsl build: XmlStreamWriter.() -> Unit) = apply(build)
-
-    /**
-     * Write a XML tag with [attrs] and [build] its children.
-     */
-    inline operator fun String.invoke(vararg attrs: Pair<String, *>,
-                               @XmlDsl build: XmlStreamWriter.() -> Unit = {}) {
-        start(this, *attrs)
-        this@XmlStreamWriter.build()
-        end()
+    fun write(element: XmlElement) {
+        when (element) {
+            is XmlTag -> element.name(*element.attrs.toTypedArray()) {
+                for (child in element.children) {
+                    write(child)
+                }
+            }
+            is XmlProlog -> prolog(*element.attrs.toTypedArray())
+            is XmlText -> text(element.text)
+        }
     }
+
+    private fun <K, V> Map<K, V>.toTypedArray(): Array<Pair<K, V>> {
+        val arr = arrayOfNulls<Pair<K, V>>(this.size)
+        for ((i, entry) in this.entries.withIndex()) {
+            arr[i] = entry.key to entry.value
+        }
+        return arr.requireNoNulls()
+    }
+
 
     private fun write(str: String) {
         writer.write(str)
@@ -238,7 +235,7 @@ class XmlStreamWriter(outputStream: OutputStream,
 
     private fun writeAttribute(tagName: String, name: String, value: Any) {
         val valueStr = if (value is Number) {
-            NUMBER_FMT.format(value)  // For floating point, omit '.0'.
+            numberFmt.format(value)  // For floating point, omit '.0'.
         } else {
             value.toString()
                     .replace("&", "&amp;")
@@ -250,9 +247,9 @@ class XmlStreamWriter(outputStream: OutputStream,
 
         if (prettyPrint && attrIndentLevel == 0) {
             // Attribute indentation level wasn't set yet. (first attribute)
-            attrIndentLevel = if (lineWidthAfter >= PRETTY_PRINT_LINE_LIMIT) {
+            attrIndentLevel = if (lineWidthAfter >= maxLineWidth) {
                 // First attribute will be on next line, use default indent.
-                PRETTY_PRINT_INDENT_SIZE
+                indentSize
             } else {
                 // First attribute will be on same line, align others with first.
                 // +2 chars for '<' and the space separating the tag and the first attribute.
@@ -261,7 +258,7 @@ class XmlStreamWriter(outputStream: OutputStream,
         }
 
         // Write indent/whitespace
-        if (prettyPrint && lineWidthAfter >= PRETTY_PRINT_LINE_LIMIT) {
+        if (prettyPrint && lineWidthAfter >= maxLineWidth) {
             writeLine()
             writeIndent()
         } else {
@@ -295,19 +292,7 @@ class XmlStreamWriter(outputStream: OutputStream,
 
         private val ILLEGAL_CHARS_REGEX = """[^\u0001-\ud7ff\ue000-\ufffd]""".toRegex()
         private val INVALID_NAME_CHARS_REGEX = """[<>&'"\v]""".toRegex()
-
-        private const val PRETTY_PRINT_INDENT_SIZE = 4
-        private const val PRETTY_PRINT_LINE_LIMIT = 128
-
-        private val NUMBER_FMT = DecimalFormat().apply {
-            isGroupingUsed = false
-            decimalFormatSymbols = DecimalFormatSymbols().apply {
-                decimalSeparator = '.'
-            }
-        }
     }
 
 }
 
-@DslMarker
-private annotation class XmlDsl

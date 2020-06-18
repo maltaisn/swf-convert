@@ -17,6 +17,8 @@
 package com.maltaisn.swfconvert.render.svg.writer.data
 
 import com.maltaisn.swfconvert.render.svg.writer.appendValuesList
+import java.text.DecimalFormat
+import java.text.NumberFormat
 
 
 internal sealed class SvgTransform {
@@ -24,14 +26,14 @@ internal sealed class SvgTransform {
     protected abstract val name: String
     protected abstract val values: FloatArray
 
-    fun toSvg() = buildString {
+    fun toSvg(nbFmt: NumberFormat) = buildString {
         append(name)
         append('(')
-        appendValuesList(*values)
+        appendValuesList(nbFmt, *values)
         append(')')
     }
 
-    override fun toString() = toSvg()
+    override fun toString() = toSvg(DecimalFormat.getInstance())
 
 
     data class Matrix(val a: Float, val b: Float, val c: Float,
@@ -60,7 +62,7 @@ internal sealed class SvgTransform {
             get() = "scale"
 
         override val values: FloatArray
-            get() = if (y == 0f) {
+            get() = if (x == y) {
                 floatArrayOf(x)
             } else {
                 floatArrayOf(x, y)
@@ -96,4 +98,5 @@ internal sealed class SvgTransform {
     }
 }
 
-internal fun List<SvgTransform>.toSvgTransformList() = this.joinToString("") { it.toSvg() }
+internal fun List<SvgTransform>.toSvgTransformList(nbFmt: NumberFormat) =
+        this.joinToString("") { it.toSvg(nbFmt) }

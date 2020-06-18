@@ -37,6 +37,7 @@ import org.apache.pdfbox.pdmodel.graphics.form.PDTransparencyGroupAttributes
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject
 import org.apache.pdfbox.util.Matrix
 import java.awt.BasicStroke
+import java.awt.geom.AffineTransform
 import java.awt.geom.Rectangle2D
 import java.io.File
 import java.util.*
@@ -273,8 +274,13 @@ class PdfFrameRenderer @Inject internal constructor(
             PDGradient.GradientPart(it.color, it.ratio)
         })
 
+        // SWF gradient has a size of 32768 and offset by -16384. Concatenate that to gradient transform.
+        val tr = AffineTransform(gradient.transform)
+        tr.concatenate(AffineTransform(32768f, 0f, 0f, 32768f, -16384f, -16384f))
+
+        // Apply the transform onto an unit vector to define the PDF gradient.
         val coords = floatArrayOf(0f, 0.5f, 1f, 0.5f)
-        gradient.transform.transform(coords, 0, coords, 0, 2)
+        tr.transform(coords, 0, coords, 0, 2)
         val arr = COSArray()
         for (coord in coords) {
             arr.add(COSFloat(coord))

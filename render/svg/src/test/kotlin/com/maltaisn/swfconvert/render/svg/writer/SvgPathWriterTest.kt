@@ -228,6 +228,17 @@ class SvgPathWriterTest {
         }
     }
 
+    @Test
+    fun `should write unoptimized path`() {
+        assertPathEquals("M 10 10 H 20 V 20 H 10 Z", optimize = false) {
+            moveTo(10f, 10f)
+            lineTo(20f, 10f)
+            lineTo(20f, 20f)
+            lineTo(10f, 20f)
+            closePath()
+        }
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun `should fail to create writer with negative precision`() {
         SvgPathWriter(-1)
@@ -239,8 +250,9 @@ class SvgPathWriterTest {
     }
 
     private fun assertPathEquals(vararg expected: String, precision: Int = 1,
+                                 optimize: Boolean = true,
                                  write: SvgPathWriter.() -> Unit) {
-        val actual = SvgPathWriter(precision).apply(write).toString()
+        val actual = SvgPathWriter(precision, optimize).apply(write).toString()
         var passed = 0
         for ((i, exp) in expected.withIndex()) {
             try {

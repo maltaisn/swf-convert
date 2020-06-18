@@ -16,8 +16,16 @@
 
 package com.maltaisn.swfconvert.render.svg.writer.data
 
+import com.maltaisn.swfconvert.core.image.Color
+import com.maltaisn.swfconvert.render.svg.writer.toSvgUrlReference
 
-internal enum class SvgClipPathRule(val svgName: String) {
-    NON_ZERO("nonzero"),
-    EVEN_ODD("evenodd")
+
+sealed class SvgFill
+
+data class SvgFillColor(val color: Color): SvgFill() {
+    override fun toString() = color.toStringNoAlpha()
+}
+
+data class SvgFillId(val id: String): SvgFill() {
+    override fun toString() = id.toSvgUrlReference()
 }

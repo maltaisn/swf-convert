@@ -16,8 +16,6 @@
 
 package com.maltaisn.swfconvert.render.svg.writer
 
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
@@ -26,20 +24,15 @@ import kotlin.math.roundToInt
  * Class used to write SVG paths with numbers using a certain [precision].
  * Path strings are also optimized to reduce size.
  */
-internal class SvgPathWriter(private val precision: Int) {
+internal class SvgPathWriter(private val precision: Int,
+                             private val optimize: Boolean = true) {
 
     init {
         // float is used internally so precision beyond 5 might produce rounding errors.
         require(precision in 0..5) { "Precision must be between 0 and 5." }
     }
 
-    private val numberFmt = DecimalFormat().apply {
-        maximumFractionDigits = precision
-        decimalFormatSymbols = DecimalFormatSymbols().apply {
-            isGroupingUsed = false
-            decimalSeparator = '.'
-        }
-    }
+    private val numberFmt = createNumberFormat(precision)
 
     private val precisionMult = 10f.pow(precision)
 
@@ -119,6 +112,9 @@ internal class SvgPathWriter(private val precision: Int) {
     }
 
     fun closePath() {
+        if (!optimize && sb.isNotEmpty()) {
+            sb.append(' ')
+        }
         sb.append('Z')
         lastCommand = 'Z'
         currentX = moveToX
@@ -142,14 +138,22 @@ internal class SvgPathWriter(private val precision: Int) {
     private fun appendShortestCommand(command: Char, x: Float, y: Float,
                                       absoluteValues: Array<String>,
                                       relativeValues: Array<String>) {
+        if (!optimize) {
+            sb.appendCommand(command, absoluteValues)
+            lastNumberStr = absoluteValues.last()
+            currentX = x.roundToPrecision()
+            currentY = y.roundToPrecision()
+            return
+        }
+
         val absCommand = command.toUpperCase()
         val relCommand = command.toLowerCase()
 
         absoluteSb.clear()
-        absoluteSb.appendCommand(absCommand, absoluteValues)
+        absoluteSb.appendOptimizedCommand(absCommand, absoluteValues)
 
         relativeSb.clear()
-        relativeSb.appendCommand(relCommand, relativeValues)
+        relativeSb.appendOptimizedCommand(relCommand, relativeValues)
 
         lastCommand = if (relativeSb.length < absoluteSb.length) {
             sb.append(relativeSb)
@@ -168,8 +172,8 @@ internal class SvgPathWriter(private val precision: Int) {
 
     private fun Float.roundToPrecision() = (this * precisionMult).roundToInt() / precisionMult
 
-    private fun StringBuilder.appendCommand(command: Char,
-                                            values: Array<String>) {
+    private fun StringBuilder.appendOptimizedCommand(command: Char,
+                                                     values: Array<String>) {
         // Append command char
         var lastNbStr = lastNumberStr
         if (!(lastCommand == command && command != 'M' && command != 'm'
@@ -195,6 +199,20 @@ internal class SvgPathWriter(private val precision: Int) {
 
             lastNbStr = value
         }
+    }
+
+    private fun StringBuilder.appendCommand(command: Char,
+                                            values: Array<String>) {
+        if (this.isNotEmpty()) {
+            append(' ')
+        }
+        append(command)
+        append(' ')
+        for (value in values) {
+            append(value)
+            append(' ')
+        }
+        deleteCharAt(length - 1)
     }
 
     override fun toString() = sb.toString()
