@@ -78,17 +78,19 @@ internal class SvgStreamWriter(outputStream: OutputStream,
 
     fun start(width: SvgNumber, height: SvgNumber,
               viewBox: Rectangle2D? = null,
+              writeProlog: Boolean = true,
               grState: SvgGraphicsState = NULL_GRAPHICS_STATE) {
         check(!hasEnded) { "SVG has ended" }
         check(xmlWriter == null) { "SVG has already started" }
 
         xmlWriter = xml
-
-        val viewBoxStr = viewBox?.toSvgValuesList()
-
         grStateStack.push(grState)
 
-        xml.prolog(ATTR_VERSION to "1.1", ATTR_ENCODING to "UTF-8")
+        if (writeProlog) {
+            xml.prolog(ATTR_VERSION to "1.1", ATTR_ENCODING to "UTF-8")
+        }
+
+        val viewBoxStr = viewBox?.toSvgValuesList()
         xmlWriter = xml.start(TAG_SVG,
                 ATTR_VERSION to "2.0",
                 ATTR_WIDTH to width.toSvg(precision),

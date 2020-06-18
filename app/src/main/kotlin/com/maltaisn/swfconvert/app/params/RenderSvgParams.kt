@@ -34,14 +34,18 @@ class RenderSvgParams : RenderParams<SvgConfiguration> {
     @Parameter(names = ["--pretty"], description = "Whether to pretty print SVG or not.", order = 1000)
     var prettyPrint: Boolean = false
 
-    @Parameter(names = ["--precision"], description = "Precision of SVG path, position, and dimension values.")
+    @Parameter(names = ["--precision"], description = "Precision of SVG path, position, and dimension values.", order=1100)
     var precision: Int = 1
 
-    @Parameter(names = ["--transform-precision"], description = "Precision of SVG transform values.")
+    @Parameter(names = ["--transform-precision"], description = "Precision of SVG transform values.", order=1110)
     var transformPrecision: Int = 2
 
-    @Parameter(names = ["--percent-precision"], description = "Precision of SVG percentage values.")
+    @Parameter(names = ["--percent-precision"], description = "Precision of SVG percentage values.", order=1120)
     var percentPrecision: Int = 2
+
+    @Parameter(names = ["--no-prolog"], description = "Whether to omit the XML prolog or not.", order=1200)
+    var noProlog: Boolean = false
+
 
     override val yAxisDirection: YAxisDirection
         get() = YAxisDirection.DOWN
@@ -62,6 +66,7 @@ class RenderSvgParams : RenderParams<SvgConfiguration> {
                     precision,
                     transformPrecision,
                     percentPrecision,
+                    !noProlog,
                     params.parallelFrameRendering)
         }
     }

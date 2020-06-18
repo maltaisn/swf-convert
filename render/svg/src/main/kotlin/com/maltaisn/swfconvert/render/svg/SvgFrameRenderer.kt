@@ -72,6 +72,7 @@ internal class SvgFrameRenderer @Inject constructor(
             svg.start(SvgNumber(frame.actualWidth, SvgUnit.PT),
                     SvgNumber(frame.actualHeight, SvgUnit.PT),
                     Rectangle2D.Float(0f, 0f, frame.width, frame.height),
+                    config.writeProlog,
                     SvgGraphicsState(
                             fillRule = SvgFillRule.EVEN_ODD,
                             clipPathRule = SvgFillRule.EVEN_ODD,

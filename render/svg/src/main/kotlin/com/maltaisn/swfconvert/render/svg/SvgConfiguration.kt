@@ -40,6 +40,9 @@ data class SvgConfiguration(
         /** Number precision used for percentage values (gradient stops and opacity). */
         val percentPrecision: Int,
 
+        /** Whether to write XML prolog in SVG documents or not. */
+        val writeProlog: Boolean,
+
         // DEBUG OPTIONS
 
         override val parallelFrameRendering: Boolean
