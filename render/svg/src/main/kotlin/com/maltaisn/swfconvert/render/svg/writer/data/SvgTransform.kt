@@ -17,8 +17,6 @@
 package com.maltaisn.swfconvert.render.svg.writer.data
 
 import com.maltaisn.swfconvert.render.svg.writer.appendValuesList
-import java.text.DecimalFormat
-import java.text.NumberFormat
 
 
 internal sealed class SvgTransform {
@@ -26,18 +24,18 @@ internal sealed class SvgTransform {
     protected abstract val name: String
     protected abstract val values: FloatArray
 
-    fun toSvg(nbFmt: NumberFormat) = buildString {
+    fun toSvg(precision: Int) = buildString {
         append(name)
         append('(')
-        appendValuesList(nbFmt, *values)
+        appendValuesList(precision, *values)
         append(')')
     }
 
-    override fun toString() = toSvg(DecimalFormat.getInstance())
+    override fun toString() = toSvg(3)
 
 
     data class Matrix(val a: Float, val b: Float, val c: Float,
-                      val d: Float, val e: Float, val f: Float): SvgTransform() {
+                      val d: Float, val e: Float, val f: Float) : SvgTransform() {
         override val name: String
             get() = "matrix"
 
@@ -45,7 +43,7 @@ internal sealed class SvgTransform {
             get() = floatArrayOf(a, b, c, d, e, f)
     }
 
-    data class Translate(val x: Float, val y: Float = 0f): SvgTransform() {
+    data class Translate(val x: Float, val y: Float = 0f) : SvgTransform() {
         override val name: String
             get() = "translate"
 
@@ -57,7 +55,7 @@ internal sealed class SvgTransform {
             }
     }
 
-    data class Scale(val x: Float, val y: Float = 0f): SvgTransform() {
+    data class Scale(val x: Float, val y: Float = 0f) : SvgTransform() {
         override val name: String
             get() = "scale"
 
@@ -69,7 +67,7 @@ internal sealed class SvgTransform {
             }
     }
 
-    data class Rotate(val angle: Float, val x: Float = 0f, val y: Float = 0f): SvgTransform() {
+    data class Rotate(val angle: Float, val x: Float = 0f, val y: Float = 0f) : SvgTransform() {
         override val name: String
             get() = "rotate"
 
@@ -81,7 +79,7 @@ internal sealed class SvgTransform {
             }
     }
 
-    data class SkewX(val angle: Float): SvgTransform() {
+    data class SkewX(val angle: Float) : SvgTransform() {
         override val name: String
             get() = "skewX"
 
@@ -89,7 +87,7 @@ internal sealed class SvgTransform {
             get() = floatArrayOf(angle)
     }
 
-    data class SkewY(val angle: Float): SvgTransform() {
+    data class SkewY(val angle: Float) : SvgTransform() {
         override val name: String
             get() = "skewY"
 
@@ -98,5 +96,5 @@ internal sealed class SvgTransform {
     }
 }
 
-internal fun List<SvgTransform>.toSvgTransformList(nbFmt: NumberFormat) =
-        this.joinToString("") { it.toSvg(nbFmt) }
+internal fun List<SvgTransform>.toSvgTransformList(precision: Int) =
+        this.joinToString("") { it.toSvg(precision) }

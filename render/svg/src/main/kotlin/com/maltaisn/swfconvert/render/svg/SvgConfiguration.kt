@@ -31,11 +31,14 @@ data class SvgConfiguration(
         /** Whether to pretty print SVG or not. */
         val prettyPrint: Boolean,
 
-        /** SVG general number precision used for number attributes, number list attributes and transforms. */
+        /** General number precision used for path, position and dimension values. */
         val precision: Int,
 
-        /** SVG number precision used for path data. */
-        val pathPrecision: Int,
+        /** Number precision used for scale and shear componenets of transforms. */
+        val transformPrecision: Int,
+
+        /** Number precision used for percentage values (gradient stops and opacity). */
+        val percentPrecision: Int,
 
         // DEBUG OPTIONS
 

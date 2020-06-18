@@ -66,7 +66,8 @@ internal class SvgFrameRenderer @Inject constructor(
         this.fontsDir = fontsDir.relativeToOrSelf(outputDir)
 
         FileOutputStream(outputFile).use { outputStream ->
-            svg = SvgStreamWriter(outputStream, config.precision, config.prettyPrint)
+            svg = SvgStreamWriter(outputStream, config.precision, config.transformPrecision,
+                    config.percentPrecision, config.prettyPrint)
 
             svg.start(SvgNumber(frame.actualWidth, SvgUnit.PT),
                     SvgNumber(frame.actualHeight, SvgUnit.PT),
@@ -199,7 +200,7 @@ internal class SvgFrameRenderer @Inject constructor(
                     .copy(fill = SvgFillColor(fill.color), fillOpacity = fill.color.floatAlpha)
         }
         if (grState != null) {
-            svg.path(config.pathPrecision, grState) {
+            svg.path(grState) {
                 writePath(path, this)
             }
         }
@@ -248,7 +249,7 @@ internal class SvgFrameRenderer @Inject constructor(
             linearGradient(stops, SvgGradientUnits.USER_SPACE_ON_USE,
                     gradient.transform.toSvgTransformList(), x1 = -16384f, x2 = 16384f)
         }
-        svg.path(config.pathPrecision, SvgGraphicsState(fill = SvgFillId(id))) {
+        svg.path(SvgGraphicsState(fill = SvgFillId(id))) {
             writePath(path, this)
         }
     }
@@ -256,7 +257,7 @@ internal class SvgFrameRenderer @Inject constructor(
     private fun createClipSvgGraphicsState(paths: List<Path>): SvgGraphicsState {
         val id = nextDefId
         svg.writeDef(id) {
-            clipPath(config.pathPrecision) {
+            clipPathData {
                 for (path in paths) {
                     writePath(path, this)
                 }

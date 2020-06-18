@@ -34,18 +34,25 @@ class RenderSvgParams : RenderParams<SvgConfiguration> {
     @Parameter(names = ["--pretty"], description = "Whether to pretty print SVG or not.", order = 1000)
     var prettyPrint: Boolean = false
 
-    @Parameter(names = ["--precision"], description = "Precision of SVG attribute values and transforms.")
+    @Parameter(names = ["--precision"], description = "Precision of SVG path, position, and dimension values.")
     var precision: Int = 1
 
-    @Parameter(names = ["--path-precision"], description = "Precision of SVG path values.")
-    var pathPrecision: Int = 1
+    @Parameter(names = ["--transform-precision"], description = "Precision of SVG transform values.")
+    var transformPrecision: Int = 2
+
+    @Parameter(names = ["--percent-precision"], description = "Precision of SVG percentage values.")
+    var percentPrecision: Int = 2
 
     override val yAxisDirection: YAxisDirection
         get() = YAxisDirection.DOWN
 
 
     override fun createConfigurations(inputs: List<List<File>>): List<SvgConfiguration> {
-        configError(precision in 0..5 && pathPrecision in 0..5) { "Precision must be between 0 and 5." }
+        configError(precision in 0..5 &&
+                transformPrecision in 0..5 &&
+                percentPrecision in 0..5) {
+            "Precision must be between 0 and 5."
+        }
         return inputs.mapIndexed { i, input ->
             val tempDir = params.getTempDirForInput(input)
             SvgConfiguration(
@@ -53,7 +60,8 @@ class RenderSvgParams : RenderParams<SvgConfiguration> {
                     tempDir,
                     prettyPrint,
                     precision,
-                    pathPrecision,
+                    transformPrecision,
+                    percentPrecision,
                     params.parallelFrameRendering)
         }
     }

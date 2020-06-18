@@ -26,9 +26,7 @@ import java.awt.geom.Rectangle2D
 import java.io.Closeable
 import java.io.Flushable
 import java.io.OutputStream
-import java.text.NumberFormat
 import java.util.*
-import kotlin.math.roundToInt
 
 /**
  * A class to write SVG to an [outputStream]. SVG 2.0 is generated.
@@ -37,7 +35,9 @@ import kotlin.math.roundToInt
  * @param prettyPrint Whether to pretty print SVG or not.
  */
 internal class SvgStreamWriter(outputStream: OutputStream,
-                               precision: Int,
+                               private val precision: Int,
+                               private val transformPrecision: Int,
+                               private val percentPrecision: Int,
                                private val prettyPrint: Boolean) : Closeable, Flushable {
 
     private val xml = XmlStreamWriter(outputStream, mapOf(
@@ -58,9 +58,6 @@ internal class SvgStreamWriter(outputStream: OutputStream,
         get() = if (xmlWriter == xml) grStateStack else defGrStateStack
 
     private var defId: String? = null
-
-    private val numberFmt = createNumberFormat(precision)
-    private val gradientNumberFmt = createNumberFormat(2)
 
 
     init {
@@ -87,15 +84,15 @@ internal class SvgStreamWriter(outputStream: OutputStream,
 
         xmlWriter = xml
 
-        val viewBoxStr = viewBox?.toSvgValuesList(numberFmt)
+        val viewBoxStr = viewBox?.toSvgValuesList()
 
         grStateStack.push(grState)
 
         xml.prolog(ATTR_VERSION to "1.1", ATTR_ENCODING to "UTF-8")
         xmlWriter = xml.start(TAG_SVG,
                 ATTR_VERSION to "2.0",
-                ATTR_WIDTH to width.toSvg(numberFmt),
-                ATTR_HEIGHT to height.toSvg(numberFmt),
+                ATTR_WIDTH to width.toSvg(precision),
+                ATTR_HEIGHT to height.toSvg(precision),
                 ATTR_VIEWBOX to viewBoxStr,
                 *getNewGraphicsStateAttrs())
     }
@@ -170,13 +167,13 @@ internal class SvgStreamWriter(outputStream: OutputStream,
         endClipPath()
     }
 
-    fun clipPath(data: String, grState: SvgGraphicsState = NULL_GRAPHICS_STATE) = clipPath {
+    fun clipPathData(data: String, grState: SvgGraphicsState = NULL_GRAPHICS_STATE) = clipPath {
         path(data, grState)
     }
 
-    inline fun clipPath(precision: Int, grState: SvgGraphicsState = NULL_GRAPHICS_STATE,
-                        write: SvgPathWriter.() -> Unit) = clipPath {
-        path(precision, grState, write)
+    inline fun clipPathData(grState: SvgGraphicsState = NULL_GRAPHICS_STATE,
+                            write: SvgPathWriter.() -> Unit) = clipPath {
+        path(grState, write)
     }
 
     fun startMask() {
@@ -206,7 +203,7 @@ internal class SvgStreamWriter(outputStream: OutputStream,
         }
     }
 
-    inline fun path(precision: Int, grState: SvgGraphicsState = NULL_GRAPHICS_STATE,
+    inline fun path(grState: SvgGraphicsState = NULL_GRAPHICS_STATE,
                     write: SvgPathWriter.() -> Unit) {
         val data = SvgPathWriter(precision, !prettyPrint).apply(write).toString()
         path(data, grState)
@@ -225,8 +222,8 @@ internal class SvgStreamWriter(outputStream: OutputStream,
             xmlWriter {
                 TAG_IMAGE(
                         ATTR_ID to consumeDefId(),
-                        ATTR_X to x.takeIf { it.value != 0f }?.toSvg(numberFmt),
-                        ATTR_Y to y.takeIf { it.value != 0f }?.toSvg(numberFmt),
+                        ATTR_X to x.takeIf { it.value != 0f }?.toSvg(precision),
+                        ATTR_Y to y.takeIf { it.value != 0f }?.toSvg(precision),
                         ATTR_WIDTH to width,
                         ATTR_HEIGHT to height,
                         ATTR_XLINK_HREF to href,
@@ -246,17 +243,17 @@ internal class SvgStreamWriter(outputStream: OutputStream,
             xmlWriter {
                 TAG_LINEAR_GRADIENT(
                         ATTR_ID to consumeDefId(),
-                        ATTR_X1 to gradientNumberFmt.takeIf { x1 != 0f }?.format(x1),
-                        ATTR_Y1 to gradientNumberFmt.takeIf { y1 != 0f }?.format(y1),
-                        ATTR_X2 to gradientNumberFmt.takeIf { x2 != 1f }?.format(x2),
-                        ATTR_Y2 to gradientNumberFmt.takeIf { y2 != 0f }?.format(y2),
+                        ATTR_X1 to x1.takeIf { x1 != 0f }?.format(precision),
+                        ATTR_Y1 to y1.takeIf { y1 != 0f }?.format(precision),
+                        ATTR_X2 to x2.takeIf { x2 != 1f }?.format(precision),
+                        ATTR_Y2 to y2.takeIf { y2 != 0f }?.format(precision),
                         ATTR_GRADIENT_UNITS to units.takeIf { it != SvgGradientUnits.OBJECT_BOUNDING_BOX }?.svgName,
-                        ATTR_GRADIENT_TRANSFORM to transforms?.toSvgTransformList(numberFmt),
+                        ATTR_GRADIENT_TRANSFORM to transforms?.toSvgTransformList(transformPrecision),
                         *getNewGraphicsStateAttrs()) {
                     for (stop in stops) {
-                        TAG_STOP(ATTR_OFFSET to gradientNumberFmt.format(stop.offset),
+                        TAG_STOP(ATTR_OFFSET to stop.offset.format(percentPrecision),
                                 ATTR_STOP_COLOR to SvgFillColor(stop.color),
-                                ATTR_STOP_OPACITY to stop.opacity.takeIf { it != 1f }?.toSvgOpacityString())
+                                ATTR_STOP_OPACITY to stop.opacity.takeIf { it != 1f }?.format(percentPrecision))
                     }
                 }
             }
@@ -276,17 +273,17 @@ internal class SvgStreamWriter(outputStream: OutputStream,
     fun text(x: SvgNumber, y: SvgNumber, dx: FloatArray = floatArrayOf(),
              fontId: String? = null, fontSize: Float? = null, text: String,
              grState: SvgGraphicsState = NULL_GRAPHICS_STATE) {
-        val dxValue = if (dx.isEmpty()) null else buildString { appendValuesList(numberFmt, *dx) }
+        val dxValue = if (dx.isEmpty()) null else buildString { appendValuesList(precision, *dx) }
         val xmlWriter = checkIfStarted()
         withGraphicsState(grState) {
             xmlWriter {
                 TAG_TEXT(
                         ATTR_ID to consumeDefId(),
-                        ATTR_X to x.takeIf { it.value != 0f }?.toSvg(numberFmt),
-                        ATTR_Y to y.takeIf { it.value != 0f }?.toSvg(numberFmt),
+                        ATTR_X to x.takeIf { it.value != 0f }?.toSvg(precision),
+                        ATTR_Y to y.takeIf { it.value != 0f }?.toSvg(precision),
                         ATTR_DX to dxValue,
                         ATTR_FONT_FAMILY to fontId,
-                        ATTR_FONT_SIZE to numberFmt.format(fontSize),
+                        ATTR_FONT_SIZE to fontSize?.format(precision),
                         *getNewGraphicsStateAttrs()) {
                     text(text)
                 }
@@ -306,16 +303,16 @@ internal class SvgStreamWriter(outputStream: OutputStream,
      */
     private fun getNewGraphicsStateAttrs() = arrayOf(
             ATTR_FILL to getNewGraphicsStateProperty { fill },
-            ATTR_FILL_OPACITY to getNewGraphicsStateProperty { fillOpacity }?.toSvgOpacityString(),
+            ATTR_FILL_OPACITY to getNewGraphicsStateProperty { fillOpacity }?.format(percentPrecision),
             ATTR_STROKE to getNewGraphicsStateProperty { stroke },
-            ATTR_STROKE_OPACITY to getNewGraphicsStateProperty { strokeOpacity }?.toSvgOpacityString(),
+            ATTR_STROKE_OPACITY to getNewGraphicsStateProperty { strokeOpacity }?.format(percentPrecision),
             ATTR_STROKE_WIDTH to getNewGraphicsStateProperty { strokeWidth },
             ATTR_STROKE_LINE_JOIN to getNewGraphicsStateProperty { strokeLineJoin }?.svgName,
             ATTR_STROKE_LINE_CAP to getNewGraphicsStateProperty { strokeLineCap }?.svgName,
             ATTR_CLIP_PATH to getNewGraphicsStateProperty { clipPathId }?.toSvgUrlReference(),
             ATTR_CLIP_RULE to getNewGraphicsStateProperty { clipPathRule }?.svgName,
             ATTR_MASK to getNewGraphicsStateProperty { maskId }?.toSvgUrlReference(),
-            ATTR_TRANSFORM to getNewGraphicsStateProperty { transforms }?.toSvgTransformList(numberFmt),
+            ATTR_TRANSFORM to getNewGraphicsStateProperty { transforms }?.toSvgTransformList(transformPrecision),
             ATTR_PRESERVE_ASPECT_RATIO to getNewGraphicsStateProperty { preserveAspectRatio }?.toSvg(),
             ATTR_STYLE to getGraphicsStateCssStyle()
     )
@@ -354,6 +351,14 @@ internal class SvgStreamWriter(outputStream: OutputStream,
             "Cannot end tag <$tag>, current tag is <${xmlWriter.currentTag}>"
         }
         return xmlWriter.end()
+    }
+
+    private fun Rectangle2D.toSvgValuesList(): String {
+        val rect = this
+        return buildString {
+            appendValuesList(precision, rect.x.toFloat(), rect.y.toFloat(),
+                    rect.width.toFloat(), rect.height.toFloat())
+        }
     }
 
 
@@ -430,17 +435,6 @@ internal class SvgStreamWriter(outputStream: OutputStream,
                 mixBlendMode = SvgMixBlendMode.NORMAL)
 
         val NULL_GRAPHICS_STATE = SvgGraphicsState()
-
-
-        private fun Float.toSvgOpacityString() = (this.coerceIn(0f, 1f) * 100f).roundToInt() / 100f
-
-        private fun Rectangle2D.toSvgValuesList(nbFmt: NumberFormat): String {
-            val rect = this
-            return buildString {
-                appendValuesList(nbFmt, rect.x.toFloat(), rect.y.toFloat(),
-                        rect.width.toFloat(), rect.height.toFloat())
-            }
-        }
     }
 
 }

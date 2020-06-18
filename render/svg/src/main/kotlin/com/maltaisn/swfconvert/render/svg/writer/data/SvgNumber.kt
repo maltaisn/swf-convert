@@ -16,8 +16,7 @@
 
 package com.maltaisn.swfconvert.render.svg.writer.data
 
-import java.text.DecimalFormat
-import java.text.NumberFormat
+import com.maltaisn.swfconvert.render.svg.writer.numberFormat
 import kotlin.math.sign
 
 
@@ -28,9 +27,9 @@ import kotlin.math.sign
 internal data class SvgNumber(val value: Float,
                               val units: SvgUnit = SvgUnit.USER) {
 
-    fun toSvg(nbFmt: NumberFormat) = nbFmt.format(value) + units.symbol
+    fun toSvg(precision: Int) = numberFormat.get().format(value) + units.symbol
 
-    override fun toString() = toSvg(DecimalFormat.getInstance())
+    override fun toString() = toSvg(3)
 
     operator fun compareTo(other: SvgNumber): Int {
         require(units == other.units || value.sign != other.value.sign || value == 0f) {

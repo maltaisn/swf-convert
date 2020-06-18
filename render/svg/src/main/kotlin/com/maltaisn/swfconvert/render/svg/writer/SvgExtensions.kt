@@ -18,21 +18,9 @@ package com.maltaisn.swfconvert.render.svg.writer
 
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
-import java.text.NumberFormat
 
 
-/**
- * Append a list of space separated [values] to [this] StringBuilder.
- */
-internal fun StringBuilder.appendValuesList(nbFmt: NumberFormat, vararg values: Float) {
-    for (value in values) {
-        this.append(nbFmt.format(value))
-        this.append(' ')
-    }
-    if (values.isNotEmpty()) {
-        this.deleteCharAt(this.length - 1)
-    }
-}
+internal val numberFormat = ThreadLocal.withInitial { createNumberFormat() }
 
 internal fun createNumberFormat(precision: Int? = null) = DecimalFormat().apply {
     if (precision != null) {
@@ -41,6 +29,28 @@ internal fun createNumberFormat(precision: Int? = null) = DecimalFormat().apply 
     isGroupingUsed = false
     decimalFormatSymbols = DecimalFormatSymbols().apply {
         decimalSeparator = '.'
+    }
+}
+
+internal fun Float.format(precision: Int): String {
+    val nbFmt = numberFormat.get()
+    if (nbFmt.maximumFractionDigits != precision) {
+        nbFmt.maximumFractionDigits = precision
+    }
+    return nbFmt.format(this)
+}
+
+internal fun StringBuilder.appendValuesList(precision: Int, vararg values: Float) {
+    val nbFmt = numberFormat.get()
+    if (nbFmt.maximumFractionDigits != precision) {
+        nbFmt.maximumFractionDigits = precision
+    }
+    for (value in values) {
+        this.append(nbFmt.format(value))
+        this.append(' ')
+    }
+    if (values.isNotEmpty()) {
+        this.deleteCharAt(this.length - 1)
     }
 }
 
