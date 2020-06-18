@@ -36,6 +36,8 @@ import java.awt.geom.AffineTransform
 import java.awt.geom.Rectangle2D
 import java.io.File
 import java.io.FileOutputStream
+import java.io.OutputStream
+import java.util.zip.GZIPOutputStream
 import javax.inject.Inject
 
 
@@ -65,7 +67,13 @@ internal class SvgFrameRenderer @Inject constructor(
         this.imagesDir = imagesDir.relativeToOrSelf(outputDir)
         this.fontsDir = fontsDir.relativeToOrSelf(outputDir)
 
-        FileOutputStream(outputFile).use { outputStream ->
+        var outputStream: OutputStream = FileOutputStream(outputFile)
+        if (config.compress) {
+            // SVGZ, use GZIP compression stream.
+            outputStream = GZIPOutputStream(outputStream)
+        }
+
+        outputStream.use {
             svg = SvgStreamWriter(outputStream, config.precision, config.transformPrecision,
                     config.percentPrecision, config.prettyPrint)
 

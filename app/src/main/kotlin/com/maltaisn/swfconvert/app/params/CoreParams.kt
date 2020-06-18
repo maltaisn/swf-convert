@@ -34,7 +34,7 @@ import java.text.DecimalFormat
  * Params for the 'convert' module and common params for the render modules.
  */
 class CoreParams(private val singleFileOutput: Boolean,
-                 private val outputExtension: String) {
+                 private val outputExtensionProvider: () -> String) {
 
     // Files configuration
 
@@ -159,6 +159,7 @@ class CoreParams(private val singleFileOutput: Boolean,
             output
         }
 
+        val outputExtension = outputExtensionProvider()
         val outputFiles = mutableListOf<List<File>>()
         for ((i, filename) in outputFilenames.withIndex()) {
             val file = File(filename)

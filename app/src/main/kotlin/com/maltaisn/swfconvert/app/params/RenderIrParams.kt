@@ -29,7 +29,7 @@ import java.io.File
 class RenderIrParams : RenderParams<IrConfiguration> {
 
     @ParametersDelegate
-    override var params = CoreParams(false, "json").apply {
+    override var params = CoreParams(false) { "json" }.apply {
         // Keep fonts and images by default for IR output.
         this.params[CoreParams.OPT_KEEP_FONTS] = true.toString()
         this.params[CoreParams.OPT_KEEP_IMAGES] = true.toString()

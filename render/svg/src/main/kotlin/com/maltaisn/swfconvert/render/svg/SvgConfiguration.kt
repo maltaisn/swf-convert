@@ -31,6 +31,9 @@ data class SvgConfiguration(
         /** Whether to pretty print SVG or not. */
         val prettyPrint: Boolean,
 
+        /** Whether to use the SVGZ format or not (gzip compression). */
+        val compress: Boolean,
+
         /** General number precision used for path, position and dimension values. */
         val precision: Int,
 

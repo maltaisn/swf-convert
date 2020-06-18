@@ -38,7 +38,7 @@ import java.text.DecimalFormat
 class RenderPdfParams : RenderParams<PdfConfiguration> {
 
     @ParametersDelegate
-    override var params = CoreParams(true, "pdf")
+    override var params = CoreParams(true) { "pdf" }
 
     // General
 
