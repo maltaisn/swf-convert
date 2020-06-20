@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.render.svg.writer
+package com.maltaisn.swfconvert.render.svg.writer.xml
 
-import com.maltaisn.swfconvert.render.svg.writer.xml.*
 import org.junit.Test
 import java.io.ByteArrayOutputStream
 import kotlin.test.assertEquals

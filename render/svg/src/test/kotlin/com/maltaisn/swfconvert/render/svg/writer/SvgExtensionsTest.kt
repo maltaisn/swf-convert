@@ -104,14 +104,14 @@ class SvgExtensionsTest {
     @Test
     fun `should append values list single value`() {
         assertEquals("0.1", buildString {
-            appendValuesList(1, 0.1f)
+            appendValuesList(1, floatArrayOf(0.1f))
         })
     }
 
     @Test
     fun `should append values list multiple value`() {
         assertEquals("0.1 -0.9 0.3 -0 1", buildString {
-            appendValuesList(1,  0.1f, -0.9f, 0.3f, -0f, 1f)
+            appendValuesList(1, floatArrayOf(0.1f, -0.9f, 0.3f, -0f, 1f))
         })
     }
 
@@ -125,30 +125,30 @@ class SvgExtensionsTest {
     @Test
     fun `should append values list optimized single value`() {
         assertEquals(".1", buildString {
-            appendValuesListOptimized(1, null, 0.1f)
+            appendValuesListOptimized(1, null, floatArrayOf(0.1f))
         })
     }
 
     @Test
     fun `should append values list optimized multiple value`() {
         assertEquals(".1-.9.3 0 1", buildString {
-            appendValuesListOptimized(1, null, 0.1f, -0.9f, 0.3f, -0f, 1f)
+            appendValuesListOptimized(1, null, floatArrayOf(0.1f, -0.9f, 0.3f, -0f, 1f))
         })
     }
 
     @Test
     fun `should append values list optimized, adding space to separate previous value`() {
         assertEquals("1 1", buildString {
-            appendValuesListOptimized(1, null, 1f)
-            appendValuesListOptimized(1, "1", 1f)
+            appendValuesListOptimized(1, null, floatArrayOf(1f))
+            appendValuesListOptimized(1, "1", floatArrayOf(1f))
         })
     }
 
     @Test
     fun `should append values list optimized, not adding space to separate previous value`() {
         assertEquals(".1.1", buildString {
-            appendValuesListOptimized(1, null, 0.1f)
-            appendValuesListOptimized(1, "0.1", 0.1f)
+            appendValuesListOptimized(1, null, floatArrayOf(0.1f))
+            appendValuesListOptimized(1, "0.1", floatArrayOf(0.1f))
         })
     }
 

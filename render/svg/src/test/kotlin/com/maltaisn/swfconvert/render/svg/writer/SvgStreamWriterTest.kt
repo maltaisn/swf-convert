@@ -38,10 +38,10 @@ class SvgStreamWriterTest {
     @Test
     fun `should svg with viewbox and graphics state attrs`() {
         assertEquals("""<?xml version="1.1" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" """ +
-                """xmlns:xlink="http://www.w3.org/1999/xlink" version="2.0" width="10" height="10" viewBox="0 0 100 100" fill="#FF0000"/>""",
+                """xmlns:xlink="http://www.w3.org/1999/xlink" version="2.0" width="10" height="10" viewBox="0 0 100 100" fill="#fa0000"/>""",
                 createSvg {
                     start(SvgNumber(10f), SvgNumber(10f), Rectangle2D.Float(0f, 0f, 100f, 100f), true,
-                            SvgGraphicsState(fill = SvgFillColor(Color(255, 0, 0))))
+                            SvgGraphicsState(fill = SvgFillColor(Color(250, 0, 0))))
                 })
     }
 
@@ -89,11 +89,11 @@ class SvgStreamWriterTest {
 
     @Test
     fun `should only write modified graphics state attributes`() {
-        assertEquals("""<g fill="#FF0000"><g fill-opacity="0.5"><g stroke-linecap="round">""" +
+        assertEquals("""<g fill="#fa0000"><g fill-opacity="0.5"><g stroke-linecap="round">""" +
                 """<g style="mix-blend-mode:multiply"/></g></g></g>""",
                 createSvg(start = true) {
-                    group(SvgGraphicsState(fill = SvgFillColor(Color(255, 0, 0)))) {
-                        group(SvgGraphicsState(fill = SvgFillColor(Color(255, 0, 0)), fillOpacity = 0.5f)) {
+                    group(SvgGraphicsState(fill = SvgFillColor(Color(250, 0, 0)))) {
+                        group(SvgGraphicsState(fill = SvgFillColor(Color(250, 0, 0)), fillOpacity = 0.5f)) {
                             group(SvgGraphicsState(strokeLineCap = SvgStrokeLineCap.ROUND)) {
                                 group(SvgGraphicsState(strokeLineCap = SvgStrokeLineCap.ROUND,
                                         mixBlendMode = SvgMixBlendMode.MULTIPLY))

@@ -25,14 +25,36 @@ sealed class SvgFill {
     override fun toString() = toSvg()
 }
 
-data class SvgFillColor(val color: Color): SvgFill() {
-    override fun toSvg() = color.toStringNoAlpha()
+data class SvgFillColor(val color: Color) : SvgFill() {
+    override fun toSvg(): String {
+        val r = color.r
+        val g = color.g
+        val b = color.b
+        return if (r.isColorComponentFoldable && g.isColorComponentFoldable && b.isColorComponentFoldable) {
+            // Can use #xxx shorthand
+            String(charArrayOf('#', HEX_CHARS[r and 0xF], HEX_CHARS[g and 0xF], HEX_CHARS[b and 0xF]))
+        } else {
+            // #xxxxxx
+            color.toStringNoAlpha().toLowerCase()
+        }
+    }
 }
 
-data class SvgFillId(val id: String): SvgFill() {
+data class SvgFillId(val id: String) : SvgFill() {
     override fun toSvg() = id.toSvgUrlReference()
 }
 
 object SvgFillNone : SvgFill() {
     override fun toSvg() = "none"
 }
+
+
+/**
+ * Returns whether the 4 most significant bits are equal to the 4 least
+ * significant bits in the least significant byte of [this] int.
+ * Basically this returns `true` for 0x00, 0x11, 0x22, 0x33, 0x44, etc.
+ */
+private val Int.isColorComponentFoldable: Boolean
+    get() = (this and 0xF) == (this ushr 4)
+
+private const val HEX_CHARS = "0123456789abcdef"
