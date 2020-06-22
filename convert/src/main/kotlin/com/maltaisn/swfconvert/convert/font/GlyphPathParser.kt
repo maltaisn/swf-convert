@@ -42,7 +42,12 @@ internal class GlyphPathParser @Inject constructor(
                 wfont.scale.scaleY.toDouble() * SWF_TO_TTF_EM_SCALE)
 
         return wfont.codes.indices.map { i ->
-            val advance = wfont.advances[i] * wfont.scale.scaleX
+            val advance = if (wfont.advances.isEmpty()) {
+                // FontFlagsHasLayout is false
+                0f
+            } else {
+                wfont.advances[i] * wfont.scale.scaleX
+            }
             val shapeData = wfont.shapes[i].objects.first() as ShapeData
             val shape = Shape.shapeFromData(shapeData)
             val contours = parseGlyphShape(context, shape, transform)

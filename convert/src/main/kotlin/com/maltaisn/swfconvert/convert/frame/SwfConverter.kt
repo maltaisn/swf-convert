@@ -348,7 +348,7 @@ internal class SwfConverter @Inject constructor(
     }
 
     private fun createText(objContext: SwfObjectContext, textTag: StaticTextTag) {
-        currentGroup.objects += textConverter.parseText(objContext, textTag, colorTransform, fontsMap)
+        currentGroup.objects += textConverter.createTextObject(objContext, textTag, colorTransform, fontsMap)
     }
 
     private fun addGroup(group: GroupObject) {

@@ -90,12 +90,11 @@ internal class SvgStreamWriter(outputStream: OutputStream,
             xml.prolog(ATTR_VERSION to "1.1", ATTR_ENCODING to "UTF-8")
         }
 
-        val viewBoxStr = viewBox?.toSvgValuesList()
         xmlWriter = xml.start(TAG_SVG,
                 ATTR_VERSION to "2.0",
                 ATTR_WIDTH to width.toSvg(precision),
                 ATTR_HEIGHT to height.toSvg(precision),
-                ATTR_VIEWBOX to viewBoxStr,
+                ATTR_VIEWBOX to viewBox?.toSvgValuesList(),
                 *getNewGraphicsStateAttrs())
     }
 
@@ -275,7 +274,7 @@ internal class SvgStreamWriter(outputStream: OutputStream,
     fun text(x: SvgNumber, y: SvgNumber, dx: FloatArray = floatArrayOf(),
              fontId: String? = null, fontSize: Float? = null, text: String,
              grState: SvgGraphicsState = NULL_GRAPHICS_STATE) {
-        val dxValue = if (dx.isEmpty()) null else createSvgValuesList(precision, dx)
+        val dxValue = if (dx.all { it == 0f }) null else createSvgValuesList(precision, dx)
         val xmlWriter = checkIfStarted()
         withGraphicsState(grState) {
             xmlWriter {

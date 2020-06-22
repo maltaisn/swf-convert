@@ -20,12 +20,12 @@ import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.render.svg.writer.toSvgUrlReference
 
 
-sealed class SvgFill {
+internal sealed class SvgFill {
     abstract fun toSvg(): String
     override fun toString() = toSvg()
 }
 
-data class SvgFillColor(val color: Color) : SvgFill() {
+internal data class SvgFillColor(val color: Color) : SvgFill() {
     override fun toSvg(): String {
         val r = color.r
         val g = color.g
@@ -40,11 +40,11 @@ data class SvgFillColor(val color: Color) : SvgFill() {
     }
 }
 
-data class SvgFillId(val id: String) : SvgFill() {
+internal data class SvgFillId(val id: String) : SvgFill() {
     override fun toSvg() = id.toSvgUrlReference()
 }
 
-object SvgFillNone : SvgFill() {
+internal object SvgFillNone : SvgFill() {
     override fun toSvg() = "none"
 }
 

@@ -30,7 +30,7 @@ import com.maltaisn.swfconvert.core.image.Color
  * @property text Text to draw.
  * @property glyphOffsets Custom spacing between glyphs, without including glyph advance width.
  * The first value represents the extra space between the first and the second character of [text].
- * The list should have either a size of 0 (no custom spacing) or `text.length - 1`.
+ * The list has a size between 0 and `text.length - 1`. Trailing zero offsets are omitted.
  * The spacing values are in glyph space units, as defined by [GlyphData.EM_SQUARE_SIZE].
  * Positive values increase spacing, negative values decrease it.
  */

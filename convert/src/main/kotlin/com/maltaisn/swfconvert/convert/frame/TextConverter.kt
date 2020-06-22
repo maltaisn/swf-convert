@@ -36,7 +36,6 @@ import com.maltaisn.swfconvert.core.shape.ShapeObject
 import com.maltaisn.swfconvert.core.text.*
 import java.awt.geom.AffineTransform
 import javax.inject.Inject
-import kotlin.math.absoluteValue
 
 
 /**
@@ -67,10 +66,10 @@ internal class TextConverter @Inject constructor(
     }
 
 
-    fun parseText(context: SwfObjectContext,
-                  textTag: StaticTextTag,
-                  colorTransform: CompositeColorTransform,
-                  fontsMap: Map<FontId, Font>): List<FrameObject> {
+    fun createTextObject(context: SwfObjectContext,
+                         textTag: StaticTextTag,
+                         colorTransform: CompositeColorTransform,
+                         fontsMap: Map<FontId, Font>): List<FrameObject> {
         this.context = context
         this.textTag = textTag
         this.colorTransform = colorTransform
@@ -155,103 +154,138 @@ internal class TextConverter @Inject constructor(
     }
 
     private fun parseTextSpan(span: TextSpan): TextObject? {
-        parseTextSpanStyle(span)
+        updateStyleFromTextSpan(span)
+
         val font = this.font!!
         val fontSize = this.fontSize!!
         val scale = font.metrics.scale
 
+        if (fontSize == 0f || span.characters.isEmpty()) {
+            // No height or no chars, ignore it.
+            return null
+        }
+
+        val glyphIndices = span.characters.toMutableList()
+
+        // SWF spec talks about the offset being relative to the glyph "reference point", i.e
+        // the starting point of the path. It doesn't seem necessary to take it into account.
         var xPos = offsetX
         val yPos = offsetY
 
-        if (fontSize == 0f) {
-            // No height, text will be invisible.
+        // Although not very clear from SWF specification, drawing text actually changes the
+        // X offset. So change the X offset by the sum of all glyph advances.
+        offsetX += glyphIndices.sumBy { it.advance } / scale.unscaleX
+
+        // Fold and trim whitespace in text
+        foldRepeatedWhitespaceInGlyphIndices(glyphIndices)
+        xPos += trimWhitespaceInGlyphIndices(glyphIndices)
+
+        if (glyphIndices.isEmpty()) {
+            // Text span was only made of whitespaces, ignore it.
             return null
         }
 
-        // Get span text and glyph offsets
-        val glyphEntries = span.characters
+        val glyphOffsets = getGlyphOffsetsFromGlyphIndices(glyphIndices)
 
-        var ignoreCustomPos = true
-        val textSb = StringBuilder(glyphEntries.size)
-        val glyphOffsets = mutableListOf<Float>()
-
-        // Replace all leading whitespace with a X offset.
-        var start = 0
-        for (glyphEntry in glyphEntries) {
-            val glyph = font.getGlyph(glyphEntry)
-            if (!glyph.isWhitespace) {
-                break
-            }
-            xPos += glyphEntry.advance / scale.unscaleX
-            start++
-        }
-
-        // Important! Although not very clearly from SWF specification, 
-        // drawing text actually changes the X offset.
-        offsetX += glyphEntries.sumByDouble { (it.advance / scale.unscaleX).toDouble() }.toFloat()
-
-        if (start == glyphEntries.size) {
-            // Only whitespaces, no text object to create.
-            return null
-        }
-
-        // Find last index, ignoring trailing whitespace.
-        var end = glyphEntries.size
-        for (glyphEntry in glyphEntries.asReversed()) {
-            val glyph = font.getGlyph(glyphEntry)
-            if (!glyph.isWhitespace) {
-                break
-            }
-            end--
-        }
-
-        // Add text span glyphs to list
-        for (i in start until end) {
-            val glyphEntry = glyphEntries[i]
-            val glyph = font.getGlyph(glyphEntry)
-            var charStr = glyph.char.toString()
-
-            // Get char default advance.
-            val defaultAdvance = try {
-                glyph.data.advanceWidth
-            } catch (e: IllegalArgumentException) {
-                // Glyph isn't in typeface!
-                if (!glyph.isWhitespace) {
-                    throw e
-                }
-                // If char is a whitespace, just replace with space.
-                charStr = " "
-                GlyphData.WHITESPACE_ADVANCE_WIDTH
-            }
-
-            // Add char to list
-            textSb.append(charStr)
-
-            // Add advance width difference to list
-            if (i != glyphEntries.lastIndex) {
-                // Find difference with default advance width, in glyph space units.
-                val actualAdvance = glyphEntry.advance.toFloat() / (scale.unscaleX * fontSize) * GlyphData.EM_SQUARE_SIZE
-                val diff = actualAdvance - defaultAdvance
-                glyphOffsets += diff
-                if (diff.absoluteValue >= config.ignoreGlyphOffsetsThreshold
-                        && diff.absoluteValue > 0) {
-                    ignoreCustomPos = false
-                }
-            }
-        }
-        if (ignoreCustomPos || glyphOffsets.size == 1) {
-            glyphOffsets.clear()
-        }
-
-        // Note: SWF spec talks about the offset being relative to the glyph "reference point", i.e
-        // the starting point of the path. It doesn't seem necessary to take it into account.
+        val text = String(CharArray(glyphIndices.size) { font.getGlyph(glyphIndices[it]).char })
 
         return TextObject(textTag.identifier, xPos, yPos, fontSize,
-                color!!, font, textSb.toString(), glyphOffsets)
+                color!!, font, text, glyphOffsets)
     }
 
-    private fun parseTextSpanStyle(span: TextSpan) {
-        // Font
+    /**
+     * Fold repeated whitespace to single spaces in [glyphIndices].
+     * This is a problem for SVG output for example, because repeated whitespace are ignored
+     * in XML and interpreted as a single space. It also allows a slight size optimization.
+     */
+    private fun foldRepeatedWhitespaceInGlyphIndices(glyphIndices: MutableList<GlyphIndex>) {
+        val font = this.font!!
+        for (i in glyphIndices.lastIndex - 1 downTo 0) {
+            val currGlyphIndex = glyphIndices[i]
+            val nextGlyphIndex = glyphIndices[i + 1]
+            val currGlyph = font.getGlyph(currGlyphIndex)
+            val nextGlyph = font.getGlyph(nextGlyphIndex)
+            if (currGlyph.isWhitespace && nextGlyph.isWhitespace) {
+                // Fold the two whitespace into a single one, using char of the first.
+                glyphIndices[i] = GlyphIndex(currGlyphIndex.glyphIndex,
+                        currGlyphIndex.advance + nextGlyphIndex.advance)
+                glyphIndices.removeAt(i + 1)
+            }
+        }
+    }
+
+    /**
+     * Trim leading and trailling whitespace in [glyphIndices].
+     * A single space can be removed to either end. The offset by which the text span should
+     * be shifted to the right is returned.
+     */
+    private fun trimWhitespaceInGlyphIndices(glyphIndices: MutableList<GlyphIndex>): Float {
+        val font = this.font!!
+        val offset = if (font.getGlyph(glyphIndices.first()).isWhitespace) {
+            glyphIndices.removeAt(0).advance / font.metrics.scale.unscaleX
+        } else {
+            0f
+        }
+        if (glyphIndices.isNotEmpty() && font.getGlyph(glyphIndices.last()).isWhitespace) {
+            glyphIndices.removeAt(glyphIndices.lastIndex)
+        }
+        return offset
+    }
+
+    /**
+     * Create a list of glyph offsets from [glyphIndices]. See [TextObject.glyphOffsets] for
+     * more information.
+     */
+    private fun getGlyphOffsetsFromGlyphIndices(glyphIndices: List<GlyphIndex>): List<Float> {
+        val font = this.font!!
+        val fontSize = this.fontSize!!
+        val scale = font.metrics.scale
+
+        // Add text span glyphs to list
+        val glyphOffsets = mutableListOf<Float>()
+        var advanceDeviation = 0f
+        for (i in 0 until glyphIndices.lastIndex) {
+            val glyphIndex = glyphIndices[i]
+            val glyph = font.getGlyph(glyphIndex)
+
+            // Find difference with default advance width, in glyph space units.
+            val defaultAdvance = glyph.data.advanceWidth
+            val actualAdvance = glyphIndex.advance / (scale.unscaleX * fontSize) * GlyphData.EM_SQUARE_SIZE
+            val diff = actualAdvance - defaultAdvance
+
+            if (diff <= config.ignoreGlyphOffsetsThreshold) {
+                // Ignore below threshold difference, use zero offset. But accumulate deviation from
+                // expected total span advance to avoid adding up error due to ignored offsets over time.
+                glyphOffsets += 0f
+                advanceDeviation += diff
+                if (advanceDeviation > config.ignoreGlyphOffsetsThreshold) {
+                    // Accumulated advance deviation is above threshold, reset it and add offset.
+                    advanceDeviation = 0f
+                    glyphOffsets += advanceDeviation
+                }
+            } else {
+                glyphOffsets += diff
+            }
+        }
+
+        // Remove trailing zero offsets.
+        while (glyphOffsets.isNotEmpty() && glyphOffsets.last() == 0f) {
+            glyphOffsets.removeAt(glyphOffsets.lastIndex)
+        }
+
+        return glyphOffsets
+    }
+
+    private fun Font.getGlyph(index: GlyphIndex) = this.glyphs[index.glyphIndex]
+
+    private fun updateStyleFromTextSpan(span: TextSpan) {
+        updateFontFromTextSpan(span)
+        updateFontSizeFromTextSpan(span)
+        updateTextColorFromTextSpan(span)
+        updateOffsetsFromTextSpan(span)
+    }
+
+    private fun updateFontFromTextSpan(span: TextSpan) {
         if (span.identifier != null) {
             val fontId = createFontId(span.identifier)
             this.font = fontsMap[fontId]
@@ -259,23 +293,26 @@ internal class TextConverter @Inject constructor(
         }
         val font = this.font
         conversionError(font != null, context) { "No font specified" }
+    }
 
-        // Font size
+    private fun updateFontSizeFromTextSpan(span: TextSpan) {
         if (span.height != null) {
             fontSize = span.height.toFloat()
         }
         conversionError(fontSize != null, context) { "No font size specified" }
+    }
 
-        // Text color
+    private fun updateTextColorFromTextSpan(span: TextSpan) {
         if (span.color != null) {
             color = colorTransform.transform(span.color.toColor())
         }
         conversionError(color != null, context) { "No text color specified" }
+    }
 
-        // Offsets
+    private fun updateOffsetsFromTextSpan(span: TextSpan) {
         // Although SWF specification says that unspecified offset is like setting it to 0,
         // this is not true, offset is only set when specified. Also, offsets are not additive.
-        val scale = font.metrics.scale
+        val scale = font!!.metrics.scale
         if (span.offsetX != null) {
             offsetX = span.offsetX.toFloat() / scale.unscaleX
         }
@@ -284,7 +321,6 @@ internal class TextConverter @Inject constructor(
         }
     }
 
-    private fun Font.getGlyph(index: GlyphIndex) = this.glyphs[index.glyphIndex]
 
     /**
      * Create a font ID to uniquely identify a font across a SWF file collection.

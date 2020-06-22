@@ -21,7 +21,6 @@ import com.maltaisn.swfconvert.core.FrameObject
 import com.maltaisn.swfconvert.core.GroupObject
 import com.maltaisn.swfconvert.core.image.ImageData
 import com.maltaisn.swfconvert.core.shape.*
-import com.maltaisn.swfconvert.core.text.GlyphData
 import com.maltaisn.swfconvert.core.text.TextObject
 import org.apache.pdfbox.cos.COSArray
 import org.apache.pdfbox.cos.COSDictionary
@@ -308,19 +307,24 @@ class PdfFrameRenderer @Inject internal constructor(
 
         // Draw text
         val str = text.text
-        if (text.glyphOffsets.isEmpty()) {
+        val glyphOffsets = text.glyphOffsets
+        if (glyphOffsets.isEmpty()) {
             stream.showText(str)
         } else {
-            // Create array of chars and glyph offsets.
-            val textArr = arrayOfNulls<Any>(str.length * 2 - 1)
+            // Create array of chars and glyph offsets to use the TJ operator.
+            val textParts = mutableListOf<Any>()
+            val currRun = StringBuilder()
             for ((i, c) in str.withIndex()) {
-                textArr[i * 2] = c.toString()
-                if (i != str.length - 1) {
-                    val offset = -text.glyphOffsets[i] / GlyphData.EM_SQUARE_SIZE * 1000
-                    textArr[i * 2 + 1] = offset
+                val offset = glyphOffsets.getOrElse(i) { 0f }
+                currRun.append(c)
+                if (offset != 0f) {
+                    textParts += currRun.toString()
+                    textParts += offset
+                    currRun.clear()
                 }
             }
-            stream.showTextWithPositioning(textArr.requireNoNulls())
+            textParts += currRun.toString()
+            stream.showTextWithPositioning(textParts.toTypedArray())
         }
 
         stream.endText()

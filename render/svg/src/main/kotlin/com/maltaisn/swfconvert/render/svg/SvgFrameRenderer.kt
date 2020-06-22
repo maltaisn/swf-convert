@@ -184,9 +184,14 @@ internal class SvgFrameRenderer @Inject constructor(
             id
         }
 
-        val dx = FloatArray(text.glyphOffsets.size) {
-            text.glyphOffsets[it] / GlyphData.EM_SQUARE_SIZE * text.fontSize
+        val dx = FloatArray(text.glyphOffsets.size + 1) {
+            // SVG dx first value is the offset before the first char, whereas in IR the first
+            // value is the offset between the 1st and 2nd char. So add leading 0 offset.
+            val offset = text.glyphOffsets.getOrElse(it - 1) { 0f }
+            // SVG dx values are in user space units, not glyph space units.
+            offset / GlyphData.EM_SQUARE_SIZE * text.fontSize
         }
+
         svg.text(SvgNumber(text.x), SvgNumber(text.y), dx, fontId, text.fontSize, text.text,
                 SvgGraphicsState(fill = SvgFillColor(text.color), fillOpacity = text.color.floatAlpha))
     }

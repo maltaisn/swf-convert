@@ -24,6 +24,7 @@ import com.maltaisn.swfconvert.core.YAxisDirection
 import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.maltaisn.swfconvert.core.text.FontScale
+import com.maltaisn.swfconvert.core.text.GlyphData
 import com.mortennobel.imagescaling.ResampleFilter
 import com.mortennobel.imagescaling.ResampleFilters
 import java.io.File
@@ -226,7 +227,8 @@ class CoreParams(private val singleFileOutput: Boolean,
                 ?: FontScale(1f, -1f, 1f, 1f)
         val fontScale3 = params[OPT_FONT_SCALE_3]?.toFontScaleOrNull()
                 ?: FontScale(0.05f, -0.05f, 1f, 1f)
-        val ignoreGlyphOffsetsThreshold = params[OPT_IGNORE_GLYPH_OFFSETS_THRESHOLD]?.toFloatOrNull() ?: 5f
+        val ignoreGlyphOffsetsThreshold = params[OPT_IGNORE_GLYPH_OFFSETS_THRESHOLD]?.toFloatOrNull()
+                ?: (GlyphData.EM_SQUARE_SIZE / 16f)
 
         return inputFileCollections.map { input ->
             val tempDir = getTempDirForInput(input)
