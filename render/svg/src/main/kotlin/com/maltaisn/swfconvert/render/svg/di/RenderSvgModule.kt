@@ -26,18 +26,15 @@ import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoMap
 
-
 @Module
 abstract class RenderSvgModule {
 
     @get:[Binds IntoMap FramesRendererKey(SvgConfiguration::class)]
     abstract val SvgFramesRenderer.bindsPdfFramesRenderer: FramesRenderer
 
-    @Module
     companion object {
         @Provides
-        @JvmStatic
         fun providesRenderConfiguration(configuration: RenderConfiguration) =
-                configuration as SvgConfiguration
+            configuration as SvgConfiguration
     }
 }

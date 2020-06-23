@@ -18,7 +18,6 @@ package com.maltaisn.swfconvert.core.shape
 
 import java.text.DecimalFormat
 
-
 sealed class PathElement(open val x: Float, open val y: Float) {
 
     abstract fun toSvg(svg: StringBuilder)
@@ -39,14 +38,19 @@ sealed class PathElement(open val x: Float, open val y: Float) {
         }
     }
 
-    data class QuadTo(val cx: Float, val cy: Float,
-                      override val x: Float, override val y: Float) : PathElement(x, y) {
+    data class QuadTo(
+        val cx: Float,
+        val cy: Float,
+        override val x: Float,
+        override val y: Float
+    ) : PathElement(x, y) {
 
         override fun toSvg(svg: StringBuilder) {
             svg.append("Q ")
             svg.appendValues(cx, cy, x, y)
         }
 
+        @Suppress("MagicNumber")
         fun toCubic(sx: Float, sy: Float): CubicTo {
             // Convert quadratic to cubic bezier: https://stackoverflow.com/a/3162732/5288316
             val c1x = sx + 2f / 3f * (cx - sx)
@@ -57,15 +61,19 @@ sealed class PathElement(open val x: Float, open val y: Float) {
         }
     }
 
-    data class CubicTo(val c1x: Float, val c1y: Float,
-                       val c2x: Float, val c2y: Float,
-                       override val x: Float, override val y: Float) : PathElement(x, y) {
+    data class CubicTo(
+        val c1x: Float,
+        val c1y: Float,
+        val c2x: Float,
+        val c2y: Float,
+        override val x: Float,
+        override val y: Float
+    ) : PathElement(x, y) {
 
         override fun toSvg(svg: StringBuilder) {
             svg.append("C ")
             svg.appendValues(c1x, c1y, c2x, c2y, x, y)
         }
-
     }
 
     object ClosePath : PathElement(0f, 0f) {
@@ -81,8 +89,12 @@ sealed class PathElement(open val x: Float, open val y: Float) {
      * A rectangle path element. Note that [x] and [y] always refer to the position of the
      * upper left corner, no matter the Y axis direction.
      */
-    data class Rectangle(override val x: Float, override val y: Float,
-                         val width: Float, val height: Float) : PathElement(x, y) {
+    data class Rectangle(
+        override val x: Float,
+        override val y: Float,
+        val width: Float,
+        val height: Float
+    ) : PathElement(x, y) {
 
         override fun toSvg(svg: StringBuilder) {
             svg.append("M ")
@@ -98,12 +110,6 @@ sealed class PathElement(open val x: Float, open val y: Float) {
     }
 }
 
-
-private val SVG_NB_FMT = DecimalFormat().apply {
-    maximumFractionDigits = 3
-    isGroupingUsed = false
-}
-
 private fun StringBuilder.appendValues(vararg values: Float) {
     for (v in values) {
         append(SVG_NB_FMT.format(v))
@@ -111,3 +117,10 @@ private fun StringBuilder.appendValues(vararg values: Float) {
     }
     delete(length - 1, length)
 }
+
+private val SVG_NB_FMT = DecimalFormat().apply {
+    maximumFractionDigits = DEBUG_SVG_PRECISION
+    isGroupingUsed = false
+}
+
+private const val DEBUG_SVG_PRECISION = 3

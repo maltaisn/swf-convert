@@ -18,7 +18,6 @@ package com.maltaisn.swfconvert.core.text
 
 import java.io.File
 
-
 interface BaseFont {
 
     var name: String

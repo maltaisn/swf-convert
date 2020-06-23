@@ -25,7 +25,6 @@ import com.maltaisn.swfconvert.render.svg.di.RenderSvgModule
 import dagger.Module
 import dagger.multibindings.Multibinds
 
-
 @Module(includes = [
     ConvertModule::class,
     RenderIrModule::class,

@@ -19,7 +19,6 @@ package com.maltaisn.swfconvert.render.pdf.metadata
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-
 /**
  * An item of a PDF outline.
  */
@@ -33,42 +32,42 @@ sealed class PdfOutlineItem {
     @Serializable
     @SerialName("fit_width")
     data class FitWidth(
-            @SerialName("title") override val title: String,
-            @SerialName("page") override val page: Int,
-            @SerialName("children") override val children: List<PdfOutlineItem> = emptyList(),
-            @SerialName("y") val y: Int = 0
+        @SerialName("title") override val title: String,
+        @SerialName("page") override val page: Int,
+        @SerialName("children") override val children: List<PdfOutlineItem> = emptyList(),
+        @SerialName("y") val y: Int = 0
     ) : PdfOutlineItem()
 
     @Serializable
     @SerialName("fit_height")
     data class FitHeight(
-            @SerialName("title") override val title: String,
-            @SerialName("page") override val page: Int,
-            @SerialName("children") override val children: List<PdfOutlineItem> = emptyList(),
-            @SerialName("x") val x: Int = 0
+        @SerialName("title") override val title: String,
+        @SerialName("page") override val page: Int,
+        @SerialName("children") override val children: List<PdfOutlineItem> = emptyList(),
+        @SerialName("x") val x: Int = 0
     ) : PdfOutlineItem()
 
     @Serializable
     @SerialName("fit_rect")
     data class FitRect(
-            @SerialName("title") override val title: String,
-            @SerialName("page") override val page: Int,
-            @SerialName("children") override val children: List<PdfOutlineItem> = emptyList(),
-            @SerialName("top") val top: Int = 0,
-            @SerialName("left") val left: Int = 0,
-            @SerialName("bottom") val bottom: Int = 0,
-            @SerialName("right") val right: Int = 0
+        @SerialName("title") override val title: String,
+        @SerialName("page") override val page: Int,
+        @SerialName("children") override val children: List<PdfOutlineItem> = emptyList(),
+        @SerialName("top") val top: Int = 0,
+        @SerialName("left") val left: Int = 0,
+        @SerialName("bottom") val bottom: Int = 0,
+        @SerialName("right") val right: Int = 0
     ) : PdfOutlineItem()
 
     @Serializable
     @SerialName("fit_xyz")
     data class FitXYZ(
-            @SerialName("title") override val title: String,
-            @SerialName("page") override val page: Int,
-            @SerialName("children") override val children: List<PdfOutlineItem> = emptyList(),
-            @SerialName("x") val x: Int = 0,
-            @SerialName("y") val y: Int = 0,
-            @SerialName("zoom") val zoom: Float = 0f
+        @SerialName("title") override val title: String,
+        @SerialName("page") override val page: Int,
+        @SerialName("children") override val children: List<PdfOutlineItem> = emptyList(),
+        @SerialName("x") val x: Int = 0,
+        @SerialName("y") val y: Int = 0,
+        @SerialName("zoom") val zoom: Float = 0f
     ) : PdfOutlineItem()
 
 }

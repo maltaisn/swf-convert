@@ -16,14 +16,13 @@
 
 package com.maltaisn.swfconvert.render.svg.writer.data
 
-
 /**
  * Units that can be used by [SvgNumber].
  * [https://www.w3.org/TR/SVG2/coords.html#Units] and [https://www.w3.org/TR/css-values/#lengths].
  * Most units are provided for completeness but only are actually used.
  */
 internal enum class SvgUnit(val symbol: String) {
-    USER(""),  // User units, as defined by the viewport.
+    USER(""), // User units, as defined by the viewport.
     PX("px"),
     CM("cm"),
     MM("mm"),

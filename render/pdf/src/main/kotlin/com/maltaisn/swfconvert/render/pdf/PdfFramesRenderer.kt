@@ -16,12 +16,19 @@
 
 package com.maltaisn.swfconvert.render.pdf
 
-import com.maltaisn.swfconvert.core.*
+import com.maltaisn.swfconvert.core.FrameGroup
+import com.maltaisn.swfconvert.core.FrameObject
+import com.maltaisn.swfconvert.core.GroupObject
+import com.maltaisn.swfconvert.core.ProgressCallback
 import com.maltaisn.swfconvert.core.image.ImageData
+import com.maltaisn.swfconvert.core.mapInParallel
 import com.maltaisn.swfconvert.core.shape.PathFillStyle
 import com.maltaisn.swfconvert.core.shape.ShapeObject
+import com.maltaisn.swfconvert.core.showProgress
+import com.maltaisn.swfconvert.core.showStep
 import com.maltaisn.swfconvert.core.text.TextObject
 import com.maltaisn.swfconvert.render.core.FramesRenderer
+import com.maltaisn.swfconvert.render.core.readAffirmativeAnswer
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfMetadata
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfOutlineCreator
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfPageLabelsCreator
@@ -40,17 +47,16 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Provider
 
-
 /**
  * Convert all frames from the intermediate representation to output format.
  */
 class PdfFramesRenderer @Inject internal constructor(
-        private val config: PdfConfiguration,
-        private val progressCb: ProgressCallback,
-        private val pdfFrameRendererProvider: Provider<PdfFrameRenderer>,
-        private val framesRasterizer: FramesRasterizer,
-        private val pdfOutlineCreator: PdfOutlineCreator,
-        private val pdfPageLabelsCreator: PdfPageLabelsCreator
+    private val config: PdfConfiguration,
+    private val progressCb: ProgressCallback,
+    private val pdfFrameRendererProvider: Provider<PdfFrameRenderer>,
+    private val framesRasterizer: FramesRasterizer,
+    private val pdfOutlineCreator: PdfOutlineCreator,
+    private val pdfPageLabelsCreator: PdfPageLabelsCreator
 ) : FramesRenderer {
 
     private val logger = logger()
@@ -73,7 +79,7 @@ class PdfFramesRenderer @Inject internal constructor(
         // Rasterize pages
         val imagesDir = File(config.tempDir, "images")
         currFrameGroups = framesRasterizer.rasterizeFramesIfNeeded(
-                pdfDoc, currFrameGroups, imagesDir, pdfImages, pdfFonts)
+            pdfDoc, currFrameGroups, imagesDir, pdfImages, pdfFonts)
 
         // Render all frames to PDF
         val pdfPages = renderFramesToPdf(currFrameGroups, pdfImages, pdfFonts)
@@ -103,8 +109,10 @@ class PdfFramesRenderer @Inject internal constructor(
         }
     }
 
-    private fun createPdfImages(pdfDoc: PDDocument,
-                                frameGroups: List<FrameGroup>): MutableMap<ImageData, PDImageXObject> {
+    private fun createPdfImages(
+        pdfDoc: PDDocument,
+        frameGroups: List<FrameGroup>
+    ): MutableMap<ImageData, PDImageXObject> {
         progressCb.beginStep("Creating PDF images", true)
 
         // Find all images in all frames.
@@ -120,8 +128,7 @@ class PdfFramesRenderer @Inject internal constructor(
         progressCb.showStep("creating images", false) {
             progressCb.showProgress(allImageData.size) {
                 for (imageData in allImageData) {
-                    val data = imageData
-                    pdfImagesMap[data] = createPdfImage(pdfDoc, data)
+                    pdfImagesMap[imageData] = createPdfImage(pdfDoc, imageData)
                     progressCb.incrementProgress()
                 }
             }
@@ -172,16 +179,19 @@ class PdfFramesRenderer @Inject internal constructor(
     }
 
     /** Find all image data recursively in children of this group, adding them to the [destination] collection. */
-    private fun <C : MutableCollection<ImageData>> GroupObject.findAllImageDataTo(destination: C): C {
-        for (obj in this.objects) {
-            if (obj is ShapeObject) {
-                for (path in obj.paths) {
+    private fun <C : MutableCollection<ImageData>> FrameObject.findAllImageDataTo(destination: C): C {
+        when (this) {
+            is ShapeObject -> {
+                for (path in paths) {
                     if (path.fillStyle is PathFillStyle.Image) {
                         destination += (path.fillStyle as PathFillStyle.Image).imageData
                     }
                 }
-            } else if (obj is GroupObject) {
-                obj.findAllImageDataTo(destination)
+            }
+            is GroupObject -> {
+                for (obj in this.objects) {
+                    obj.findAllImageDataTo(destination)
+                }
             }
         }
         return destination
@@ -199,9 +209,11 @@ class PdfFramesRenderer @Inject internal constructor(
         return destination
     }
 
-    private suspend fun renderFramesToPdf(frameGroups: List<FrameGroup>,
-                                          pdfImages: Map<ImageData, PDImageXObject>,
-                                          pdfFonts: Map<File, PDFont>): List<PDDocument> {
+    private suspend fun renderFramesToPdf(
+        frameGroups: List<FrameGroup>,
+        pdfImages: Map<ImageData, PDImageXObject>,
+        pdfFonts: Map<File, PDFont>
+    ): List<PDDocument> {
         return progressCb.showStep("Rendering PDF frames", true) {
             progressCb.showProgress(frameGroups.size) {
                 frameGroups.mapInParallel(config.parallelFrameRendering) { frameGroup ->
@@ -235,22 +247,18 @@ class PdfFramesRenderer @Inject internal constructor(
      * If [IOException] is thrown, ask user to retry in console.
      */
     private inline fun trySave(file: File, save: () -> Unit) {
-        save@ while (true) {
+        while (true) {
             try {
                 save()
                 return
             } catch (e: IOException) {
-                retry@ while (true) {
-                    logger.warn { "Failed to save file to $file" }
-                    print("Could not save file '${file.path}'. Retry (Y/N)? ")
-                    when (readLine()?.toLowerCase()) {
-                        "y" -> continue@save
-                        "n" -> return
-                        else -> continue@retry
-                    }
+                logger.warn { "Failed to save file to $file" }
+                if (readAffirmativeAnswer("Could not save file '${file.path}'.")) {
+                    continue
+                } else {
+                    return
                 }
             }
         }
     }
-
 }

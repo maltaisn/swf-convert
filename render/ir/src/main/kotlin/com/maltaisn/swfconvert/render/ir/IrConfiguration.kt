@@ -19,20 +19,19 @@ package com.maltaisn.swfconvert.render.ir
 import com.maltaisn.swfconvert.render.core.RenderConfiguration
 import java.io.File
 
-
 /**
  * Configuration for the intermediate representation output format.
  */
 data class IrConfiguration(
 
-        override val output: List<File>,
-        override val tempDir: File,
+    override val output: List<File>,
+    override val tempDir: File,
 
-        /** Whether to pretty print JSON or not. */
-        val prettyPrint: Boolean,
+    /** Whether to pretty print JSON or not. */
+    val prettyPrint: Boolean,
 
-        // DEBUG OPTIONS
+    // DEBUG OPTIONS
 
-        override val parallelFrameRendering: Boolean
+    override val parallelFrameRendering: Boolean
 
 ) : RenderConfiguration

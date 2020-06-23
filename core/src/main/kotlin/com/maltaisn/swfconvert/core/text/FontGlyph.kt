@@ -16,8 +16,10 @@
 
 package com.maltaisn.swfconvert.core.text
 
-data class FontGlyph(val char: Char,
-                     val data: GlyphData) {
+data class FontGlyph(
+    val char: Char,
+    val data: GlyphData
+) {
 
     val isWhitespace: Boolean
         get() = data.isWhitespace

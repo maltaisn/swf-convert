@@ -19,14 +19,19 @@ package com.maltaisn.swfconvert.convert.wrapper
 import com.flagstone.transform.datatype.Bounds
 import com.flagstone.transform.fillstyle.FillStyle
 import com.flagstone.transform.linestyle.LineStyle
-import com.flagstone.transform.shape.*
+import com.flagstone.transform.shape.DefineShape
+import com.flagstone.transform.shape.DefineShape2
+import com.flagstone.transform.shape.DefineShape3
+import com.flagstone.transform.shape.DefineShape4
+import com.flagstone.transform.shape.Shape
 
-
-internal data class WDefineShape(val identifier: Int,
-                                 val shape: Shape,
-                                 val bounds: Bounds,
-                                 val fillStyles: List<FillStyle>,
-                                 val lineStyles: List<LineStyle>) {
+internal data class WDefineShape(
+    val identifier: Int,
+    val shape: Shape,
+    val bounds: Bounds,
+    val fillStyles: List<FillStyle>,
+    val lineStyles: List<LineStyle>
+) {
 
     constructor(s: DefineShape) : this(s.identifier, s.shape, s.bounds, s.fillStyles, s.lineStyles)
     constructor(s: DefineShape2) : this(s.identifier, s.shape, s.bounds, s.fillStyles, s.lineStyles)

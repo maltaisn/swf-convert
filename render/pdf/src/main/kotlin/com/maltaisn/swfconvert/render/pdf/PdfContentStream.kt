@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("TooManyFunctions")
+
 package com.maltaisn.swfconvert.render.pdf
 
 import com.maltaisn.swfconvert.core.image.Color
@@ -105,22 +107,28 @@ internal interface PdfContentStream {
 internal class PdfPageContentStream(pdfDoc: PDDocument, page: PDPage, compress: Boolean) : PdfContentStream {
 
     private val stream = PDPageContentStream(pdfDoc, page,
-            PDPageContentStream.AppendMode.OVERWRITE, compress)
+        PDPageContentStream.AppendMode.OVERWRITE, compress)
 
     override fun beginText() = stream.beginText()
     override fun endText() = stream.endText()
     override fun setFont(font: PDFont, fontSize: Float) = stream.setFont(font, fontSize)
-    override fun showTextWithPositioning(textWithPositioningArray: Array<Any>) = stream.showTextWithPositioning(textWithPositioningArray)
+    override fun showTextWithPositioning(textWithPositioningArray: Array<Any>) =
+        stream.showTextWithPositioning(textWithPositioningArray)
+
     override fun showText(text: String) = stream.showText(text)
     override fun setLeading(leading: Float) = stream.setLeading(leading)
     override fun newLine() = stream.newLine()
     override fun newLineAtOffset(tx: Float, ty: Float) = stream.newLineAtOffset(tx, ty)
     override fun setTextMatrix(matrix: Matrix) = stream.setTextMatrix(matrix)
     override fun drawImage(image: PDImageXObject, x: Float, y: Float) = stream.drawImage(image, x, y)
-    override fun drawImage(image: PDImageXObject, x: Float, y: Float, width: Float, height: Float) = stream.drawImage(image, x, y, width, height)
+    override fun drawImage(image: PDImageXObject, x: Float, y: Float, width: Float, height: Float) =
+        stream.drawImage(image, x, y, width, height)
+
     override fun drawImage(image: PDImageXObject, matrix: Matrix) = stream.drawImage(image, matrix)
     override fun drawImage(inlineImage: PDInlineImage, x: Float, y: Float) = stream.drawImage(inlineImage, x, y)
-    override fun drawImage(inlineImage: PDInlineImage, x: Float, y: Float, width: Float, height: Float) = stream.drawImage(inlineImage, x, y, width, height)
+    override fun drawImage(inlineImage: PDInlineImage, x: Float, y: Float, width: Float, height: Float) =
+        stream.drawImage(inlineImage, x, y, width, height)
+
     override fun drawForm(form: PDFormXObject) = stream.drawForm(form)
     override fun transform(matrix: Matrix) = stream.transform(matrix)
     override fun saveGraphicsState() = stream.saveGraphicsState()
@@ -137,7 +145,9 @@ internal class PdfPageContentStream(pdfDoc: PDDocument, page: PDPage, compress: 
     override fun setNonStrokingColor(c: Float, m: Float, y: Float, k: Float) = stream.setNonStrokingColor(c, m, y, k)
     override fun setNonStrokingColor(g: Float) = stream.setNonStrokingColor(g)
     override fun addRect(x: Float, y: Float, width: Float, height: Float) = stream.addRect(x, y, width, height)
-    override fun curveTo(x1: Float, y1: Float, x2: Float, y2: Float, x3: Float, y3: Float) = stream.curveTo(x1, y1, x2, y2, x3, y3)
+    override fun curveTo(x1: Float, y1: Float, x2: Float, y2: Float, x3: Float, y3: Float) =
+        stream.curveTo(x1, y1, x2, y2, x3, y3)
+
     override fun curveTo2(x2: Float, y2: Float, x3: Float, y3: Float) = stream.curveTo2(x2, y2, x3, y3)
     override fun curveTo1(x1: Float, y1: Float, x3: Float, y3: Float) = stream.curveTo1(x1, y1, x3, y3)
     override fun moveTo(x: Float, y: Float) = stream.moveTo(x, y)
@@ -160,7 +170,9 @@ internal class PdfPageContentStream(pdfDoc: PDDocument, page: PDPage, compress: 
     override fun setLineDashPattern(pattern: FloatArray, phase: Float) = stream.setLineDashPattern(pattern, phase)
     override fun setMiterLimit(miterLimit: Float) = stream.setMiterLimit(miterLimit)
     override fun beginMarkedContent(tag: COSName) = stream.beginMarkedContent(tag)
-    override fun beginMarkedContent(tag: COSName, propertyList: PDPropertyList) = stream.beginMarkedContent(tag, propertyList)
+    override fun beginMarkedContent(tag: COSName, propertyList: PDPropertyList) =
+        stream.beginMarkedContent(tag, propertyList)
+
     override fun endMarkedContent() = stream.endMarkedContent()
     override fun setGraphicsStateParameters(state: PDExtendedGraphicsState) = stream.setGraphicsStateParameters(state)
     override fun addComment(comment: String) = stream.addComment(comment)
@@ -179,17 +191,23 @@ internal class PdfFormContentStream(form: PDFormXObject) : PdfContentStream {
     override fun beginText() = stream.beginText()
     override fun endText() = stream.endText()
     override fun setFont(font: PDFont, fontSize: Float) = stream.setFont(font, fontSize)
-    override fun showTextWithPositioning(textWithPositioningArray: Array<Any>) = stream.showTextWithPositioning(textWithPositioningArray)
+    override fun showTextWithPositioning(textWithPositioningArray: Array<Any>) =
+        stream.showTextWithPositioning(textWithPositioningArray)
+
     override fun showText(text: String) = stream.showText(text)
     override fun setLeading(leading: Float) = stream.setLeading(leading)
     override fun newLine() = stream.newLine()
     override fun newLineAtOffset(tx: Float, ty: Float) = stream.newLineAtOffset(tx, ty)
     override fun setTextMatrix(matrix: Matrix) = stream.setTextMatrix(matrix)
     override fun drawImage(image: PDImageXObject, x: Float, y: Float) = stream.drawImage(image, x, y)
-    override fun drawImage(image: PDImageXObject, x: Float, y: Float, width: Float, height: Float) = stream.drawImage(image, x, y, width, height)
+    override fun drawImage(image: PDImageXObject, x: Float, y: Float, width: Float, height: Float) =
+        stream.drawImage(image, x, y, width, height)
+
     override fun drawImage(image: PDImageXObject, matrix: Matrix) = stream.drawImage(image, matrix)
     override fun drawImage(inlineImage: PDInlineImage, x: Float, y: Float) = stream.drawImage(inlineImage, x, y)
-    override fun drawImage(inlineImage: PDInlineImage, x: Float, y: Float, width: Float, height: Float) = stream.drawImage(inlineImage, x, y, width, height)
+    override fun drawImage(inlineImage: PDInlineImage, x: Float, y: Float, width: Float, height: Float) =
+        stream.drawImage(inlineImage, x, y, width, height)
+
     override fun drawForm(form: PDFormXObject) = stream.drawForm(form)
     override fun transform(matrix: Matrix) = stream.transform(matrix)
     override fun saveGraphicsState() = stream.saveGraphicsState()
@@ -206,7 +224,9 @@ internal class PdfFormContentStream(form: PDFormXObject) : PdfContentStream {
     override fun setNonStrokingColor(c: Float, m: Float, y: Float, k: Float) = stream.setNonStrokingColor(c, m, y, k)
     override fun setNonStrokingColor(g: Float) = stream.setNonStrokingColor(g)
     override fun addRect(x: Float, y: Float, width: Float, height: Float) = stream.addRect(x, y, width, height)
-    override fun curveTo(x1: Float, y1: Float, x2: Float, y2: Float, x3: Float, y3: Float) = stream.curveTo(x1, y1, x2, y2, x3, y3)
+    override fun curveTo(x1: Float, y1: Float, x2: Float, y2: Float, x3: Float, y3: Float) =
+        stream.curveTo(x1, y1, x2, y2, x3, y3)
+
     override fun curveTo2(x2: Float, y2: Float, x3: Float, y3: Float) = stream.curveTo2(x2, y2, x3, y3)
     override fun curveTo1(x1: Float, y1: Float, x3: Float, y3: Float) = stream.curveTo1(x1, y1, x3, y3)
     override fun moveTo(x: Float, y: Float) = stream.moveTo(x, y)
@@ -229,7 +249,9 @@ internal class PdfFormContentStream(form: PDFormXObject) : PdfContentStream {
     override fun setLineDashPattern(pattern: FloatArray, phase: Float) = stream.setLineDashPattern(pattern, phase)
     override fun setMiterLimit(miterLimit: Float) = stream.setMiterLimit(miterLimit)
     override fun beginMarkedContent(tag: COSName) = stream.beginMarkedContent(tag)
-    override fun beginMarkedContent(tag: COSName, propertyList: PDPropertyList) = stream.beginMarkedContent(tag, propertyList)
+    override fun beginMarkedContent(tag: COSName, propertyList: PDPropertyList) =
+        stream.beginMarkedContent(tag, propertyList)
+
     override fun endMarkedContent() = stream.endMarkedContent()
     override fun setGraphicsStateParameters(state: PDExtendedGraphicsState) = stream.setGraphicsStateParameters(state)
     override fun addComment(comment: String) = stream.addComment(comment)

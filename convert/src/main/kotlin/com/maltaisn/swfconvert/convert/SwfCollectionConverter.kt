@@ -27,17 +27,16 @@ import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.kotlin.logger
 import javax.inject.Inject
 
-
 /**
  * Converts a collection of SWF files to the intermediate representation.
  */
 class SwfCollectionConverter @Inject internal constructor(
-        private val config: ConvertConfiguration,
-        private val progressCb: ProgressCallback,
-        private val swfsDecoder: SwfsDecoder,
-        private val swfsConverter: SwfsConverter,
-        private val fontConverter: FontConverter,
-        private val imageCreator: ImageCreator
+    private val config: ConvertConfiguration,
+    private val progressCb: ProgressCallback,
+    private val swfsDecoder: SwfsDecoder,
+    private val swfsConverter: SwfsConverter,
+    private val fontConverter: FontConverter,
+    private val imageCreator: ImageCreator
 ) {
 
     private val logger = logger()

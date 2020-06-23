@@ -20,29 +20,35 @@ import com.flagstone.transform.Movie
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
 import com.maltaisn.swfconvert.convert.context.ConvertContext
 import com.maltaisn.swfconvert.convert.context.SwfFileContext
-import com.maltaisn.swfconvert.core.*
+import com.maltaisn.swfconvert.core.FrameGroup
+import com.maltaisn.swfconvert.core.ProgressCallback
+import com.maltaisn.swfconvert.core.mapInParallel
+import com.maltaisn.swfconvert.core.showProgress
+import com.maltaisn.swfconvert.core.showStep
 import com.maltaisn.swfconvert.core.text.Font
 import com.maltaisn.swfconvert.core.text.FontId
+import com.maltaisn.swfconvert.core.use
 import javax.inject.Inject
 import javax.inject.Provider
-
 
 /**
  * Converts a collection of SWF files to the [FrameGroup] intermediate representation.
  */
 internal class SwfsConverter @Inject constructor(
-        private val config: ConvertConfiguration,
-        private val progressCb: ProgressCallback,
-        private val swfConverterProvider: Provider<SwfConverter>
+    private val config: ConvertConfiguration,
+    private val progressCb: ProgressCallback,
+    private val swfConverterProvider: Provider<SwfConverter>
 ) {
 
-    suspend fun createFrameGroups(context: ConvertContext,
-                                  swfs: List<Movie>,
-                                  fontsMap: Map<FontId, Font>): List<FrameGroup> {
+    suspend fun createFrameGroups(
+        context: ConvertContext,
+        swfs: List<Movie>,
+        fontsMap: Map<FontId, Font>
+    ): List<FrameGroup> {
         return progressCb.showStep("Converting SWFs", true) {
             progressCb.showProgress(swfs.size) {
                 swfs.withIndex().mapInParallel(
-                        config.parallelSwfConversion) { (i, swf) ->
+                    config.parallelSwfConversion) { (i, swf) ->
                     val swfContext = SwfFileContext(context, config.input[i], i)
                     val frameGroup = swfConverterProvider.get().use {
                         it.createFrameGroup(swfContext, swf, fontsMap)

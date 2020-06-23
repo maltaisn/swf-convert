@@ -25,21 +25,24 @@ import com.maltaisn.swfconvert.core.shape.Path
 import com.maltaisn.swfconvert.core.shape.PathElement
 import com.maltaisn.swfconvert.core.shape.PathElement.MoveTo
 import com.maltaisn.swfconvert.core.text.GlyphData
+import org.apache.logging.log4j.kotlin.logger
 import java.awt.geom.AffineTransform
+import java.io.IOException
 import javax.inject.Inject
-
 
 /**
  * Class used to create [GlyphData] from a SWF font tag.
  */
 internal class GlyphPathParser @Inject constructor(
-        private val converter: ShapeConverter
+    private val converter: ShapeConverter
 ) {
+
+    private val logger = logger()
 
     fun createFontGlyphsData(context: SwfObjectContext, wfont: WDefineFont): List<GlyphData> {
         val transform = AffineTransform.getScaleInstance(
-                wfont.scale.scaleX.toDouble() * SWF_TO_TTF_EM_SCALE,
-                wfont.scale.scaleY.toDouble() * SWF_TO_TTF_EM_SCALE)
+            wfont.scale.scaleX.toDouble() * SWF_TO_TTF_EM_SCALE,
+            wfont.scale.scaleY.toDouble() * SWF_TO_TTF_EM_SCALE)
 
         return wfont.codes.indices.map { i ->
             val advance = if (wfont.advances.isEmpty()) {
@@ -49,20 +52,30 @@ internal class GlyphPathParser @Inject constructor(
                 wfont.advances[i] * wfont.scale.scaleX
             }
             val shapeData = wfont.shapes[i].objects.first() as ShapeData
-            val shape = Shape.shapeFromData(shapeData)
-            val contours = parseGlyphShape(context, shape, transform)
+            val contours = try {
+                val shape = Shape.shapeFromData(shapeData)
+                parseGlyphShape(context, shape, transform)
+            } catch (e: IOException) {
+                logger.error(e) { "Could not parse glyph shape data at $context: I/O exception" }
+                emptyList()
+            } catch (e: ArrayIndexOutOfBoundsException) {
+                logger.error(e) { "Could not parse glyph shape data at $context: unknown exception" }
+                emptyList()
+            }
             GlyphData(advance, contours)
         }
     }
 
-    private fun parseGlyphShape(context: SwfObjectContext,
-                                shape: Shape,
-                                transform: AffineTransform): List<Path> {
+    private fun parseGlyphShape(
+        context: SwfObjectContext,
+        shape: Shape,
+        transform: AffineTransform
+    ): List<Path> {
         // Create the glyph shape from SWF shape records
         val paths = converter.parseShape(context, shape,
-                emptyList(), emptyList(),
-                transform, IDENTITY_TRANSFORM,
-                ignoreStyles = true, allowRectangles = false)
+            emptyList(), emptyList(),
+            transform, IDENTITY_TRANSFORM,
+            ignoreStyles = true, allowRectangles = false)
 
         // Separate glyph shape into contours, each having a single move to element.
         val contours = mutableListOf<Path>()
@@ -80,7 +93,6 @@ internal class GlyphPathParser @Inject constructor(
 
         return contours
     }
-
 
     companion object {
         private val IDENTITY_TRANSFORM = AffineTransform()

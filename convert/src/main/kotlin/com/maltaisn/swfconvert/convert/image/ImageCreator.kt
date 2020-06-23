@@ -17,10 +17,15 @@
 package com.maltaisn.swfconvert.convert.image
 
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
-import com.maltaisn.swfconvert.core.*
+import com.maltaisn.swfconvert.core.FrameGroup
+import com.maltaisn.swfconvert.core.GroupObject
+import com.maltaisn.swfconvert.core.ProgressCallback
 import com.maltaisn.swfconvert.core.image.ImageData
+import com.maltaisn.swfconvert.core.mapInParallel
 import com.maltaisn.swfconvert.core.shape.PathFillStyle
 import com.maltaisn.swfconvert.core.shape.ShapeObject
+import com.maltaisn.swfconvert.core.showProgress
+import com.maltaisn.swfconvert.core.showStep
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -28,10 +33,9 @@ import java.text.NumberFormat
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 
-
 internal class ImageCreator @Inject constructor(
-        private val config: ConvertConfiguration,
-        private val progressCb: ProgressCallback
+    private val config: ConvertConfiguration,
+    private val progressCb: ProgressCallback
 ) {
 
     /**

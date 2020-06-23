@@ -16,20 +16,25 @@
 
 package com.maltaisn.swfconvert.render.svg.writer
 
+import com.maltaisn.swfconvert.render.svg.writer.format.appendValuesList
+import com.maltaisn.swfconvert.render.svg.writer.format.appendValuesListOptimized
+import com.maltaisn.swfconvert.render.svg.writer.format.createNumberFormat
+import com.maltaisn.swfconvert.render.svg.writer.format.formatOptimized
+import com.maltaisn.swfconvert.render.svg.writer.format.requireSvgPrecision
 import kotlin.math.pow
 import kotlin.math.roundToInt
-
 
 /**
  * Class used to write SVG paths with numbers using a certain [precision].
  * Path strings are also optimized to reduce size.
  */
-internal class SvgPathWriter(private val precision: Int,
-                             private val optimize: Boolean = true) {
+internal class SvgPathWriter(
+    private val precision: Int,
+    private val optimize: Boolean = true
+) {
 
     init {
-        // float is used internally so precision beyond 5 might produce rounding errors.
-        require(precision in 0..5) { "Precision must be between 0 and 5." }
+        requireSvgPrecision(precision)
     }
 
     private val numberFmt = createNumberFormat(precision)
@@ -49,13 +54,12 @@ internal class SvgPathWriter(private val precision: Int,
     private var currentX = 0f
     private var currentY = 0f
 
-
     fun moveTo(x: Float, y: Float) {
         moveToX = x.roundToPrecision()
         moveToY = y.roundToPrecision()
         appendShortestCommand('M', x, y,
-                getFormattedValues(x, y),
-                getFormattedValues(x - currentX, y - currentY))
+            getFormattedValues(x, y),
+            getFormattedValues(x - currentX, y - currentY))
     }
 
     fun lineTo(x: Float, y: Float) {
@@ -75,12 +79,12 @@ internal class SvgPathWriter(private val precision: Int,
             rxIsZero -> {
                 // X didn't change from current position
                 appendShortestCommand('V', x, y,
-                        arrayOf(absVals.last()), arrayOf(relVals.last()))
+                    arrayOf(absVals.last()), arrayOf(relVals.last()))
             }
             ryIsZero -> {
                 // Y didn't change from current position
                 appendShortestCommand('H', x, y,
-                        arrayOf(absVals.first()), arrayOf(relVals.first()))
+                    arrayOf(absVals.first()), arrayOf(relVals.first()))
             }
             else -> appendShortestCommand('L', x, y, absVals, relVals)
         }
@@ -88,27 +92,29 @@ internal class SvgPathWriter(private val precision: Int,
 
     fun quadTo(c1x: Float, c1y: Float, x: Float, y: Float) {
         val relVals = getFormattedValues(c1x - currentX, c1y - currentY,
-                x - currentX, y - currentY)
+            x - currentX, y - currentY)
+        @Suppress("MagicNumber")
         if (relVals[2] == "0" && relVals[3] == "0") {
             // Invisible quad curve, don't write it.
             return
         }
         appendShortestCommand('Q', x, y,
-                getFormattedValues(c1x, c1y, x, y),
-                relVals)
+            getFormattedValues(c1x, c1y, x, y),
+            relVals)
     }
 
     fun cubicTo(c1x: Float, c1y: Float, c2x: Float, c2y: Float, x: Float, y: Float) {
         val relVals = getFormattedValues(c1x - currentX, c1y - currentY,
-                c2x - currentX, c2y - currentY,
-                x - currentX, y - currentY)
+            c2x - currentX, c2y - currentY,
+            x - currentX, y - currentY)
+        @Suppress("MagicNumber")
         if (relVals[4] == "0" && relVals[5] == "0") {
             // Invisible cubic curve, don't write it.
             return
         }
         appendShortestCommand('C', x, y,
-                getFormattedValues(c1x, c1y, c2x, c2y, x, y),
-                relVals)
+            getFormattedValues(c1x, c1y, c2x, c2y, x, y),
+            relVals)
     }
 
     fun closePath() {
@@ -122,11 +128,15 @@ internal class SvgPathWriter(private val precision: Int,
     }
 
     private fun getFormattedValues(vararg values: Float) =
-            Array(values.size) { values[it].formatOptimized(numberFmt) }
+        Array(values.size) { values[it].formatOptimized(numberFmt) }
 
-    private fun appendShortestCommand(command: Char, x: Float, y: Float,
-                                      absoluteValues: Array<String>,
-                                      relativeValues: Array<String>) {
+    private fun appendShortestCommand(
+        command: Char,
+        x: Float,
+        y: Float,
+        absoluteValues: Array<String>,
+        relativeValues: Array<String>
+    ) {
         if (!optimize) {
             sb.appendCommand(command, absoluteValues)
             lastNumberStr = absoluteValues.last()
@@ -161,8 +171,7 @@ internal class SvgPathWriter(private val precision: Int,
 
     private fun Float.roundToPrecision() = (this * precisionMult).roundToInt() / precisionMult
 
-    private fun StringBuilder.appendCommand(command: Char,
-                                            values: Array<String>) {
+    private fun StringBuilder.appendCommand(command: Char, values: Array<String>) {
         if (this.isNotEmpty()) {
             append(' ')
         }
@@ -171,15 +180,15 @@ internal class SvgPathWriter(private val precision: Int,
         appendValuesList(values)
     }
 
-    private fun StringBuilder.appendOptimizedCommand(command: Char,
-                                                     values: Array<String>) {
-        // Append command char
+    private fun StringBuilder.appendOptimizedCommand(command: Char, values: Array<String>) {
         var lastNbStr = lastNumberStr
-        if (!(lastCommand == command && command != 'M' && command != 'm'
-                        || lastCommand == 'M' && command == 'L'
-                        || lastCommand == 'm' && command == 'l')) {
-            // - Command can be omitted if previous command is the same, except 'move to'.
-            // - 'line to' command can be omitted if placed immediately after a 'move to' command.
+
+        val isSameCommandExceptMoveTo = lastCommand == command && command != 'M' && command != 'm'
+        val hasImplicitLineToAbs = lastCommand == 'M' && command == 'L'
+        val hasImplicitLineToRel = lastCommand == 'm' && command == 'l'
+
+        if (!isSameCommandExceptMoveTo && !hasImplicitLineToAbs && !hasImplicitLineToRel) {
+            // Command cannot be omitted.
             append(command)
             lastNbStr = ""
         }

@@ -24,7 +24,6 @@ import javax.imageio.ImageIO
 import javax.imageio.ImageWriteParam
 import javax.inject.Inject
 
-
 /**
  * Utility class for creating [ImageData] from [BufferedImage].
  */
@@ -88,5 +87,4 @@ class ImageDataCreator @Inject constructor() : Disposable {
     override fun dispose() {
         jpgWriter.dispose()
     }
-
 }

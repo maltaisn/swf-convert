@@ -23,7 +23,6 @@ import java.io.ByteArrayInputStream
 import java.util.zip.InflaterInputStream
 import com.flagstone.transform.datatype.Color as FColor
 
-
 internal fun FColor.toColor() = Color(this.red, this.green, this.blue, this.alpha)
 
 /**
@@ -39,19 +38,18 @@ internal fun FColor.toColor() = Color(this.red, this.green, this.blue, this.alph
  * `RotateSkew1` should correspond to AffineTransform's shearX and `RotateSkew0` should be shearY.
  */
 internal fun CoordTransform.toAffineTransform() = AffineTransform(
-            this.scaleX,
-            this.shearX,
-            this.shearY,
-            this.scaleY,
-            this.translateX.toFloat(),
-            this.translateY.toFloat())
+    this.scaleX,
+    this.shearX,
+    this.shearY,
+    this.scaleY,
+    this.translateX.toFloat(),
+    this.translateY.toFloat())
 
 /**
  * Null-safe alternative to [toAffineTransform] that returns the identity matrix if [this] is `null`.
  */
 internal fun CoordTransform?.toAffineTransformOrIdentity() =
-        this?.toAffineTransform() ?: AffineTransform()
-
+    this?.toAffineTransform() ?: AffineTransform()
 
 internal fun ByteArray.zlibDecompress(): ByteArray {
     val inflaterStream = InflaterInputStream(ByteArrayInputStream(this))

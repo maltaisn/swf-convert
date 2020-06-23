@@ -17,9 +17,18 @@
 package com.maltaisn.swfconvert.convert.shape
 
 import com.flagstone.transform.MovieTag
-import com.flagstone.transform.fillstyle.*
+import com.flagstone.transform.fillstyle.BitmapFill
+import com.flagstone.transform.fillstyle.FillStyle
+import com.flagstone.transform.fillstyle.GradientFill
+import com.flagstone.transform.fillstyle.Interpolation
+import com.flagstone.transform.fillstyle.SolidFill
+import com.flagstone.transform.fillstyle.Spread
 import com.flagstone.transform.image.ImageTag
-import com.flagstone.transform.linestyle.*
+import com.flagstone.transform.linestyle.CapStyle
+import com.flagstone.transform.linestyle.JoinStyle
+import com.flagstone.transform.linestyle.LineStyle
+import com.flagstone.transform.linestyle.LineStyle1
+import com.flagstone.transform.linestyle.LineStyle2
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
 import com.maltaisn.swfconvert.convert.conversionError
 import com.maltaisn.swfconvert.convert.image.CompositeColorTransform
@@ -38,13 +47,12 @@ import javax.inject.Inject
 import kotlin.math.min
 import kotlin.math.sqrt
 
-
 /**
  * Extends the functionality of [ShapeConverter] by allowing fill and line styles.
  */
 internal class StyledShapeConverter @Inject constructor(
-        private val config: ConvertConfiguration,
-        private val imageDecoder: ImageDecoder
+    private val config: ConvertConfiguration,
+    private val imageDecoder: ImageDecoder
 ) : ShapeConverter(), Disposable {
 
     private lateinit var objectsMap: Map<Int, MovieTag>
@@ -55,8 +63,10 @@ internal class StyledShapeConverter @Inject constructor(
      * @param objectsMap Used to get image tags from SWF.
      * @param colorTransform Color transform applied on fill and line styles.
      */
-    fun initialize(objectsMap: Map<Int, MovieTag>,
-                   colorTransform: CompositeColorTransform) {
+    fun initialize(
+        objectsMap: Map<Int, MovieTag>,
+        colorTransform: CompositeColorTransform
+    ) {
         this.objectsMap = objectsMap
         this.colorTransform = colorTransform
     }
@@ -72,7 +82,7 @@ internal class StyledShapeConverter @Inject constructor(
             }
 
             val image = objectsMap[fillStyle.identifier] as? ImageTag
-                    ?: conversionError(context, "Invalid image ID ${fillStyle.identifier}")
+                ?: conversionError(context, "Invalid image ID ${fillStyle.identifier}")
 
             val tr = fillStyle.transform.toAffineTransform()
             tr.scale(image.width.toDouble(), image.height.toDouble())
@@ -93,7 +103,7 @@ internal class StyledShapeConverter @Inject constructor(
 
             val colors = fillStyle.gradients.map {
                 val color = colorTransform.transform(it.color.toColor())
-                val ratio = it.ratio / 255f
+                val ratio = it.ratio.toFloat() / GRADIENT_MAX_RATIO
                 GradientColor(color, ratio)
             }
 
@@ -139,9 +149,9 @@ internal class StyledShapeConverter @Inject constructor(
             else -> conversionError(context, "Unknown line style ${lineStyle.javaClass.simpleName}")
         }
         return PathLineStyle(wstyle.color.toColor(), wstyle.width.toFloat(),
-                wstyle.capStyle?.toBasicStrokeConstant() ?: BasicStroke.CAP_BUTT,
-                wstyle.joinStyle?.toBasicStrokeConstant() ?: BasicStroke.JOIN_BEVEL,
-                wstyle.miterLimit.toFloat())
+            wstyle.capStyle?.toBasicStrokeConstant() ?: BasicStroke.CAP_BUTT,
+            wstyle.joinStyle?.toBasicStrokeConstant() ?: BasicStroke.JOIN_BEVEL,
+            wstyle.miterLimit.toFloat())
     }
 
     private fun CapStyle.toBasicStrokeConstant() = when (this) {
@@ -156,4 +166,7 @@ internal class StyledShapeConverter @Inject constructor(
         JoinStyle.MITER -> BasicStroke.JOIN_MITER
     }
 
+    companion object {
+        private const val GRADIENT_MAX_RATIO = 255
+    }
 }

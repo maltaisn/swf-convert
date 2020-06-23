@@ -16,7 +16,6 @@
 
 package com.maltaisn.swfconvert.core
 
-
 /**
  * Blend modes in the intermediate representation.
  */

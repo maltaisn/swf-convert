@@ -16,7 +16,6 @@
 
 package com.maltaisn.swfconvert.render.svg.writer.data
 
-
 internal data class SvgPreserveAspectRatio(val align: Align, val slice: Boolean = false) {
 
     fun toSvg() = align.svgName + if (slice) " slice" else ""

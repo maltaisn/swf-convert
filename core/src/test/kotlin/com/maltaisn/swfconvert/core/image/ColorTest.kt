@@ -19,7 +19,6 @@ package com.maltaisn.swfconvert.core.image
 import org.junit.Test
 import kotlin.test.assertEquals
 
-
 class ColorTest {
 
     @Test
@@ -46,13 +45,13 @@ class ColorTest {
     @Test
     fun `should give hex value`() {
         val color = Color(0x5E3F09AD)
-        assertEquals("#5E3F09AD", color.toString())
+        assertEquals("#5e3f09ad", color.toString())
     }
 
     @Test
     fun `should give hex value without alpha`() {
         val color = Color(0x5E3F09AD)
-        assertEquals("#3F09AD", color.toStringNoAlpha())
+        assertEquals("#3f09ad", color.toStringNoAlpha())
     }
 
     @Test
@@ -76,35 +75,4 @@ class ColorTest {
         val color = Color.gray(0x56)
         assertEquals(Color(0xFF565656.toInt()), color)
     }
-
-    @Test
-    fun `should color from pix15 bytes`() {
-        val bytes = byteArrayOf(0x33, 0x95.toByte())
-        assertEquals(Color(0xFF60E0A8.toInt()), Color.fromPix15Bytes(bytes, 0))
-    }
-
-    @Test
-    fun `should color from pix24 bytes`() {
-        val bytes = byteArrayOf(0x00, 0x01, 0x02, 0x03)
-        assertEquals(Color(0xFF010203.toInt()), Color.fromPix24Bytes(bytes, 0))
-    }
-
-    @Test
-    fun `should color from rgb bytes`() {
-        val bytes = byteArrayOf(0x01, 0x02, 0x03)
-        assertEquals(Color(0xFF010203.toInt()), Color.fromRgbBytes(bytes, 0))
-    }
-
-    @Test
-    fun `should color from rgba bytes`() {
-        val bytes = byteArrayOf(0x01, 0x02, 0x03, 0x04)
-        assertEquals(Color(0x04010203), Color.fromRgbaBytes(bytes, 0))
-    }
-
-    @Test
-    fun `should color from argb bytes`() {
-        val bytes = byteArrayOf(0x01, 0x02, 0x03, 0x04)
-        assertEquals(Color(0x01020304), Color.fromArgbBytes(bytes, 0))
-    }
-
 }

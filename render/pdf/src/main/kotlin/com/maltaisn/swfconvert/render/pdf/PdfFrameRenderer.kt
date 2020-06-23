@@ -20,7 +20,11 @@ import com.maltaisn.swfconvert.core.FrameGroup
 import com.maltaisn.swfconvert.core.FrameObject
 import com.maltaisn.swfconvert.core.GroupObject
 import com.maltaisn.swfconvert.core.image.ImageData
-import com.maltaisn.swfconvert.core.shape.*
+import com.maltaisn.swfconvert.core.shape.Path
+import com.maltaisn.swfconvert.core.shape.PathElement
+import com.maltaisn.swfconvert.core.shape.PathFillStyle
+import com.maltaisn.swfconvert.core.shape.PathLineStyle
+import com.maltaisn.swfconvert.core.shape.ShapeObject
 import com.maltaisn.swfconvert.core.text.TextObject
 import org.apache.pdfbox.cos.COSArray
 import org.apache.pdfbox.cos.COSDictionary
@@ -39,30 +43,30 @@ import java.awt.BasicStroke
 import java.awt.geom.AffineTransform
 import java.awt.geom.Rectangle2D
 import java.io.File
-import java.util.*
 import javax.inject.Inject
 
-
 class PdfFrameRenderer @Inject internal constructor(
-        private val config: PdfConfiguration
+    private val config: PdfConfiguration
 ) {
 
     private lateinit var pdfDoc: PDDocument
     private lateinit var pdfImages: Map<ImageData, PDImageXObject>
     private lateinit var pdfFonts: Map<File, PDFont>
 
-    private val streamWrapperStack = LinkedList<PdfStreamWrapper>()
+    private val streamWrapperStack = ArrayDeque<PdfStreamWrapper>()
     private val streamWrapper: PdfStreamWrapper
-        get() = streamWrapperStack.peek()
+        get() = streamWrapperStack.last()
 
-    private val pageBoundsStack = LinkedList<PDRectangle>()
+    private val pageBoundsStack = ArrayDeque<PDRectangle>()
     private val currentPageBounds: PDRectangle
-        get() = pageBoundsStack.peek()
+        get() = pageBoundsStack.last()
 
-
-    fun renderFrame(pdfDoc: PDDocument, frame: FrameGroup,
-                    pdfImages: Map<ImageData, PDImageXObject>,
-                    pdfFonts: Map<File, PDFont>) {
+    fun renderFrame(
+        pdfDoc: PDDocument,
+        frame: FrameGroup,
+        pdfImages: Map<ImageData, PDImageXObject>,
+        pdfFonts: Map<File, PDFont>
+    ) {
         this.pdfDoc = pdfDoc
         this.pdfImages = pdfImages
         this.pdfFonts = pdfFonts
@@ -74,7 +78,7 @@ class PdfFrameRenderer @Inject internal constructor(
         // Set page bounds
         val bounds = PDRectangle(frame.actualWidth, frame.actualHeight)
         pdfPage.mediaBox = bounds
-        pageBoundsStack.push(bounds)
+        pageBoundsStack += bounds
 
         // Draw page
         withPdfStream(PdfPageContentStream(pdfDoc, pdfPage, config.compress)) {
@@ -120,16 +124,16 @@ class PdfFrameRenderer @Inject internal constructor(
             // Transform page bounds (with inverse transform)
             val bounds = currentPageBounds
             val boundsRect = Rectangle2D.Float(bounds.lowerLeftX,
-                    bounds.lowerLeftY, bounds.width, bounds.height)
+                bounds.lowerLeftY, bounds.width, bounds.height)
             val newBounds = group.transform.createInverse()
-                    .createTransformedShape(boundsRect).bounds2D
-            pageBoundsStack.push(PDRectangle(newBounds.x.toFloat(), newBounds.y.toFloat(),
-                    newBounds.width.toFloat(), newBounds.height.toFloat()))
+                .createTransformedShape(boundsRect).bounds2D
+            pageBoundsStack += PDRectangle(newBounds.x.toFloat(), newBounds.y.toFloat(),
+                newBounds.width.toFloat(), newBounds.height.toFloat())
 
             // Draw group objects
             drawSimpleGroup(group)
 
-            pageBoundsStack.pop()
+            pageBoundsStack.removeLast()
         }
     }
 
@@ -156,7 +160,7 @@ class PdfFrameRenderer @Inject internal constructor(
         // use the mask bounds, which should give better performance since it's smaller.
         val bounds = group.bounds
         val pdbounds = PDRectangle(bounds.x.toFloat(), bounds.y.toFloat(),
-                bounds.width.toFloat(), bounds.height.toFloat())
+            bounds.width.toFloat(), bounds.height.toFloat())
 
         // Create mask transparency group
         val maskGroup = createTransparencyGroup(pdbounds) {
@@ -275,7 +279,8 @@ class PdfFrameRenderer @Inject internal constructor(
 
         // SWF gradient has a size of 32768 and offset by -16384. Concatenate that to gradient transform.
         val tr = AffineTransform(gradient.transform)
-        tr.concatenate(AffineTransform(32768f, 0f, 0f, 32768f, -16384f, -16384f))
+        tr.concatenate(AffineTransform(PathFillStyle.Gradient.SIZE, 0f, 0f,
+            PathFillStyle.Gradient.SIZE, PathFillStyle.Gradient.OFFSET, PathFillStyle.Gradient.OFFSET))
 
         // Apply the transform onto an unit vector to define the PDF gradient.
         val coords = floatArrayOf(0f, 0.5f, 1f, 0.5f)
@@ -357,14 +362,16 @@ class PdfFrameRenderer @Inject internal constructor(
 
     private inline fun withPdfStream(pdfStream: PdfContentStream, block: () -> Unit) {
         val wrapper = PdfStreamWrapper(pdfStream)
-        streamWrapperStack.push(wrapper)
+        streamWrapperStack += wrapper
         block()
-        streamWrapperStack.pop()
+        streamWrapperStack.removeLast()
         wrapper.stream.close()
     }
 
-    private inline fun createTransparencyGroup(bounds: PDRectangle = currentPageBounds,
-                                               block: () -> Unit): PDTransparencyGroup {
+    private inline fun createTransparencyGroup(
+        bounds: PDRectangle = currentPageBounds,
+        block: () -> Unit
+    ): PDTransparencyGroup {
         val group = PDTransparencyGroup(pdfDoc)
         group.bBox = bounds
         group.resources = PDResources()
@@ -386,5 +393,4 @@ class PdfFrameRenderer @Inject internal constructor(
             else -> 1
         }
     }
-
 }

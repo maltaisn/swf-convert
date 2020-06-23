@@ -23,10 +23,10 @@ internal data class XmlProlog(val attrs: Map<String, Any?>) : XmlElement
 internal data class XmlText(val text: String) : XmlElement
 
 internal data class XmlTag(
-        val name: String,
-        val attrs: Map<String, Any?> = mutableMapOf(),
-        val children: MutableList<XmlElement> = mutableListOf(),
-        val parent: XmlTag? = null
+    val name: String,
+    val attrs: Map<String, Any?> = mutableMapOf(),
+    val children: MutableList<XmlElement> = mutableListOf(),
+    val parent: XmlTag? = null
 ) : XmlWriter(), XmlElement {
 
     override val currentTag: String

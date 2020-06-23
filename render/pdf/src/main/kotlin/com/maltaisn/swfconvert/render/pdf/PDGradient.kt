@@ -17,14 +17,17 @@
 package com.maltaisn.swfconvert.render.pdf
 
 import com.maltaisn.swfconvert.core.image.Color
-import org.apache.pdfbox.cos.*
+import org.apache.pdfbox.cos.COSArray
+import org.apache.pdfbox.cos.COSDictionary
+import org.apache.pdfbox.cos.COSFloat
+import org.apache.pdfbox.cos.COSInteger
+import org.apache.pdfbox.cos.COSName
 import org.apache.pdfbox.pdmodel.common.PDRange
 import org.apache.pdfbox.pdmodel.common.function.PDFunction
 import org.apache.pdfbox.pdmodel.common.function.PDFunctionType2
 import org.apache.pdfbox.pdmodel.common.function.PDFunctionType3
 import org.apache.pdfbox.pdmodel.graphics.color.PDDeviceRGB
 import org.apache.pdfbox.pdmodel.graphics.shading.PDShadingType2
-
 
 internal class PDGradient(parts: List<GradientPart>) : PDShadingType2(COSDictionary()) {
 
@@ -72,7 +75,7 @@ internal class PDGradient(parts: List<GradientPart>) : PDShadingType2(COSDiction
             encode.add(COSInteger.ONE)
             lastPart = part
         }
-        dict.setInt(COSName.FUNCTION_TYPE, 3)
+        dict.setInt(COSName.FUNCTION_TYPE, STITCHING_FUNC_TYPE)
         dict.setItem(COSName.DOMAIN, PDRange()) // [0.0 1.0]
         dict.setItem(COSName.FUNCTIONS, functions)
         dict.setItem(COSName.BOUNDS, bounds)
@@ -95,9 +98,9 @@ internal class PDGradient(parts: List<GradientPart>) : PDShadingType2(COSDiction
         // Create a COSArray for a color. 
         // Color class uses RGB (0-255) but PDF uses RGB (0-1)
         val a = COSArray()
-        a.add(COSFloat(color.r / 255f))
-        a.add(COSFloat(color.g / 255f))
-        a.add(COSFloat(color.b / 255f))
+        a.add(COSFloat(color.floatR))
+        a.add(COSFloat(color.floatG))
+        a.add(COSFloat(color.floatB))
         return a
     }
 
@@ -106,4 +109,7 @@ internal class PDGradient(parts: List<GradientPart>) : PDShadingType2(COSDiction
      */
     class GradientPart(val color: Color, val ratio: Float)
 
+    companion object {
+        private const val STITCHING_FUNC_TYPE = 3
+    }
 }

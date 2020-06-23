@@ -21,13 +21,12 @@ import com.maltaisn.swfconvert.convert.di.ConvertComponent
 import com.maltaisn.swfconvert.render.core.di.RenderCoreComponent
 import dagger.Component
 
-
 @Component(
-        modules = [AppModule::class],
-        dependencies = [
-            ConvertComponent::class,
-            RenderCoreComponent::class
-        ])
+    modules = [AppModule::class],
+    dependencies = [
+        ConvertComponent::class,
+        RenderCoreComponent::class
+    ])
 internal interface AppComponent {
 
     fun inject(swfConvert: SwfConvert)

@@ -20,7 +20,6 @@ import java.awt.geom.AffineTransform
 import java.awt.image.AffineTransformOp
 import java.awt.image.BufferedImage
 
-
 /**
  * Return a vertically flipped copy of [this] image.
  */
@@ -41,7 +40,7 @@ internal fun BufferedImage.removeAlphaChannel(): BufferedImage {
     val rgbImage = BufferedImage(w, h, BufferedImage.TYPE_INT_RGB)
     val rgbArray = this.getRGB(0, 0, w, h, null, 0, w)
     for ((i, argb) in rgbArray.withIndex()) {
-        rgbArray[i] = argb or 0xFF000000.toInt()
+        rgbArray[i] = Color(argb).opaque.value
     }
     rgbImage.setRGB(0, 0, w, h, rgbArray, 0, w)
     return rgbImage
@@ -57,7 +56,7 @@ internal fun BufferedImage.isolateAlphaChannel(): BufferedImage {
     val alphaImage = BufferedImage(w, h, BufferedImage.TYPE_BYTE_GRAY)
     val alphaArray = this.getRGB(0, 0, w, h, null, 0, w)
     for ((i, argb) in alphaArray.withIndex()) {
-        val alpha = argb ushr 24
+        val alpha = Color(argb).a
         alphaArray[i] = Color.gray(alpha).value
     }
     alphaImage.raster.setPixels(0, 0, w, h, alphaArray)

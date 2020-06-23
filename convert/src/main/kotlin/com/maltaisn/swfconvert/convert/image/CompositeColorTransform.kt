@@ -19,11 +19,19 @@ package com.maltaisn.swfconvert.convert.image
 import com.flagstone.transform.datatype.ColorTransform
 import com.maltaisn.swfconvert.core.image.Color
 import java.awt.image.BufferedImage
-import java.util.*
 import kotlin.math.roundToInt
 
+data class CompositeColorTransform(
+    private val transforms: ArrayDeque<ColorTransform> = ArrayDeque()
+) {
 
-data class CompositeColorTransform(val transforms: LinkedList<ColorTransform> = LinkedList()) {
+    fun clear() = transforms.clear()
+
+    fun push(colorTransform: ColorTransform) {
+        transforms += colorTransform
+    }
+
+    fun pop() = transforms.removeLast()
 
     /**
      * Return a [color] transformed with the color transforms.
@@ -37,10 +45,10 @@ data class CompositeColorTransform(val transforms: LinkedList<ColorTransform> = 
         var g = color.g
         var b = color.b
         for (tr in transforms) {
-            a = (a * tr.multiplyAlpha + tr.addAlpha).roundToInt().coerceAtMost(0xFF)
-            r = (r * tr.multiplyRed + tr.addRed).roundToInt().coerceAtMost(0xFF)
-            g = (g * tr.multiplyGreen + tr.addGreen).roundToInt().coerceAtMost(0xFF)
-            b = (b * tr.multiplyBlue + tr.addBlue).roundToInt().coerceAtMost(0xFF)
+            a = (a * tr.multiplyAlpha + tr.addAlpha).roundToInt().coerceAtMost(Color.COMPONENT_MAX)
+            r = (r * tr.multiplyRed + tr.addRed).roundToInt().coerceAtMost(Color.COMPONENT_MAX)
+            g = (g * tr.multiplyGreen + tr.addGreen).roundToInt().coerceAtMost(Color.COMPONENT_MAX)
+            b = (b * tr.multiplyBlue + tr.addBlue).roundToInt().coerceAtMost(Color.COMPONENT_MAX)
         }
         return Color(r, g, b, a)
     }

@@ -16,7 +16,16 @@
 
 package com.maltaisn.swfconvert.convert.frame
 
-import com.flagstone.transform.*
+import com.flagstone.transform.DefineTag
+import com.flagstone.transform.Export
+import com.flagstone.transform.Movie
+import com.flagstone.transform.MovieHeader
+import com.flagstone.transform.MovieTag
+import com.flagstone.transform.Place
+import com.flagstone.transform.Place2
+import com.flagstone.transform.Place3
+import com.flagstone.transform.PlaceType
+import com.flagstone.transform.ShowFrame
 import com.flagstone.transform.datatype.Blend
 import com.flagstone.transform.datatype.CoordTransform
 import com.flagstone.transform.filter.ColorMatrixFilter
@@ -35,7 +44,11 @@ import com.maltaisn.swfconvert.convert.shape.StyledShapeConverter
 import com.maltaisn.swfconvert.convert.toAffineTransformOrIdentity
 import com.maltaisn.swfconvert.convert.wrapper.WDefineShape
 import com.maltaisn.swfconvert.convert.wrapper.WPlace
-import com.maltaisn.swfconvert.core.*
+import com.maltaisn.swfconvert.core.BlendMode
+import com.maltaisn.swfconvert.core.Disposable
+import com.maltaisn.swfconvert.core.FrameGroup
+import com.maltaisn.swfconvert.core.GroupObject
+import com.maltaisn.swfconvert.core.Units
 import com.maltaisn.swfconvert.core.shape.Path
 import com.maltaisn.swfconvert.core.shape.PathElement
 import com.maltaisn.swfconvert.core.shape.ShapeObject
@@ -44,17 +57,15 @@ import com.maltaisn.swfconvert.core.text.FontId
 import org.apache.logging.log4j.kotlin.logger
 import java.awt.Rectangle
 import java.awt.geom.AffineTransform
-import java.util.*
 import javax.inject.Inject
-
 
 /**
  * Converts a single SWF file to the [FrameGroup] intermediate representation.
  */
 internal class SwfConverter @Inject constructor(
-        private val config: ConvertConfiguration,
-        private val textConverter: TextConverter,
-        private val shapeParser: StyledShapeConverter
+    private val config: ConvertConfiguration,
+    private val textConverter: TextConverter,
+    private val shapeParser: StyledShapeConverter
 ) : Disposable {
 
     private val logger = logger()
@@ -62,45 +73,46 @@ internal class SwfConverter @Inject constructor(
     private lateinit var context: SwfFileContext
     private lateinit var fontsMap: Map<FontId, Font>
 
-    private val groupStack = LinkedList<GroupObject>()
+    private val groupStack = ArrayDeque<GroupObject>()
     private val currentGroup: GroupObject
-        get() = groupStack.first
+        get() = groupStack.last()
 
     private var objectsMap: Map<Int, DefineTag> = emptyMap()
     private val colorTransform = CompositeColorTransform()
 
-    private val idStack = LinkedList<Int>()
-    private val blendStack = LinkedList<BlendMode>()
-    private val clipStack = LinkedList<Int>()
-    private val transformStack = LinkedList<AffineTransform>()
+    private val idStack = ArrayDeque<Int>()
+    private val blendStack = ArrayDeque<BlendMode>()
+    private val clipStack = ArrayDeque<Int>()
+    private val transformStack = ArrayDeque<AffineTransform>()
 
-
-    fun createFrameGroup(context: SwfFileContext, swf: Movie,
-                         fontsMap: Map<FontId, Font>): FrameGroup {
+    fun createFrameGroup(
+        context: SwfFileContext, swf: Movie,
+        fontsMap: Map<FontId, Font>
+    ): FrameGroup {
         this.context = context
         this.fontsMap = fontsMap
 
         objectsMap = swf.objects.filterIsInstance<DefineTag>().associateBy { it.identifier }
 
-        colorTransform.transforms.clear()
+        colorTransform.clear()
         groupStack.clear()
         clipStack.clear()
 
         blendStack.clear()
-        blendStack.push(BlendMode.NORMAL)
+        blendStack += BlendMode.NORMAL
 
         shapeParser.initialize(objectsMap, colorTransform)
 
         // Create frame group
         val movieHeader = swf.objects.find { it is MovieHeader } as MovieHeader
         val frameGroup = FrameGroup.create(movieHeader.frameSize.width.toFloat(),
-                movieHeader.frameSize.height.toFloat(),
-                config.framePadding / Units.TWIPS_TO_INCH,
-                config.yAxisDirection)
+            movieHeader.frameSize.height.toFloat(),
+            config.framePadding / Units.TWIPS_TO_INCH,
+            config.yAxisDirection)
 
         // Create root frame
-        groupStack.push(frameGroup)
-        transformStack.push(frameGroup.transform)
+        groupStack += frameGroup
+        transformStack += frameGroup.transform
 
         val frameTags = mutableListOf<MovieTag>()
         for (obj in swf.objects) {
@@ -111,7 +123,7 @@ internal class SwfConverter @Inject constructor(
                 is Export -> {
                     for (id in obj.objects.keys) {
                         frameTags += Place(id, frameTags.size + 1,
-                                CoordTransform.translate(0, 0))
+                            CoordTransform.translate(0, 0))
                     }
                 }
             }
@@ -119,7 +131,7 @@ internal class SwfConverter @Inject constructor(
         val rootFrameContext = SwfObjectContext(context, listOf(0))
         createFrame(rootFrameContext, frameTags)
 
-        conversionError( currentGroup === frameGroup, context) {
+        conversionError(currentGroup === frameGroup, context) {
             "Expected only frame group in group stack"
         }
         return frameGroup
@@ -131,7 +143,7 @@ internal class SwfConverter @Inject constructor(
         // Draw frame objects
         var lastDepth = 0
         for (frameTag in frameTags) {
-            val placeTag = frameTag.toPlaceTagOrNull()
+            val placeTag = frameTag.toPlaceWrapperOrNull()
             if (placeTag != null && placeTag.ratio == null) {
                 // Remove tags and frames with ratios are ignored.
                 conversionError(placeTag.type == PlaceType.NEW, frameContext) { "Unsupported place tag type" }
@@ -141,7 +153,7 @@ internal class SwfConverter @Inject constructor(
                 lastDepth = placeTag.depth
 
                 // Place object
-                idStack.addLast(placeTag.identifier)
+                idStack += placeTag.identifier
                 val objContext = SwfObjectContext(context, idStack.toList())
                 val obj = objectsMap[placeTag.identifier] ?: conversionError(objContext, "Invalid object ID")
                 createObject(objContext, placeTag, obj)
@@ -154,13 +166,14 @@ internal class SwfConverter @Inject constructor(
         var groupsBefore = groupStack.size
         val id = objTag.identifier
 
-        val wshape = objTag.toShapeTagOrNull()
+        val wshape = objTag.toShapeWrapperOrNull()
         val transform = placeTag.transform.toAffineTransformOrIdentity()
 
         // Check if all filters are supported
         for (filter in placeTag.filters) {
             if (filter !is ColorMatrixFilter
-                    || filter.matrix?.contentEquals(IDENTITY_COLOR_MATRIX) == false) {
+                || filter.matrix?.contentEquals(IDENTITY_COLOR_MATRIX) == false
+            ) {
                 conversionError(objContext, "Unsupported place filter $filter")
             }
         }
@@ -168,7 +181,7 @@ internal class SwfConverter @Inject constructor(
         // Color transform
         val colorTransform = placeTag.colorTransform
         if (colorTransform != null) {
-            this.colorTransform.transforms.push(colorTransform)
+            this.colorTransform.push(colorTransform)
         }
 
         // Blend mode / masked group
@@ -179,12 +192,12 @@ internal class SwfConverter @Inject constructor(
                 if (!config.disableMasking) {
                     if (wshape == null) {
                         // Using text as soft mask is unsupported for example.
-                        conversionError(objContext, "Unsupported mask object ${objTag.javaClass.simpleName}" )
+                        conversionError(objContext, "Unsupported mask object ${objTag.javaClass.simpleName}")
                     }
 
                     // Find mask object bounds
                     val boundsRect = Rectangle(wshape.bounds.minX, wshape.bounds.minY,
-                            wshape.bounds.width, wshape.bounds.height)
+                        wshape.bounds.width, wshape.bounds.height)
                     val bounds = transform.createTransformedShape(boundsRect).bounds2D
 
                     // Replace last group with a masked group. Current object will be used as mask.
@@ -195,7 +208,7 @@ internal class SwfConverter @Inject constructor(
                     if (group is GroupObject.Blend) {
                         // If current group is blend mode, this is the blend mode that will be used to
                         // draw objects to mask. But it will hide previous blend mode so it has to be ignored.
-                        groupStack.pop()
+                        groupStack.removeLast()
                         currentGroup.objects -= group
                     }
                     addGroup(maskedGroup)
@@ -212,15 +225,15 @@ internal class SwfConverter @Inject constructor(
                     Blend.LIGHTEN -> BlendMode.LIGHTEN
                     Blend.DARKEN -> BlendMode.DARKEN
                     Blend.HARDLIGHT -> BlendMode.HARD_LIGHT
-                    Blend.SCREEN -> BlendMode.SCREEN  // Not exactly the same?
-                    Blend.OVERLAY -> BlendMode.OVERLAY  // Not exactly the same?
+                    Blend.SCREEN -> BlendMode.SCREEN // Not exactly the same?
+                    Blend.OVERLAY -> BlendMode.OVERLAY // Not exactly the same?
                     else -> {
                         conversionError(objContext, "Unsupported blend mode ${blendMode.name}")
                     }
                 }
-                if (blend != blendStack.peek()) {
+                if (blend != blendStack.last()) {
                     addGroup(GroupObject.Blend(id, blend))
-                    blendStack.push(blend)
+                    blendStack += blend
                     blendModeChanged = true
                 }
             }
@@ -231,9 +244,9 @@ internal class SwfConverter @Inject constructor(
             // If object is a clipping shape, transform will be pre-applied on path later.
             addGroup(GroupObject.Transform(id, transform))
 
-            val newTransform = AffineTransform(transformStack.peek())
+            val newTransform = AffineTransform(transformStack.last())
             newTransform.preConcatenate(transform)
-            transformStack.push(newTransform)
+            transformStack += newTransform
         }
 
         // Create object
@@ -263,10 +276,10 @@ internal class SwfConverter @Inject constructor(
 
         // Restore the group stack
         while (groupStack.size > groupsBefore) {
-            val group = groupStack.pop()
+            val group = groupStack.removeLast()
 
             if (group is GroupObject.Transform) {
-                transformStack.pop()
+                transformStack.removeLast()
             }
 
             // If group has no objects, remove it from parent.
@@ -277,19 +290,19 @@ internal class SwfConverter @Inject constructor(
 
         // Restore previous blend mode
         if (blendModeChanged) {
-            blendStack.pop()
+            blendStack.removeLast()
         }
 
         // Unclip all shapes with clip depth lower or equal than current depth.
-        while (clipStack.isNotEmpty() && placeTag.depth >= clipStack.peek()) {
-            clipStack.pop()
+        while (clipStack.isNotEmpty() && placeTag.depth >= clipStack.last()) {
+            clipStack.removeLast()
 
-            if (groupStack.peek() !is GroupObject.Clip) {
+            if (groupStack.last() !is GroupObject.Clip) {
                 conversionError(objContext, "Expected clip group")
                 // TODO: clips are per frame, not per file.
             }
 
-            val group = groupStack.pop()
+            val group = groupStack.removeLast()
 
             // If clip group has no objects, remove it from parent.
             if (group.objects.isEmpty()) {
@@ -299,7 +312,7 @@ internal class SwfConverter @Inject constructor(
 
         // Remove color transform
         if (colorTransform != null) {
-            this.colorTransform.transforms.pop()
+            this.colorTransform.pop()
         }
     }
 
@@ -310,8 +323,8 @@ internal class SwfConverter @Inject constructor(
 
         // Parse the shape into paths and images.
         val paths = shapeParser.parseShape(objContext, shapeTag.shape,
-                shapeTag.fillStyles, shapeTag.lineStyles, transform,
-                transformStack.peek(), placeTag.hasClip, true)
+            shapeTag.fillStyles, shapeTag.lineStyles, transform,
+            transformStack.last(), placeTag.hasClip, true)
         val shapeObject = ShapeObject(shapeTag.identifier, paths)
 
         if (placeTag.hasClip) {
@@ -319,27 +332,27 @@ internal class SwfConverter @Inject constructor(
             // Clips cannot be interlaced in intermediate representation, although SWF supports it.
             // Also, empty clips (i.e with no paths), must be kept since they represent a frame
             // and masked group only applies to last frame.
-            conversionError(clipStack.isEmpty() || placeTag.clipDepth <= clipStack.peek(), objContext) {
+            conversionError(clipStack.isEmpty() || placeTag.clipDepth <= clipStack.last(), objContext) {
                 "Unsupported interlaced clips"
             }
 
-            clipStack.push(placeTag.clipDepth)
+            clipStack += placeTag.clipDepth
             addGroup(GroupObject.Clip(shapeTag.identifier,
-                    if (config.disableClipping) {
-                        emptyList()
-                    } else {
-                        shapeObject.paths.toSet().toList()
-                    }))
+                if (config.disableClipping) {
+                    emptyList()
+                } else {
+                    shapeObject.paths.toSet().toList()
+                }))
 
         } else if (paths.isNotEmpty()) {
             // Add debug shape bounds
             if (config.drawShapeBounds) {
                 val bounds = shapeTag.bounds
                 currentGroup.objects += ShapeObject(shapeTag.identifier,
-                        listOf(Path(listOf(PathElement.Rectangle(
-                                bounds.minX.toFloat(), bounds.minY.toFloat(),
-                                bounds.width.toFloat(), bounds.height.toFloat())),
-                                lineStyle = config.debugLineStyle)))
+                    listOf(Path(listOf(PathElement.Rectangle(
+                        bounds.minX.toFloat(), bounds.minY.toFloat(),
+                        bounds.width.toFloat(), bounds.height.toFloat())),
+                        lineStyle = config.debugLineStyle)))
             }
 
             // Add shape to current group.
@@ -348,22 +361,22 @@ internal class SwfConverter @Inject constructor(
     }
 
     private fun createText(objContext: SwfObjectContext, textTag: StaticTextTag) {
-        currentGroup.objects += textConverter.createTextObject(objContext, textTag, colorTransform, fontsMap)
+        currentGroup.objects += textConverter.createTextObjects(objContext, textTag, colorTransform, fontsMap)
     }
 
     private fun addGroup(group: GroupObject) {
         currentGroup.objects += group
-        groupStack.push(group)
+        groupStack += group
     }
 
-    private fun MovieTag.toPlaceTagOrNull() = when (this) {
+    private fun MovieTag.toPlaceWrapperOrNull() = when (this) {
         is Place -> WPlace(this)
         is Place2 -> WPlace(this)
         is Place3 -> WPlace(this)
         else -> null
     }
 
-    private fun MovieTag.toShapeTagOrNull() = when (this) {
+    private fun MovieTag.toShapeWrapperOrNull() = when (this) {
         is DefineShape -> WDefineShape(this)
         is DefineShape2 -> WDefineShape(this)
         is DefineShape3 -> WDefineShape(this)
@@ -377,10 +390,10 @@ internal class SwfConverter @Inject constructor(
 
     companion object {
         private val IDENTITY_COLOR_MATRIX = floatArrayOf(
-                1f, 0f, 0f, 0f, 0f,
-                0f, 1f, 0f, 0f, 0f,
-                0f, 0f, 1f, 0f, 0f,
-                0f, 0f, 0f, 1f, 0f)
+            1f, 0f, 0f, 0f, 0f,
+            0f, 1f, 0f, 0f, 0f,
+            0f, 0f, 1f, 0f, 0f,
+            0f, 0f, 0f, 1f, 0f)
     }
 
 }

@@ -18,7 +18,11 @@ package com.maltaisn.swfconvert.convert.shape
 
 import com.flagstone.transform.fillstyle.FillStyle
 import com.flagstone.transform.linestyle.LineStyle
-import com.flagstone.transform.shape.*
+import com.flagstone.transform.shape.Curve
+import com.flagstone.transform.shape.Line
+import com.flagstone.transform.shape.Shape
+import com.flagstone.transform.shape.ShapeStyle
+import com.flagstone.transform.shape.ShapeStyle2
 import com.maltaisn.swfconvert.convert.context.SwfObjectContext
 import com.maltaisn.swfconvert.convert.shape.ShapeConverter.Edge.CurveEdge
 import com.maltaisn.swfconvert.convert.shape.ShapeConverter.Edge.LineEdge
@@ -26,13 +30,15 @@ import com.maltaisn.swfconvert.convert.wrapper.WShapeStyle
 import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.core.shape.Path
 import com.maltaisn.swfconvert.core.shape.PathElement
-import com.maltaisn.swfconvert.core.shape.PathElement.*
+import com.maltaisn.swfconvert.core.shape.PathElement.LineTo
+import com.maltaisn.swfconvert.core.shape.PathElement.MoveTo
+import com.maltaisn.swfconvert.core.shape.PathElement.QuadTo
+import com.maltaisn.swfconvert.core.shape.PathElement.Rectangle
 import com.maltaisn.swfconvert.core.shape.PathFillStyle
 import com.maltaisn.swfconvert.core.shape.PathLineStyle
 import java.awt.geom.AffineTransform
 import java.awt.geom.Point2D
 import javax.inject.Inject
-
 
 /**
  * Converts SWF shapes to the [Path] intermediate format.
@@ -61,15 +67,16 @@ internal open class ShapeConverter @Inject constructor() {
 
     private val paths = mutableListOf<Path>()
 
-
-    fun parseShape(context: SwfObjectContext,
-                   shape: Shape,
-                   fillStyles: List<FillStyle>,
-                   lineStyles: List<LineStyle>,
-                   transform: AffineTransform,
-                   currentTransform: AffineTransform,
-                   ignoreStyles: Boolean,
-                   allowRectangles: Boolean): List<Path> {
+    fun parseShape(
+        context: SwfObjectContext,
+        shape: Shape,
+        fillStyles: List<FillStyle>,
+        lineStyles: List<LineStyle>,
+        transform: AffineTransform,
+        currentTransform: AffineTransform,
+        ignoreStyles: Boolean,
+        allowRectangles: Boolean
+    ): List<Path> {
         this.context = context
         this.shape = shape
 
@@ -169,7 +176,7 @@ internal open class ShapeConverter @Inject constructor() {
             is CurveEdge -> {
                 val control = e.control.transform(transform)
                 QuadTo(control.x.toFloat(), control.y.toFloat(),
-                        end.x.toFloat(), end.y.toFloat())
+                    end.x.toFloat(), end.y.toFloat())
             }
             is LineEdge -> {
                 LineTo(end.x.toFloat(), end.y.toFloat())
@@ -177,16 +184,21 @@ internal open class ShapeConverter @Inject constructor() {
         }
     }
 
-    private fun createPath(elements: MutableList<PathElement>,
-                           fillStyle: PathFillStyle? = null, lineStyle: PathLineStyle? = null) {
+    private fun createPath(
+        elements: MutableList<PathElement>,
+        fillStyle: PathFillStyle? = null, lineStyle: PathLineStyle? = null
+    ) {
         if (elements.isNotEmpty() && (fillStyle != null || lineStyle != null)) {
-            val rect = if (allowRectangles) {
-                convertPathToRectangle(elements)
-            } else {
-                null
-            }
-            paths += Path(if (rect != null) listOf(rect) else elements.toList(),
-                    fillStyle.takeUnless { ignoreStyles }, lineStyle.takeUnless { ignoreStyles })
+            // FIXME rectangle optimization not working correctly, see test class
+//            val rect = if (allowRectangles) {
+//                convertPathToRectangle(elements)
+//            } else {
+//                null
+//            }
+//            paths += Path(if (rect != null) listOf(rect) else elements.toList(),
+//                fillStyle.takeUnless { ignoreStyles }, lineStyle.takeUnless { ignoreStyles })
+            paths += Path(elements.toList(),
+                fillStyle.takeUnless { ignoreStyles }, lineStyle.takeUnless { ignoreStyles })
         }
         elements.clear()
     }
@@ -210,7 +222,8 @@ internal open class ShapeConverter @Inject constructor() {
             when {
                 shapeStyle != null -> {
                     if (shapeStyle.lineStyle != null || shapeStyle.fillStyle0 != null
-                            || shapeStyle.fillStyle1 != null) {
+                        || shapeStyle.fillStyle1 != null
+                    ) {
                         processSubPath(subPath, currLineStyleIdx, currFillStyleIdx0, currFillStyleIdx1)
                         subPath.clear()
                     }
@@ -225,7 +238,8 @@ internal open class ShapeConverter @Inject constructor() {
                     // Check if all styles are reset to 0.
                     // This (probably) means that a new group starts with the next record
                     if (shapeStyle.lineStyle == 0 && shapeStyle.fillStyle0 == 0
-                            && shapeStyle.fillStyle1 == 0) {
+                        && shapeStyle.fillStyle1 == 0
+                    ) {
                         cleanEdgeMap(currFillEdgeMap)
                         cleanEdgeMap(currLineEdgeMap)
                         fillEdgeMaps += currFillEdgeMap
@@ -300,8 +314,10 @@ internal open class ShapeConverter @Inject constructor() {
         }
     }
 
-    private fun processSubPath(subPath: List<Edge>, lineStyleIdx: Int,
-                               fillStyleIdx0: Int, fillStyleIdx1: Int) {
+    private fun processSubPath(
+        subPath: List<Edge>, lineStyleIdx: Int,
+        fillStyleIdx0: Int, fillStyleIdx1: Int
+    ) {
         if (fillStyleIdx0 != 0) {
             // Wrong side is being filled. Reverse the entire path to correct this.
             val path = currFillEdgeMap.getOrPut(fillStyleIdx0) { mutableListOf() }
@@ -374,7 +390,6 @@ internal open class ShapeConverter @Inject constructor() {
         }
     }
 
-
     protected open fun convertFillStyle(fillStyle: FillStyle): PathFillStyle {
         throw UnsupportedOperationException("Can't convert fill style")
     }
@@ -382,7 +397,6 @@ internal open class ShapeConverter @Inject constructor() {
     protected open fun convertLineStyle(lineStyle: LineStyle): PathLineStyle {
         throw UnsupportedOperationException("Can't convert fill style")
     }
-
 
     private data class Point(val x: Int, val y: Int) {
         fun transform(transform: AffineTransform): Point2D {
@@ -399,73 +413,76 @@ internal open class ShapeConverter @Inject constructor() {
 
         abstract fun reverseWithNewFillStyle(newFillStyleIdx: Int): Edge
 
-        data class LineEdge(override val start: Point,
-                            override val end: Point,
-                            override val lineStyleIdx: Int,
-                            override val fillStyleIdx: Int) : Edge() {
+        data class LineEdge(
+            override val start: Point,
+            override val end: Point,
+            override val lineStyleIdx: Int,
+            override val fillStyleIdx: Int
+        ) : Edge() {
 
             override fun reverseWithNewFillStyle(newFillStyleIdx: Int) =
-                    LineEdge(end, start, lineStyleIdx, newFillStyleIdx)
+                LineEdge(end, start, lineStyleIdx, newFillStyleIdx)
         }
 
-        data class CurveEdge(override val start: Point,
-                             val control: Point,
-                             override val end: Point,
-                             override val lineStyleIdx: Int,
-                             override val fillStyleIdx: Int) : Edge() {
+        data class CurveEdge(
+            override val start: Point,
+            val control: Point,
+            override val end: Point,
+            override val lineStyleIdx: Int,
+            override val fillStyleIdx: Int
+        ) : Edge() {
 
             override fun reverseWithNewFillStyle(newFillStyleIdx: Int) =
-                    CurveEdge(end, control, start, lineStyleIdx, newFillStyleIdx)
+                CurveEdge(end, control, start, lineStyleIdx, newFillStyleIdx)
         }
     }
-
 
     companion object {
         private const val NO_STYLE_INDEX = Int.MAX_VALUE
         private val NO_POINT = Point(Int.MAX_VALUE, Int.MAX_VALUE)
         private val SOLID_BLACK_FILL = PathFillStyle.Solid(Color.BLACK)
 
-
         internal fun convertPathToRectangle(elements: List<PathElement>): Rectangle? {
-            if (elements.size != 5) {
-                return null
-            }
-
-            val first = elements[0]
-            var last: PathElement = first
-            var lastWasHorizontal: Boolean? = null
-            var width = 0f
-            var height = 0f
-            for (i in 1 until elements.size) {
-                val e = elements[i]
-                if (e !is LineTo) return null
-                val dx = e.x - last.x
-                val dy = e.y - last.y
-                when {
-                    dy == 0f -> {
-                        if (lastWasHorizontal == true) return null
-                        if (width == 0f) {
-                            width = dx
-                        } else if (width != -dx) {
-                            return null
-                        }
-                        lastWasHorizontal = true
-                    }
-                    dx == 0f -> {
-                        if (lastWasHorizontal == false) return null
-                        if (height == 0f) {
-                            height = dy
-                        } else if (height != -dy) {
-                            return null
-                        }
-                        lastWasHorizontal = false
-                    }
-                    else -> return null
-                }
-                last = e
-            }
-
-            return Rectangle(first.x, first.y, width, height)
+            TODO()
+//            if (elements.size != 5) {
+//                return null
+//            }
+//
+//            val first = elements[0]
+//            var last: PathElement = first
+//            var lastWasHorizontal: Boolean? = null
+//            var width = 0f
+//            var height = 0f
+//            for (i in 1 until elements.size) {
+//                val e = elements[i]
+//                if (e !is LineTo) return null
+//                val dx = e.x - last.x
+//                val dy = e.y - last.y
+//                when {
+//                    dy == 0f -> {
+//                        if (lastWasHorizontal == true) return null
+//                        if (width == 0f) {
+//                            width = dx
+//                        } else if (width != -dx) {
+//                            return null
+//                        }
+//                        lastWasHorizontal = true
+//                    }
+//                    dx == 0f -> {
+//                        if (lastWasHorizontal == false) return null
+//                        if (height == 0f) {
+//                            height = dy
+//                        } else if (height != -dy) {
+//                            return null
+//                        }
+//                        lastWasHorizontal = false
+//                    }
+//                    else -> return null
+//                }
+//                last = e
+//            }
+//
+//            return Rectangle(first.x, first.y, width, height)
         }
     }
 

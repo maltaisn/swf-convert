@@ -16,83 +16,60 @@
 
 package com.maltaisn.swfconvert.core.image
 
-import kotlin.math.roundToInt
-
+import com.maltaisn.swfconvert.core.toHexString
 
 /**
  * Inline color class, stored in ARGB format.
  */
 inline class Color(val value: Int) {
 
-    constructor(r: Int, g: Int, b: Int, a: Int = 0xFF) :
-            this((a shl 24) or (r shl 16) or (g shl 8) or b)
+    /**
+     * Create a color from [red][r], [green][g], [blue][b] and optionally [alpha][a] component values.
+     * No range check or masking is done, values are expected to be between 0 and 255.
+     */
+    constructor(r: Int, g: Int, b: Int, a: Int = COMPONENT_MAX) :
+            this((a shl SHIFT_ALPHA) or (r shl SHIFT_RED) or
+                    (g shl SHIFT_GREEN) or (b shl SHIFT_BLUE))
 
-    val a: Int get() = value ushr 24
-    val r: Int get() = value ushr 16 and 0xFF
-    val g: Int get() = value ushr 8 and 0xFF
-    val b: Int get() = value and 0xFF
+    val a: Int get() = value ushr SHIFT_ALPHA and MASK_BYTE
+    val r: Int get() = value ushr SHIFT_RED and MASK_BYTE
+    val g: Int get() = value ushr SHIFT_GREEN and MASK_BYTE
+    val b: Int get() = value ushr SHIFT_BLUE and MASK_BYTE
 
-    fun withAlpha(a: Int) = Color(value and 0xFFFFFF or (a shl 24))
+    val floatA: Float get() = a / COMPONENT_MAX_F
+    val floatR: Float get() = r / COMPONENT_MAX_F
+    val floatG: Float get() = g / COMPONENT_MAX_F
+    val floatB: Float get() = b / COMPONENT_MAX_F
 
-    fun divideAlpha(): Color {
-        val m = if (a == 0) 0f else 255f / a
-        val r = (r * m).roundToInt().coerceAtMost(0xFF)
-        val g = (g * m).roundToInt().coerceAtMost(0xFF)
-        val b = (b * m).roundToInt().coerceAtMost(0xFF)
-        return Color(r, g, b, a)
-    }
+    val opaque: Color get() = withAlpha(COMPONENT_MAX)
+
+    fun withAlpha(a: Int) = Color(value and MASK_RGB or (a shl SHIFT_ALPHA))
 
     fun toAwtColor() = java.awt.Color(value, true)
 
-    override fun toString() = '#' + value.toUInt().toString(16).toUpperCase()
+    override fun toString() = '#' + value.toHexString()
 
-    fun toStringNoAlpha() = '#' + value.toUInt().toString(16).substring(2).toUpperCase()
+    fun toStringNoAlpha() = '#' + value.toHexString().substring(2)
 
     companion object {
 
+        private const val SHIFT_ALPHA = 24
+        private const val SHIFT_RED = 16
+        private const val SHIFT_GREEN = 8
+        private const val SHIFT_BLUE = 0
+
+        private const val MASK_RGB = 0xFFFFFF
+        private const val MASK_BYTE = 0xFF
+
+        const val COMPONENT_MAX = 255
+        const val COMPONENT_MAX_F = 255f
+
         val TRANSPARENT = Color(0)
         val BLACK = Color(0, 0, 0)
+        val RED = Color(255, 0, 0)
+        val GREEN = Color(0, 255, 0)
+        val BLUE = Color(0, 0, 255)
 
         fun gray(value: Int) = Color(value, value, value)
-
-        fun fromPix15Bytes(arr: ByteArray, offset: Int): Color {
-            val v = (arr[offset].toInt() and 0xFF shl 8) or
-                    (arr[offset + 1].toInt() and 0xFF)
-            val r = v and 0x7C00 ushr 7
-            val g = v and 0x3E0 ushr 2
-            val b = v and 0x1F shl 3
-            return Color(r, g, b)
-        }
-
-        fun fromPix24Bytes(arr: ByteArray, offset: Int): Color {
-            val r = arr[offset + 1].toInt() and 0xFF
-            val g = arr[offset + 2].toInt() and 0xFF
-            val b = arr[offset + 3].toInt() and 0xFF
-            return Color(r, g, b)
-        }
-
-        fun fromRgbBytes(arr: ByteArray, offset: Int): Color {
-            val r = arr[offset].toInt() and 0xFF
-            val g = arr[offset + 1].toInt() and 0xFF
-            val b = arr[offset + 2].toInt() and 0xFF
-            return Color(r, g, b)
-        }
-
-        fun fromRgbaBytes(arr: ByteArray, offset: Int): Color {
-            val r = arr[offset].toInt() and 0xFF
-            val g = arr[offset + 1].toInt() and 0xFF
-            val b = arr[offset + 2].toInt() and 0xFF
-            val a = arr[offset + 3].toInt() and 0xFF
-            return Color(r, g, b, a)
-        }
-
-        fun fromArgbBytes(arr: ByteArray, offset: Int): Color {
-            val a = arr[offset].toInt() and 0xFF
-            val r = arr[offset + 1].toInt() and 0xFF
-            val g = arr[offset + 2].toInt() and 0xFF
-            val b = arr[offset + 3].toInt() and 0xFF
-            return Color(r, g, b, a)
-        }
     }
-
 }

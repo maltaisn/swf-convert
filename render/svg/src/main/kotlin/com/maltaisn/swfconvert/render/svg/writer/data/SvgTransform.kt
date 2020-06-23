@@ -16,11 +16,11 @@
 
 package com.maltaisn.swfconvert.render.svg.writer.data
 
-import com.maltaisn.swfconvert.render.svg.writer.appendValuesList
-import com.maltaisn.swfconvert.render.svg.writer.appendValuesListOptimized
-import com.maltaisn.swfconvert.render.svg.writer.getNumberFormat
+import com.maltaisn.swfconvert.render.svg.writer.format.DEBUG_SVG_PRECISION
+import com.maltaisn.swfconvert.render.svg.writer.format.appendValuesList
+import com.maltaisn.swfconvert.render.svg.writer.format.appendValuesListOptimized
+import com.maltaisn.swfconvert.render.svg.writer.format.getNumberFormat
 import java.text.NumberFormat
-
 
 internal sealed class SvgTransform {
 
@@ -28,7 +28,7 @@ internal sealed class SvgTransform {
     protected abstract val values: FloatArray
 
     fun toSvg(precision: Int, optimized: Boolean) =
-            toSvg(getNumberFormat(precision), optimized)
+        toSvg(getNumberFormat(precision), optimized)
 
     fun toSvg(numberFmt: NumberFormat, optimized: Boolean) = buildString {
         append(name)
@@ -41,11 +41,16 @@ internal sealed class SvgTransform {
         append(')')
     }
 
-    override fun toString() = toSvg(3, false)
+    override fun toString() = toSvg(DEBUG_SVG_PRECISION, false)
 
-
-    data class Matrix(val a: Float, val b: Float, val c: Float,
-                      val d: Float, val e: Float, val f: Float) : SvgTransform() {
+    data class Matrix(
+        val a: Float,
+        val b: Float,
+        val c: Float,
+        val d: Float,
+        val e: Float,
+        val f: Float
+    ) : SvgTransform() {
         override val name: String
             get() = "matrix"
 

@@ -20,6 +20,12 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 
+/**
+ * Utiltiy function to convert [this] integer to a lowercase unsigned hexadecimal string.
+ * Mostly to avoid having to use the "magic number" 16 everywhere.
+ */
+@Suppress("MagicNumber")
+fun Int.toHexString(): String = Integer.toHexString(this)
 
 /**
  * Map the values of [this] iterable to a list of type [R] with [block] value.
@@ -27,8 +33,10 @@ import kotlinx.coroutines.coroutineScope
  * @param parallel Whether to map in parallel or not. The current coroutine context is used.
  * Parallelization provides better performance but it can be unwanted during debugging for example.
  */
-suspend fun <T, R> Iterable<T>.mapInParallel(parallel: Boolean = true,
-                                             block: suspend (T) -> R): List<R> {
+suspend fun <T, R> Iterable<T>.mapInParallel(
+    parallel: Boolean = true,
+    block: suspend (T) -> R
+): List<R> {
     return if (parallel) {
         coroutineScope {
             this@mapInParallel.map {

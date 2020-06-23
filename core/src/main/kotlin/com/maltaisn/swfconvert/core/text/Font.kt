@@ -18,12 +18,11 @@ package com.maltaisn.swfconvert.core.text
 
 import java.io.File
 
-
 data class Font(
-        val id: FontId,
-        override var name: String,
-        override val metrics: FontMetrics,
-        override val glyphs: List<FontGlyph>
+    val id: FontId,
+    override var name: String,
+    override val metrics: FontMetrics,
+    override val glyphs: List<FontGlyph>
 ) : BaseFont {
 
     override var fontFile: File? = null

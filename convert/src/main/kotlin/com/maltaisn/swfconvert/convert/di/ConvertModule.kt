@@ -20,12 +20,10 @@ import dagger.Module
 import dagger.Provides
 import org.doubletype.ossa.Engine
 
-
 @Module
 object ConvertModule {
 
     @Provides
-    @JvmStatic
     fun providesDoubletypeEngine() = Engine()
 
 }

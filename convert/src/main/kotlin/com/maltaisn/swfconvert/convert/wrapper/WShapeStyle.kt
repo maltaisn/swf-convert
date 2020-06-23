@@ -21,19 +21,20 @@ import com.flagstone.transform.linestyle.LineStyle
 import com.flagstone.transform.shape.ShapeStyle
 import com.flagstone.transform.shape.ShapeStyle2
 
-
-internal data class WShapeStyle(val moveX: Int?,
-                                val moveY: Int?,
-                                val fillStyle0: Int?,
-                                val fillStyle1: Int?,
-                                val lineStyle: Int?,
-                                val fillStyles: List<FillStyle>,
-                                val lineStyles: List<LineStyle>) {
+internal data class WShapeStyle(
+    val moveX: Int?,
+    val moveY: Int?,
+    val fillStyle0: Int?,
+    val fillStyle1: Int?,
+    val lineStyle: Int?,
+    val fillStyles: List<FillStyle>,
+    val lineStyles: List<LineStyle>
+) {
 
     constructor(style: ShapeStyle) : this(style.moveX, style.moveY, style.fillStyle,
-            style.altFillStyle, style.lineStyle, style.fillStyles, style.lineStyles)
+        style.altFillStyle, style.lineStyle, style.fillStyles, style.lineStyles)
 
     constructor(style: ShapeStyle2) : this(style.moveX, style.moveY, style.fillStyle,
-            style.altFillStyle, style.lineStyle, style.fillStyles, style.lineStyles)
+        style.altFillStyle, style.lineStyle, style.fillStyles, style.lineStyles)
 
 }

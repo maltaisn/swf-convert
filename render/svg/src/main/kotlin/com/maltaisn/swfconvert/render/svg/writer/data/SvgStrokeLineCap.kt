@@ -16,7 +16,6 @@
 
 package com.maltaisn.swfconvert.render.svg.writer.data
 
-
 internal enum class SvgStrokeLineCap(val svgName: String) {
     BUTT("butt"),
     ROUND("round"),

@@ -22,9 +22,9 @@ import com.beust.jcommander.ParametersDelegate
 import com.maltaisn.swfconvert.app.configError
 import com.maltaisn.swfconvert.core.YAxisDirection
 import com.maltaisn.swfconvert.render.svg.SvgConfiguration
+import com.maltaisn.swfconvert.render.svg.writer.format.requireSvgPrecision
 import org.apache.logging.log4j.kotlin.logger
 import java.io.File
-
 
 @Parameters(commandDescription = "SVG output format")
 class RenderSvgParams : RenderParams<SvgConfiguration> {
@@ -42,28 +42,30 @@ class RenderSvgParams : RenderParams<SvgConfiguration> {
     @Parameter(names = ["--svgz"], description = "Whether to use SVGZ format (gzip compression).", order = 1010)
     var compress: Boolean = false
 
-    @Parameter(names = ["--precision"], description = "Precision of SVG path, position, and dimension values.", order=1100)
+    @Parameter(names = ["--precision"],
+        description = "Precision of SVG path, position, and dimension values.",
+        order = 1100)
     var precision: Int = 1
 
-    @Parameter(names = ["--transform-precision"], description = "Precision of SVG transform values.", order=1110)
+    @Parameter(names = ["--transform-precision"], description = "Precision of SVG transform values.", order = 1110)
     var transformPrecision: Int = 2
 
-    @Parameter(names = ["--percent-precision"], description = "Precision of SVG percentage values.", order=1120)
+    @Parameter(names = ["--percent-precision"], description = "Precision of SVG percentage values.", order = 1120)
     var percentPrecision: Int = 2
 
-    @Parameter(names = ["--no-prolog"], description = "Whether to omit the XML prolog or not.", order=1200)
+    @Parameter(names = ["--no-prolog"], description = "Whether to omit the XML prolog or not.", order = 1200)
     var noProlog: Boolean = false
-
 
     override val yAxisDirection: YAxisDirection
         get() = YAxisDirection.DOWN
 
-
     override fun createConfigurations(inputs: List<List<File>>): List<SvgConfiguration> {
-        configError(precision in 0..5 &&
-                transformPrecision in 0..5 &&
-                percentPrecision in 0..5) {
-            "Precision must be between 0 and 5."
+        try {
+            requireSvgPrecision(precision)
+            requireSvgPrecision(transformPrecision)
+            requireSvgPrecision(percentPrecision)
+        } catch (e: IllegalArgumentException) {
+            configError(e.message!!)
         }
 
         if (prettyPrint && compress) {
@@ -73,15 +75,15 @@ class RenderSvgParams : RenderParams<SvgConfiguration> {
         return inputs.mapIndexed { i, input ->
             val tempDir = params.getTempDirForInput(input)
             SvgConfiguration(
-                    params.outputFiles[i],
-                    tempDir,
-                    prettyPrint,
-                    compress,
-                    precision,
-                    transformPrecision,
-                    percentPrecision,
-                    !noProlog,
-                    params.parallelFrameRendering)
+                params.outputFiles[i],
+                tempDir,
+                prettyPrint,
+                compress,
+                precision,
+                transformPrecision,
+                percentPrecision,
+                !noProlog,
+                params.parallelFrameRendering)
         }
     }
 
@@ -90,5 +92,4 @@ class RenderSvgParams : RenderParams<SvgConfiguration> {
             |Pretty print SVG: $prettyPrint
         """.trimMargin())
     }
-
 }

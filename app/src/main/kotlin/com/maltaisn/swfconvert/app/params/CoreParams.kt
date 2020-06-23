@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
+@file:Suppress("MagicNumber")
+
 package com.maltaisn.swfconvert.app.params
 
 import com.beust.jcommander.DynamicParameter
 import com.beust.jcommander.Parameter
-import com.maltaisn.swfconvert.app.*
+import com.maltaisn.swfconvert.app.checkNoOptionsInArgs
+import com.maltaisn.swfconvert.app.configError
+import com.maltaisn.swfconvert.app.isSwfFile
+import com.maltaisn.swfconvert.app.toBooleanOrNull
+import com.maltaisn.swfconvert.app.toColorOrNull
+import com.maltaisn.swfconvert.app.toListOrNull
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
 import com.maltaisn.swfconvert.core.YAxisDirection
 import com.maltaisn.swfconvert.core.image.Color
@@ -29,63 +36,106 @@ import com.mortennobel.imagescaling.ResampleFilter
 import com.mortennobel.imagescaling.ResampleFilters
 import java.io.File
 import java.text.DecimalFormat
-
+import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KProperty
 
 /**
  * Params for the 'convert' module and common params for the render modules.
  */
-class CoreParams(private val singleFileOutput: Boolean,
-                 private val outputExtensionProvider: () -> String) {
+class CoreParams(
+    private val singleFileOutput: Boolean,
+    private val outputExtensionProvider: () -> String
+) {
 
     // Files configuration
 
-    @Parameter(description = "Input files or directories")
+    @Parameter(
+        description = "Input files or directories")
     private var input: List<String> = mutableListOf()
 
-    @Parameter(names = ["-o", "--output"], variableArity = true, description = "Output files or directories.", order = 0)
+    @Parameter(
+        names = ["-o", "--output"],
+        variableArity = true,
+        description = "Output files or directories.",
+        order = 0)
     private var output: List<String> = mutableListOf()
 
-    @Parameter(names = ["-t", "--tempdir"], description = "Temp directory used for debugging and intermediate files.", order = 10)
+    @Parameter(
+        names = ["-t", "--tempdir"],
+        description = "Temp directory used for debugging and intermediate files.",
+        order = 10)
     private var tempDir: String? = null
 
     // Text & font configuration
 
     /** Whether to group fonts that can be merged into a single one. */
-    @Parameter(names = ["--group-fonts"], arity = 1, description = "Whether to group fonts that can be merged into a single one.", order = 40)
+    @Parameter(
+        names = ["--group-fonts"],
+        arity = 1,
+        description = "Whether to group fonts that can be merged into a single one.",
+        order = 40)
     private var groupFonts: Boolean = true
 
     // Images configuration
 
-    @Parameter(names = ["--remove-duplicate-images"], arity = 1, description = "Whether to use the same image for all images with the same binary data.", order = 50)
+    @Parameter(
+        names = ["--remove-duplicate-images"],
+        arity = 1,
+        description = "Whether to use the same image for all images with the same binary data.",
+        order = 50)
     private var removeDuplicateImages: Boolean = true
 
-    @Parameter(names = ["--downsample-images"], description = "Whether to downsample big images to reduce output size.", order = 60)
+    @Parameter(
+        names = ["--downsample-images"],
+        description = "Whether to downsample big images to reduce output size.",
+        order = 60)
     private var downsampleImages: Boolean = false
 
-    @Parameter(names = ["--downsample-filter"], description = "Filter used to downsample images: fast | bell | bicubic | bicubichf | box | bspline | hermite | lanczos3 | mitchell | triangle.", order = 70)
+    @Parameter(
+        names = ["--downsample-filter"],
+        description = "Filter used to downsample images: fast | bell | bicubic | bicubichf | box | bspline | " +
+                "hermite | lanczos3 | mitchell | triangle.",
+        order = 70)
     private var downsampleFilterName: String = "lanczos3"
 
-    @Parameter(names = ["--downsample-min-size"], description = "Minimum size in pixels that images are downsampled to or from. Must be at least 3 px.", order = 80)
+    @Parameter(
+        names = ["--downsample-min-size"],
+        description = "Minimum size in pixels that images are downsampled to or from. Must be at least 3 px.",
+        order = 80)
     private var downsampleMinSize: Int = 10
 
     /** If downsampling images, the maximum allowed image density. */
-    @Parameter(names = ["--max-dpi"], description = "Maximum image density in DPI.", order = 90)
+    @Parameter(
+        names = ["--max-dpi"],
+        description = "Maximum image density in DPI.",
+        order = 90)
     private var maxDpi: Float = 200f
 
-    @Parameter(names = ["--jpeg-quality"], description = "JPEG image quality between 0 and 100.", order = 100)
+    @Parameter(
+        names = ["--jpeg-quality"],
+        description = "JPEG image quality between 0 and 100.",
+        order = 100)
     private var jpegQuality: Int = 75
 
-    @Parameter(names = ["--image-format"], description = "Format to use for images: default | jpg | png", order = 110)
+    @Parameter(
+        names = ["--image-format"],
+        description = "Format to use for images: default | jpg | png",
+        order = 110)
     private var imageFormatName: String = "default"
 
     // Other
 
-    @DynamicParameter(names = ["-D"], description = "Additional parameters")
+    @DynamicParameter(
+        names = ["-D"],
+        description = "Additional parameters")
     var params = mutableMapOf<String, String>()
 
-    @Parameter(names = ["-h", "--help"], description = "Show help message for this command.", help = true, order = 10000)
+    @Parameter(
+        names = ["-h", "--help"],
+        description = "Show help message for this command.",
+        help = true,
+        order = 10000)
     var help = false
-
 
     // Convert module safe params
 
@@ -164,7 +214,7 @@ class CoreParams(private val singleFileOutput: Boolean,
         val outputFiles = mutableListOf<List<File>>()
         for ((i, filename) in outputFilenames.withIndex()) {
             val file = File(filename)
-            if (file.name.matches("""^.+\..+$""".toRegex()) && (!file.exists() || file.isFile)) {
+            outputFiles += if (file.name.matches("""^.+\..+$""".toRegex()) && (!file.exists() || file.isFile)) {
                 // If file doesn't exist, guess whether it's a file or a directory from the filename.
                 // If file already exist, this can be checked.
                 configError(singleFileOutput || input[i].size == 1) {
@@ -176,17 +226,17 @@ class CoreParams(private val singleFileOutput: Boolean,
                     "Output file '$filename' should have .$outputExtension extension."
                 }
 
-                outputFiles += listOf(file)
+                listOf(file)
 
             } else {
                 // Treat as directory, create it.
                 file.mkdirs()
                 if (singleFileOutput) {
                     // Output to single file in directory.
-                    outputFiles += listOf(File(file, "output.$outputExtension"))
+                    listOf(File(file, "output.$outputExtension"))
                 } else {
                     // Output to one file per input file in directory.
-                    outputFiles += input[i].map { inputFile ->
+                    input[i].map { inputFile ->
                         val name = inputFile.nameWithoutExtension
                         File(file, "$name.$outputExtension")
                     }
@@ -196,71 +246,75 @@ class CoreParams(private val singleFileOutput: Boolean,
         outputFiles
     }
 
-    val parallelFrameRendering by lazy {
-        params[OPT_PARALLEL_FRAME_RENDERING]?.toBooleanOrNull() ?: true
-    }
-
     fun getTempDirForInput(input: List<File>) =
-            File(tempDir ?: input.first().parent)
+        File(tempDir ?: input.first().parent)
 
+    private val parallelSwfDecoding by dynamicParam("parallelSwfDecoding", false, String::toBooleanOrNull)
+    private val parallelSwfConversion by dynamicParam("parallelSwfConversion", false, String::toBooleanOrNull)
+    private val parallelImageCreation by dynamicParam("parallelImageCreation", false, String::toBooleanOrNull)
+    val parallelFrameRendering by dynamicParam("parallelFrameRendering", true, String::toBooleanOrNull)
+    private val keepFonts by dynamicParam(PARAM_KEEP_FONTS, false, String::toBooleanOrNull)
+    private val keepImages by dynamicParam(PARAM_KEEP_IMAGES, false, String::toBooleanOrNull)
+    private val drawShapeBounds by dynamicParam("drawShapeBounds", false, String::toBooleanOrNull)
+    private val drawTextBounds by dynamicParam("drawTextBounds", false, String::toBooleanOrNull)
+    private val drawClipBounds by dynamicParam("drawClipBounds", false, String::toBooleanOrNull)
+    private val disableClipping by dynamicParam("disableClipping", false, String::toBooleanOrNull)
+    private val disableBlending by dynamicParam("disableBlending", false, String::toBooleanOrNull)
+    private val disableMasking by dynamicParam("disableMasking", false, String::toBooleanOrNull)
+    private val framePadding by dynamicParam("framePadding", 0f, String::toFloatOrNull)
+    private val debugLineWidth by dynamicParam("debugLineWidth", 20f, String::toFloatOrNull)
+    private val debugLineColor by dynamicParam("debugLineColor", Color.GREEN, String::toColorOrNull)
+    private val fontScale2 by dynamicParam("fontScale2", DEFAULT_FONTSCALE_2, String::toFontScaleOrNull)
+    private val fontScale3 by dynamicParam("fontScale3", DEFAULT_FONTSCALE_3, String::toFontScaleOrNull)
+    private val ignoreGlyphOffsetsThreshold by dynamicParam("ignoreGlyphOffsetsThreshold",
+        GlyphData.EM_SQUARE_SIZE / 16f, String::toFloatOrNull)
+
+    private fun <T> dynamicParam(
+        name: String,
+        defaultValue: T,
+        transform: String.() -> T?
+    ): ReadOnlyProperty<CoreParams, T> =
+        object : ReadOnlyProperty<CoreParams, T> {
+            override fun getValue(thisRef: CoreParams, property: KProperty<*>): T {
+                return thisRef.params[name]?.transform() ?: defaultValue
+            }
+        }
 
     fun createConfigurations(yAxisDirection: YAxisDirection): List<ConvertConfiguration> {
         configError(downsampleMinSize >= 3) { "Minimum downsampling size must be at least 3 px." }
         configError(maxDpi in 10f..2000f) { "Maximum image density must be between 10 and 2000 DPI." }
 
-        // Additional options
-        val parallelSwfDecoding = params[OPT_PARALLEL_SWF_DECODING]?.toBooleanOrNull() ?: true
-        val parallelSwfConversion = params[OPT_PARALLEL_SWF_CONVERSION]?.toBooleanOrNull() ?: true
-        val parallelImageCreation = params[OPT_PARALLEL_IMAGE_CREATION]?.toBooleanOrNull() ?: true
-        val keepFonts = params[OPT_KEEP_FONTS]?.toBooleanOrNull() ?: false
-        val keepImages = params[OPT_KEEP_IMAGES]?.toBooleanOrNull() ?: false
-        val drawShapeBounds = params[OPT_DRAW_SHAPE_BOUNDS]?.toBooleanOrNull() ?: false
-        val drawTextBounds = params[OPT_DRAW_TEXT_BOUNDS]?.toBooleanOrNull() ?: false
-        val drawClipBounds = params[OPT_DRAW_CLIP_BOUNDS]?.toBooleanOrNull() ?: false
-        val disableClipping = params[OPT_DISABLE_CLIPPING]?.toBooleanOrNull() ?: false
-        val disableBlending = params[OPT_DISABLE_BLENDING]?.toBooleanOrNull() ?: false
-        val disableMasking = params[OPT_DISABLE_MASKING]?.toBooleanOrNull() ?: false
-        val framePadding = params[OPT_FRAME_PADDING]?.toFloatOrNull() ?: 0f
-        val debugLineWidth = params[OPT_DEBUG_LINE_WIDTH]?.toFloatOrNull() ?: 20f
-        val debugLineColor = params[OPT_DEBUG_LINE_COLOR]?.toColorOrNull() ?: Color(0, 255, 0)
-        val fontScale2 = params[OPT_FONT_SCALE_2]?.toFontScaleOrNull()
-                ?: FontScale(1f, -1f, 1f, 1f)
-        val fontScale3 = params[OPT_FONT_SCALE_3]?.toFontScaleOrNull()
-                ?: FontScale(0.05f, -0.05f, 1f, 1f)
-        val ignoreGlyphOffsetsThreshold = params[OPT_IGNORE_GLYPH_OFFSETS_THRESHOLD]?.toFloatOrNull()
-                ?: (GlyphData.EM_SQUARE_SIZE / 16f)
-
         return inputFileCollections.map { input ->
             val tempDir = getTempDirForInput(input)
             ConvertConfiguration(
-                    input,
-                    tempDir,
-                    yAxisDirection,
-                    groupFonts,
-                    removeDuplicateImages,
-                    downsampleImages,
-                    downsampleFilter,
-                    downsampleMinSize,
-                    maxDpi,
-                    jpegQualityFloat,
-                    imageFormat,
-                    parallelSwfDecoding,
-                    parallelSwfConversion,
-                    parallelImageCreation,
-                    keepFonts,
-                    keepImages,
-                    drawShapeBounds,
-                    drawTextBounds,
-                    drawClipBounds,
-                    disableClipping,
-                    disableBlending,
-                    disableMasking,
-                    framePadding,
-                    fontScale2,
-                    fontScale3,
-                    ignoreGlyphOffsetsThreshold,
-                    debugLineWidth,
-                    debugLineColor)
+                input,
+                tempDir,
+                yAxisDirection,
+                groupFonts,
+                removeDuplicateImages,
+                downsampleImages,
+                downsampleFilter,
+                downsampleMinSize,
+                maxDpi,
+                jpegQualityFloat,
+                imageFormat,
+                parallelSwfDecoding,
+                parallelSwfConversion,
+                parallelImageCreation,
+                keepFonts,
+                keepImages,
+                drawShapeBounds,
+                drawTextBounds,
+                drawClipBounds,
+                disableClipping,
+                disableBlending,
+                disableMasking,
+                framePadding,
+                fontScale2,
+                fontScale3,
+                ignoreGlyphOffsetsThreshold,
+                debugLineWidth,
+                debugLineColor)
         }
     }
 
@@ -296,33 +350,19 @@ class CoreParams(private val singleFileOutput: Boolean,
         }
     }
 
-    private fun String.toFontScaleOrNull(): FontScale? {
-        val vals = this.toListOrNull(String::toFloatOrNull)
-                ?.takeIf { it.size == 4 } ?: return null
-        return FontScale(vals[0], vals[1], vals[2], vals[3])
-    }
-
     companion object {
         private val NUMBER_FMT = DecimalFormat()
 
-        const val OPT_PARALLEL_SWF_DECODING = "parallelSwfDecoding"
-        const val OPT_PARALLEL_SWF_CONVERSION = "parallelSwfConversion"
-        const val OPT_PARALLEL_FRAME_RENDERING = "parallelFrameRendering"
-        const val OPT_PARALLEL_IMAGE_CREATION = "parallelImageCreation"
-        const val OPT_KEEP_FONTS = "keepFonts"
-        const val OPT_KEEP_IMAGES = "keepImages"
-        const val OPT_DRAW_SHAPE_BOUNDS = "drawShapeBounds"
-        const val OPT_DRAW_TEXT_BOUNDS = "drawTextBounds"
-        const val OPT_DRAW_CLIP_BOUNDS = "drawClipBounds"
-        const val OPT_DISABLE_CLIPPING = "disableClipping"
-        const val OPT_DISABLE_BLENDING = "disableBlending"
-        const val OPT_DISABLE_MASKING = "disableMasking"
-        const val OPT_FRAME_PADDING = "framePadding"
-        const val OPT_FONT_SCALE_2 = "fontScale2"
-        const val OPT_FONT_SCALE_3 = "fontScale3"
-        const val OPT_IGNORE_GLYPH_OFFSETS_THRESHOLD = "ignoreGlyphOffsetsThreshold"
-        const val OPT_DEBUG_LINE_WIDTH = "debugLineWidth"
-        const val OPT_DEBUG_LINE_COLOR = "debugLineColor"
-    }
+        const val PARAM_KEEP_FONTS = "keepFonts"
+        const val PARAM_KEEP_IMAGES = "keepImages"
 
+        private val DEFAULT_FONTSCALE_2 = FontScale(1f, -1f, 1f, 1f)
+        private val DEFAULT_FONTSCALE_3 = FontScale(0.05f, -0.05f, 1f, 1f)
+    }
+}
+
+private fun String.toFontScaleOrNull(): FontScale? {
+    val vals = this.toListOrNull(String::toFloatOrNull)
+        ?.takeIf { it.size == 4 } ?: return null
+    return FontScale(vals[0], vals[1], vals[2], vals[3])
 }

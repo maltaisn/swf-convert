@@ -16,7 +16,6 @@
 
 package com.maltaisn.swfconvert.render.svg.writer.data
 
-
 internal enum class SvgGradientUnits(val svgName: String) {
     USER_SPACE_ON_USE("userSpaceOnUse"),
     OBJECT_BOUNDING_BOX("objectBoundingBox")

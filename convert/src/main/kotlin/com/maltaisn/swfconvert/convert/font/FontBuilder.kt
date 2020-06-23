@@ -24,11 +24,11 @@ import org.apache.logging.log4j.kotlin.logger
 import org.doubletype.ossa.Engine
 import org.doubletype.ossa.adapter.EContour
 import org.doubletype.ossa.adapter.EContourPoint
+import org.doubletype.ossa.module.GlyphFile
 import java.io.File
-import java.util.*
+import java.util.Date
 import javax.inject.Inject
 import kotlin.math.roundToInt
-
 
 /**
  * Based on ffdec, doubletype code was taken there too.
@@ -36,7 +36,7 @@ import kotlin.math.roundToInt
  * Modifications made to this code include custom whitespace validation.
  */
 internal class FontBuilder @Inject constructor(
-        private val doubletypeEngine: Engine
+    private val doubletypeEngine: Engine
 ) {
 
     private val logger = logger()
@@ -95,40 +95,41 @@ internal class FontBuilder @Inject constructor(
             doubletypeEngine.checkUnicodeBlock(code)
             val glyphFile = doubletypeEngine.addNewGlyph(code)
             glyphFile.advanceWidth = data.advanceWidth.roundToInt()
-
-            for (contour in data.contours) {
-                val econtour = EContour()
-                econtour.type = EContour.k_quadratic
-                for (e in contour.elements) {
-                    if (e is ClosePath) {
-                        continue
-                    }
-                    val epoint = EContourPoint(e.x.toDouble(), e.y.toDouble(), true)
-                    if (e is QuadTo) {
-                        econtour.addContourPoint(EContourPoint(e.cx.toDouble(), e.cy.toDouble(), false))
-                    }
-                    // Note: epoint.controlPoint1 only works partially--sometimes it isn't added correctly.
-                    econtour.addContourPoint(epoint)
-                }
-                glyphFile.addContour(econtour)
-            }
+            createGlyphFileContours(glyphFile, data)
         }
         doubletypeEngine.typeface.addRequiredGlyphs()
     }
 
+    private fun createGlyphFileContours(glyphFile: GlyphFile, data: GlyphData) {
+        for (contour in data.contours) {
+            val econtour = EContour()
+            econtour.type = EContour.k_quadratic
+            for (e in contour.elements) {
+                if (e is ClosePath) {
+                    continue
+                }
+                val epoint = EContourPoint(e.x.toDouble(), e.y.toDouble(), true)
+                if (e is QuadTo) {
+                    econtour.addContourPoint(EContourPoint(e.cx.toDouble(), e.cy.toDouble(), false))
+                }
+                // Note: epoint.controlPoint1 only works partially--sometimes it isn't added correctly.
+                econtour.addContourPoint(epoint)
+            }
+            glyphFile.addContour(econtour)
+        }
+    }
+
     private fun validateFilename(filename: String) =
-            filename.replace(INVALID_FILENAME_CHARS_PATTERN, "")
-
-    private val INVALID_FILENAME_CHARS_PATTERN = """[/\\:*?"<>|]""".toRegex()
-
+        filename.replace(INVALID_FILENAME_CHARS_PATTERN, "")
 
     companion object {
+        private val INVALID_FILENAME_CHARS_PATTERN = """[/\\:*?"<>|]""".toRegex()
+
         // These metadata values aren't found in SWF files, so generic ones are used instead.
-        private val TYPEFACE_DATE = Date(946684800000)  // 2000-01-01 00:00:00 UTC
+        private val TYPEFACE_DATE = Date(946684800000) // 2000-01-01 00:00:00 UTC
         private const val TYPEFACE_COPYRIGHT = "2000"
         private const val TYPEFACE_LICENSE = ""
         private const val TYPEFACE_VERSION = "1.0"
         private const val TYPEFACE_AUTHOR = "unknown"
     }
-
 }

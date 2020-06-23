@@ -22,11 +22,9 @@ import org.apache.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState
 import org.apache.pdfbox.util.Matrix
 import java.awt.BasicStroke
 import java.awt.geom.AffineTransform
-import java.util.*
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 import org.apache.pdfbox.pdmodel.graphics.blend.BlendMode as PdfBlendMode
-
 
 /**
  * A wrapper around PDF content [stream], so that changing a property to
@@ -34,9 +32,8 @@ import org.apache.pdfbox.pdmodel.graphics.blend.BlendMode as PdfBlendMode
  */
 internal class PdfStreamWrapper(val stream: PdfContentStream) {
 
-    private val stateStack = LinkedList<State>()
+    private val stateStack = ArrayDeque<State>()
     var restoringState = false
-
 
     var blendMode: BlendMode by stateProperty(BlendMode.NORMAL) { new, _ ->
         setExtendedState {
@@ -54,18 +51,18 @@ internal class PdfStreamWrapper(val stream: PdfContentStream) {
 
     var strokingColor: Color by stateProperty(Color.BLACK) { new, old ->
         stream.setStrokingColor(new)
-        if (new.a != old.a && (new.a != 255 || old.a != 255)) {
+        if (new.a != old.a && (new.a != Color.COMPONENT_MAX || old.a != Color.COMPONENT_MAX)) {
             setExtendedState {
-                strokingAlphaConstant = new.a / 255f
+                strokingAlphaConstant = new.floatA
             }
         }
     }
 
     var nonStrokingColor: Color by stateProperty(Color.BLACK) { new, old ->
         stream.setNonStrokingColor(new)
-        if (new.a != old.a && (new.a != 255 || old.a != 255)) {
+        if (new.a != old.a && (new.a != Color.COMPONENT_MAX || old.a != Color.COMPONENT_MAX)) {
             setExtendedState {
-                nonStrokingAlphaConstant = new.a / 255f
+                nonStrokingAlphaConstant = new.floatA
             }
         }
     }
@@ -86,7 +83,6 @@ internal class PdfStreamWrapper(val stream: PdfContentStream) {
         stream.setMiterLimit(new)
     }
 
-
     init {
         stream.setStrokingColor(strokingColor)
         stream.setNonStrokingColor(nonStrokingColor)
@@ -94,17 +90,16 @@ internal class PdfStreamWrapper(val stream: PdfContentStream) {
         stream.setLineCapStyle(lineCapStyle)
     }
 
-
     fun saveState() {
-        stateStack.push(State(blendMode, strokingColor, nonStrokingColor,
-                lineWidth, lineCapStyle, lineJoinStyle, miterLimit))
+        stateStack += State(blendMode, strokingColor, nonStrokingColor,
+            lineWidth, lineCapStyle, lineJoinStyle, miterLimit)
         stream.saveGraphicsState()
     }
 
     fun restoreState() {
         check(stateStack.isNotEmpty()) { "No state to restore" }
 
-        val state = stateStack.pop()
+        val state = stateStack.removeLast()
 
         restoringState = true
         blendMode = state.blendMode
@@ -139,32 +134,33 @@ internal class PdfStreamWrapper(val stream: PdfContentStream) {
 
     private inline fun <T> stateProperty(value: T, crossinline write: (new: T, old: T) -> Unit)
             : ReadWriteProperty<PdfStreamWrapper, T> =
-            object : ReadWriteProperty<PdfStreamWrapper, T> {
-                var value = value
+        object : ReadWriteProperty<PdfStreamWrapper, T> {
+            var value = value
 
-                override fun getValue(thisRef: PdfStreamWrapper, property: KProperty<*>) = this.value
+            override fun getValue(thisRef: PdfStreamWrapper, property: KProperty<*>) = this.value
 
-                override fun setValue(thisRef: PdfStreamWrapper, property: KProperty<*>, value: T) {
-                    if (thisRef.restoringState) {
-                        // Restore state value without setting it on PDF stream
-                        this.value = value
+            override fun setValue(thisRef: PdfStreamWrapper, property: KProperty<*>, value: T) {
+                if (thisRef.restoringState) {
+                    // Restore state value without setting it on PDF stream
+                    this.value = value
 
-                    } else if (this.value != value) {
-                        write(value, this.value)
-                        this.value = value
-                    }
+                } else if (this.value != value) {
+                    write(value, this.value)
+                    this.value = value
                 }
-
-                override fun toString() = value.toString()
             }
 
+            override fun toString() = value.toString()
+        }
 
-    data class State(val blendMode: BlendMode,
-                     val strokingColor: Color,
-                     val nonStrokingColor: Color,
-                     val lineWidth: Float,
-                     val lineCapStyle: Int,
-                     val lineJoinStyle: Int,
-                     val miterLimit: Float)
+    data class State(
+        val blendMode: BlendMode,
+        val strokingColor: Color,
+        val nonStrokingColor: Color,
+        val lineWidth: Float,
+        val lineCapStyle: Int,
+        val lineJoinStyle: Int,
+        val miterLimit: Float
+    )
 
 }

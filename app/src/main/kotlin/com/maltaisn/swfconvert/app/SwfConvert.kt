@@ -30,13 +30,14 @@ import org.apache.logging.log4j.kotlin.logger
 import javax.inject.Inject
 import javax.inject.Provider
 
-
 class SwfConvert(private val config: Configuration) {
 
     private val logger = logger()
 
-    @Inject lateinit var converterProvider: Provider<SwfCollectionConverter>
-    @Inject lateinit var framesRenderers: Map<Class<out RenderConfiguration>,
+    @Inject
+    lateinit var converterProvider: Provider<SwfCollectionConverter>
+    @Inject
+    lateinit var framesRenderers: Map<Class<out RenderConfiguration>,
             @JvmSuppressWildcards Provider<FramesRenderer>>
 
     private val progressCb = ProgressPrinter()
@@ -44,20 +45,20 @@ class SwfConvert(private val config: Configuration) {
     init {
         // Create components
         val convertComponent = DaggerConvertComponent.factory()
-                .create(config.convert, progressCb)
+            .create(config.convert, progressCb)
         val renderCoreComponent = DaggerRenderCoreComponent.factory()
-                .create(config.render, progressCb)
+            .create(config.render, progressCb)
         DaggerRenderIrComponent.builder()
-                .renderCoreComponent(renderCoreComponent)
-                .build()
+            .renderCoreComponent(renderCoreComponent)
+            .build()
         DaggerRenderPdfComponent.builder()
-                .renderCoreComponent(renderCoreComponent)
-                .build()
+            .renderCoreComponent(renderCoreComponent)
+            .build()
 
         val appComponent = DaggerAppComponent.builder()
-                .convertComponent(convertComponent)
-                .renderCoreComponent(renderCoreComponent)
-                .build()
+            .convertComponent(convertComponent)
+            .renderCoreComponent(renderCoreComponent)
+            .build()
         appComponent.inject(this)
     }
 

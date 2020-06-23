@@ -22,21 +22,22 @@ import com.flagstone.transform.font.Kerning
 import com.flagstone.transform.shape.Shape
 import com.maltaisn.swfconvert.core.text.FontScale
 
-
-internal data class WDefineFont(val identifier: Int,
-                                val name: String,
-                                val ascent: Int,
-                                val descent: Int,
-                                val codes: List<Int>,
-                                val shapes: List<Shape>,
-                                val advances: List<Int>,
-                                val kernings: List<Kerning>,
-                                val scale: FontScale) {
+internal data class WDefineFont(
+    val identifier: Int,
+    val name: String,
+    val ascent: Int,
+    val descent: Int,
+    val codes: List<Int>,
+    val shapes: List<Shape>,
+    val advances: List<Int>,
+    val kernings: List<Kerning>,
+    val scale: FontScale
+) {
 
     constructor(font: DefineFont2, scale: FontScale) : this(font.identifier, font.name, font.ascent, font.descent,
-            font.codes, font.shapes, font.advances, font.kernings, scale)
+        font.codes, font.shapes, font.advances, font.kernings, scale)
 
     constructor(font: DefineFont3, scale: FontScale) : this(font.identifier, font.name, font.ascent, font.descent,
-            font.codes, font.shapes, font.advances, font.kernings, scale)
+        font.codes, font.shapes, font.advances, font.kernings, scale)
 
 }

@@ -16,7 +16,6 @@
 
 package com.maltaisn.swfconvert.core
 
-
 /**
  * Callback to indicate progress during conversion.
  */

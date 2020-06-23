@@ -16,7 +16,6 @@
 
 package com.maltaisn.swfconvert.render.svg.writer.data
 
-
 internal enum class SvgMixBlendMode(val svgName: String) {
     NORMAL("normal"),
     MULTIPLY("multiply"),

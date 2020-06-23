@@ -33,16 +33,19 @@ import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.core.shape.Path
 import com.maltaisn.swfconvert.core.shape.PathElement
 import com.maltaisn.swfconvert.core.shape.ShapeObject
-import com.maltaisn.swfconvert.core.text.*
+import com.maltaisn.swfconvert.core.text.Font
+import com.maltaisn.swfconvert.core.text.FontId
+import com.maltaisn.swfconvert.core.text.FontScale
+import com.maltaisn.swfconvert.core.text.GlyphData
+import com.maltaisn.swfconvert.core.text.TextObject
 import java.awt.geom.AffineTransform
 import javax.inject.Inject
-
 
 /**
  * Converts SWF text tags to [TextObject] intermediate representation.
  */
 internal class TextConverter @Inject constructor(
-        private val config: ConvertConfiguration
+    private val config: ConvertConfiguration
 ) {
 
     private lateinit var context: SwfObjectContext
@@ -65,22 +68,18 @@ internal class TextConverter @Inject constructor(
         YAxisDirection.DOWN -> 1
     }
 
-
-    fun createTextObject(context: SwfObjectContext,
-                         textTag: StaticTextTag,
-                         colorTransform: CompositeColorTransform,
-                         fontsMap: Map<FontId, Font>): List<FrameObject> {
+    fun createTextObjects(
+        context: SwfObjectContext,
+        textTag: StaticTextTag,
+        colorTransform: CompositeColorTransform,
+        fontsMap: Map<FontId, Font>
+    ): List<FrameObject> {
         this.context = context
         this.textTag = textTag
         this.colorTransform = colorTransform
         this.fontsMap = fontsMap
 
-        // Reset styles
-        font = null
-        fontSize = null
-        color = null
-        offsetX = 0f
-        offsetY = 0f
+        resetStyles()
 
         val fontScale = getTextScale() ?: return emptyList()
         val transform = getTextTransform(fontScale)
@@ -92,6 +91,7 @@ internal class TextConverter @Inject constructor(
         } else {
             // Note: it would be possible to extract translate and
             // scale components to text objects attributes: x, y, fontSize.
+            // However, in practice, this has lead to almost no file size difference in SVG and PDF.
             val group = GroupObject.Transform(textTag.identifier, transform)
             textObjects = group.objects
             mutableListOf(group)
@@ -99,21 +99,12 @@ internal class TextConverter @Inject constructor(
 
         // Parse text spans
         for (span in textTag.spans) {
-            textObjects.add(parseTextSpan(span) ?: continue)
-        }
-        if (textObjects.isEmpty()) {
-            // No text spans with content, so no text.
-            return emptyList()
+            textObjects.add(createTextSpanObject(span) ?: continue)
         }
 
-        // Add text bounds rectangle if needed
-        if (config.drawTextBounds) {
-            val bounds = textTag.bounds
-            val boundsRect = Path(listOf(PathElement.Rectangle(
-                    bounds.minX.toFloat(), bounds.minY.toFloat(),
-                    bounds.width.toFloat(), bounds.height.toFloat())),
-                    lineStyle = config.debugLineStyle)
-            objects += ShapeObject(textTag.identifier, listOf(boundsRect))
+        // Add text bounds rectangle if enabled and at least one text object was created.
+        if (config.drawTextBounds && textObjects.isNotEmpty()) {
+            objects += createTextBoundsObject(textTag)
         }
 
         return objects
@@ -140,7 +131,9 @@ internal class TextConverter @Inject constructor(
         return lastScale
     }
 
-    /** Creates the text transform used to draw the text. */
+    /**
+     * Creates the text transform used to draw the text.
+     */
     private fun getTextTransform(scale: FontScale): AffineTransform {
         val tagTr = textTag.transform.toAffineTransformOrIdentity()
         val usx = scale.unscaleX.toDouble()
@@ -148,17 +141,17 @@ internal class TextConverter @Inject constructor(
         // Scale the transform except for translation components.
         // (this is a pre-scale transformation but AffineTransform doesn't have it)
         return AffineTransform(
-                tagTr.scaleX * usx, tagTr.shearY * usx,
-                tagTr.shearX * usy, tagTr.scaleY * usy,
-                tagTr.translateX, tagTr.translateY)
+            tagTr.scaleX * usx, tagTr.shearY * usx,
+            tagTr.shearX * usy, tagTr.scaleY * usy,
+            tagTr.translateX, tagTr.translateY)
     }
 
-    private fun parseTextSpan(span: TextSpan): TextObject? {
+    private fun createTextSpanObject(span: TextSpan): TextObject? {
         updateStyleFromTextSpan(span)
 
         val font = this.font!!
         val fontSize = this.fontSize!!
-        val scale = font.metrics.scale
+        val fontScale = font.metrics.scale
 
         if (fontSize == 0f || span.characters.isEmpty()) {
             // No height or no chars, ignore it.
@@ -174,7 +167,7 @@ internal class TextConverter @Inject constructor(
 
         // Although not very clear from SWF specification, drawing text actually changes the
         // X offset. So change the X offset by the sum of all glyph advances.
-        offsetX += glyphIndices.sumBy { it.advance } / scale.unscaleX
+        offsetX += glyphIndices.sumBy { it.advance } / fontScale.unscaleX
 
         // Fold and trim whitespace in text
         foldRepeatedWhitespaceInGlyphIndices(glyphIndices)
@@ -190,7 +183,7 @@ internal class TextConverter @Inject constructor(
         val text = String(CharArray(glyphIndices.size) { font.getGlyph(glyphIndices[it]).char })
 
         return TextObject(textTag.identifier, xPos, yPos, fontSize,
-                color!!, font, text, glyphOffsets)
+            color!!, font, text, glyphOffsets)
     }
 
     /**
@@ -208,7 +201,7 @@ internal class TextConverter @Inject constructor(
             if (currGlyph.isWhitespace && nextGlyph.isWhitespace) {
                 // Fold the two whitespace into a single one, using char of the first.
                 glyphIndices[i] = GlyphIndex(currGlyphIndex.glyphIndex,
-                        currGlyphIndex.advance + nextGlyphIndex.advance)
+                    currGlyphIndex.advance + nextGlyphIndex.advance)
                 glyphIndices.removeAt(i + 1)
             }
         }
@@ -239,7 +232,7 @@ internal class TextConverter @Inject constructor(
     private fun getGlyphOffsetsFromGlyphIndices(glyphIndices: List<GlyphIndex>): List<Float> {
         val font = this.font!!
         val fontSize = this.fontSize!!
-        val scale = font.metrics.scale
+        val fontScale = font.metrics.scale
 
         // Add text span glyphs to list
         val glyphOffsets = mutableListOf<Float>()
@@ -250,7 +243,7 @@ internal class TextConverter @Inject constructor(
 
             // Find difference with default advance width, in glyph space units.
             val defaultAdvance = glyph.data.advanceWidth
-            val actualAdvance = glyphIndex.advance / (scale.unscaleX * fontSize) * GlyphData.EM_SQUARE_SIZE
+            val actualAdvance = glyphIndex.advance / (fontScale.unscaleX * fontSize) * GlyphData.EM_SQUARE_SIZE
             val diff = actualAdvance - defaultAdvance
 
             if (diff <= config.ignoreGlyphOffsetsThreshold) {
@@ -285,11 +278,19 @@ internal class TextConverter @Inject constructor(
         updateOffsetsFromTextSpan(span)
     }
 
+    private fun resetStyles() {
+        font = null
+        fontSize = null
+        color = null
+        offsetX = 0f
+        offsetY = 0f
+    }
+
     private fun updateFontFromTextSpan(span: TextSpan) {
         if (span.identifier != null) {
             val fontId = createFontId(span.identifier)
             this.font = fontsMap[fontId]
-                    ?: conversionError(context, "Unknown font ID ${span.identifier}")
+                ?: conversionError(context, "Unknown font ID ${span.identifier}")
         }
         val font = this.font
         conversionError(font != null, context) { "No font specified" }
@@ -312,15 +313,26 @@ internal class TextConverter @Inject constructor(
     private fun updateOffsetsFromTextSpan(span: TextSpan) {
         // Although SWF specification says that unspecified offset is like setting it to 0,
         // this is not true, offset is only set when specified. Also, offsets are not additive.
-        val scale = font!!.metrics.scale
+        val fontScale = font!!.metrics.scale
         if (span.offsetX != null) {
-            offsetX = span.offsetX.toFloat() / scale.unscaleX
+            offsetX = span.offsetX.toFloat() / fontScale.unscaleX
         }
         if (span.offsetY != null) {
-            offsetY = span.offsetY.toFloat() / scale.unscaleY * yAxisMultiplier
+            offsetY = span.offsetY.toFloat() / fontScale.unscaleY * yAxisMultiplier
         }
     }
 
+    /**
+     * Create a debug shape matching the defined SWF bounds of a [textTag].
+     */
+    private fun createTextBoundsObject(textTag: StaticTextTag): FrameObject {
+        val bounds = textTag.bounds
+        val boundsRect = Path(listOf(PathElement.Rectangle(
+            bounds.minX.toFloat(), bounds.minY.toFloat(),
+            bounds.width.toFloat(), bounds.height.toFloat())),
+            lineStyle = config.debugLineStyle)
+        return ShapeObject(textTag.identifier, listOf(boundsRect))
+    }
 
     /**
      * Create a font ID to uniquely identify a font across a SWF file collection.

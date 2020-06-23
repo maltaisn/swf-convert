@@ -22,16 +22,15 @@ import com.maltaisn.swfconvert.core.text.FontGlyph
 import com.maltaisn.swfconvert.core.text.FontMetrics
 import java.io.File
 
-
 /**
  * Represents a group of [fonts] objects merged into a single group,
  * that share the same info and the same glyphs.
  */
 internal data class FontGroup(
-        override var name: String,
-        override val metrics: FontMetrics,
-        val fonts: MutableList<Font>,
-        val glyphsMap: MutableMap<Char, FontGlyph>
+    override var name: String,
+    override val metrics: FontMetrics,
+    val fonts: MutableList<Font>,
+    val glyphsMap: MutableMap<Char, FontGlyph>
 ) : BaseFont {
 
     override val glyphs: List<FontGlyph>
@@ -43,11 +42,11 @@ internal data class FontGroup(
         get() = glyphsMap.values.all { it.isWhitespace }
 
     fun isCompatibleWith(other: FontGroup, requireCommon: Boolean): Boolean {
-        if (other.glyphs.size < glyphs.size) {
-            // Use group with the least glyph as comparison base.
-            return other.isCompatibleWith(this, requireCommon)
-        }
         return when {
+            other.glyphs.size < glyphs.size -> {
+                // Use group with the least glyph as comparison base, it'll be faster.
+                other.isCompatibleWith(this, requireCommon)
+            }
             isAllWhitespaces || other.isAllWhitespaces -> {
                 // One font or the other has only whitespace. Since all whitespace is converted
                 // to identical spaces, fonts are automatically compatible.

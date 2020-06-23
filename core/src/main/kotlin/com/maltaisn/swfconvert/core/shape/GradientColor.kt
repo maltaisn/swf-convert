@@ -18,5 +18,4 @@ package com.maltaisn.swfconvert.core.shape
 
 import com.maltaisn.swfconvert.core.image.Color
 
-
 data class GradientColor(val color: Color, val ratio: Float)

@@ -20,7 +20,6 @@ import com.maltaisn.swfconvert.core.image.Color
 import org.junit.Test
 import kotlin.test.assertEquals
 
-
 class SvgFillTest {
 
     @Test

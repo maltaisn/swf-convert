@@ -20,7 +20,6 @@ import org.junit.ComparisonFailure
 import org.junit.Test
 import kotlin.test.assertEquals
 
-
 class SvgPathWriterTest {
 
     @Test
@@ -184,7 +183,7 @@ class SvgPathWriterTest {
     fun `should not write invisible 'cubic to'`() {
         assertPathEquals("M10 10") {
             moveTo(10f, 10f)
-            cubicTo(20f, 20f, 30f, 30f,10f, 10f)
+            cubicTo(20f, 20f, 30f, 30f, 10f, 10f)
         }
     }
 
@@ -249,9 +248,12 @@ class SvgPathWriterTest {
         SvgPathWriter(100)
     }
 
-    private fun assertPathEquals(vararg expected: String, precision: Int = 1,
-                                 optimize: Boolean = true,
-                                 write: SvgPathWriter.() -> Unit) {
+    private fun assertPathEquals(
+        vararg expected: String,
+        precision: Int = 1,
+        optimize: Boolean = true,
+        write: SvgPathWriter.() -> Unit
+    ) {
         val actual = SvgPathWriter(precision, optimize).apply(write).toString()
         var passed = 0
         for ((i, exp) in expected.withIndex()) {

@@ -16,8 +16,9 @@
 
 package com.maltaisn.swfconvert.core.text
 
-
-data class FontScale(val scaleX: Float,
-                     val scaleY: Float,
-                     val unscaleX: Float,
-                     val unscaleY: Float)
+data class FontScale(
+    val scaleX: Float,
+    val scaleY: Float,
+    val unscaleX: Float,
+    val unscaleY: Float
+)

@@ -33,7 +33,7 @@ import java.io.File
 import java.io.IOException
 import java.text.DecimalFormat
 
-
+@Suppress("MagicNumber")
 @Parameters(commandDescription = "PDF output format")
 class RenderPdfParams : RenderParams<PdfConfiguration> {
 
@@ -47,29 +47,44 @@ class RenderPdfParams : RenderParams<PdfConfiguration> {
 
     // Metadata
 
-    @Parameter(names = ["--metadata"], variableArity = true, description = "JSON files containing metadata to set on PDF files.", order = 1100)
+    @Parameter(names = ["--metadata"],
+        variableArity = true,
+        description = "JSON files containing metadata to set on PDF files.",
+        order = 1100)
     var metadata: List<String> = emptyList()
 
-    @Parameter(names = ["--optimize-page-labels"], arity = 1, description = "Whether to optimize page labels or not.", order = 1110)
+    @Parameter(names = ["--optimize-page-labels"],
+        arity = 1,
+        description = "Whether to optimize page labels or not.",
+        order = 1110)
     var optimizePageLabels: Boolean = true
 
     // Rasterization
 
-    @Parameter(names = ["--rasterization-enabled"], description = "Whether to enable rasterization of complex input files or not.", order = 1200)
+    @Parameter(names = ["--rasterization-enabled"],
+        description = "Whether to enable rasterization of complex input files or not.",
+        order = 1200)
     var rasterizationEnabled: Boolean = false
 
-    @Parameter(names = ["--rasterization-threshold"], description = "Minimum input file complexity required to perform rasterization, in arbitrary units.", order = 1210)
+    @Parameter(names = ["--rasterization-threshold"],
+        description = "Minimum input file complexity required to perform rasterization, in arbitrary units.",
+        order = 1210)
     var rasterizationThreshold = 100000
 
-    @Parameter(names = ["--rasterization-dpi"], description = "Density in DPI to use to rasterize output if rasterization is enabled.", order = 1220)
+    @Parameter(names = ["--rasterization-dpi"],
+        description = "Density in DPI to use to rasterize output if rasterization is enabled.",
+        order = 1220)
     var rasterizationDpi = 200f
 
-    @Parameter(names = ["--rasterization-format"], description = "Image format to use for rasterized output.", order = 1230)
+    @Parameter(names = ["--rasterization-format"],
+        description = "Image format to use for rasterized output.",
+        order = 1230)
     var rasterizationFormatName = ImageFormat.JPG.extension
 
-    @Parameter(names = ["--rasterization-jpeg-quality"], description = "JPEG image quality for rasterization, between 0 and 100.", order = 1240)
+    @Parameter(names = ["--rasterization-jpeg-quality"],
+        description = "JPEG image quality for rasterization, between 0 and 100.",
+        order = 1240)
     var rasterizationJpegQuality = 75
-
 
     override val yAxisDirection: YAxisDirection
         get() = YAxisDirection.UP
@@ -125,18 +140,18 @@ class RenderPdfParams : RenderParams<PdfConfiguration> {
         return inputs.mapIndexed { i, input ->
             val tempDir = params.getTempDirForInput(input)
             PdfConfiguration(
-                    params.outputFiles[i],
-                    tempDir,
-                    compress,
-                    pdfMetadata.getOrNull(i),
-                    optimizePageLabels,
-                    rasterizationEnabled,
-                    rasterizationThreshold,
-                    rasterizationDpi,
-                    rasterizationFormat,
-                    rasterizationJpegQualityFloat,
-                    params.parallelFrameRendering,
-                    parallelRasterization)
+                params.outputFiles[i],
+                tempDir,
+                compress,
+                pdfMetadata.getOrNull(i),
+                optimizePageLabels,
+                rasterizationEnabled,
+                rasterizationThreshold,
+                rasterizationDpi,
+                rasterizationFormat,
+                rasterizationJpegQualityFloat,
+                params.parallelFrameRendering,
+                parallelRasterization)
         }
     }
 

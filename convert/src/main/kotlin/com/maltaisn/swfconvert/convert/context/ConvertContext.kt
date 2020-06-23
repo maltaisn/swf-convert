@@ -16,7 +16,6 @@
 
 package com.maltaisn.swfconvert.convert.context
 
-
 /**
  * Passed around conversion classes and methods to keep track of the file and objects being
  * currently converted to intermediate representation.
@@ -27,7 +26,6 @@ abstract class ConvertContext(val parent: ConvertContext?) {
      * Provides a text description of this context, without describing the parent.
      */
     abstract val description: String
-
 
     override fun toString() = buildString {
         var context: ConvertContext? = this@ConvertContext

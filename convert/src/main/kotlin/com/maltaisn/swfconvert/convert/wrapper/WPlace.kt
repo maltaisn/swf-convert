@@ -25,28 +25,29 @@ import com.flagstone.transform.datatype.ColorTransform
 import com.flagstone.transform.datatype.CoordTransform
 import com.flagstone.transform.filter.Filter
 
-
-internal data class WPlace(val type: PlaceType,
-                           val transform: CoordTransform?,
-                           var colorTransform: ColorTransform?,
-                           val filters: List<Filter>,
-                           val identifier: Int,
-                           val depth: Int,
-                           val clipDepth: Int,
-                           val blendMode: Blend?,
-                           val ratio: Int?) {
+internal data class WPlace(
+    val type: PlaceType,
+    val transform: CoordTransform?,
+    var colorTransform: ColorTransform?,
+    val filters: List<Filter>,
+    val identifier: Int,
+    val depth: Int,
+    val clipDepth: Int,
+    val blendMode: Blend?,
+    val ratio: Int?
+) {
 
     val hasClip: Boolean
         get() = clipDepth != NO_CLIP_DEPTH
 
     constructor(place: Place) : this(PlaceType.NEW, place.transform, place.colorTransform,
-            emptyList(), place.identifier, place.layer, NO_CLIP_DEPTH, null, null)
+        emptyList(), place.identifier, place.layer, NO_CLIP_DEPTH, null, null)
 
     constructor(place: Place2) : this(place.type, place.transform, place.colorTransform,
-            emptyList(), place.identifier, place.layer, place.depth ?: NO_CLIP_DEPTH, null, place.ratio)
+        emptyList(), place.identifier, place.layer, place.depth ?: NO_CLIP_DEPTH, null, place.ratio)
 
     constructor(place: Place3) : this(place.type, place.transform, place.colorTransform,
-            place.filters, place.identifier, place.layer, place.depth ?: NO_CLIP_DEPTH, place.blend, place.ratio)
+        place.filters, place.identifier, place.layer, place.depth ?: NO_CLIP_DEPTH, place.blend, place.ratio)
 
     companion object {
         const val NO_CLIP_DEPTH = 0

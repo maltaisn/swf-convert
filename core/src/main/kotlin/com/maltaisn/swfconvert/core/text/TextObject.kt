@@ -19,7 +19,6 @@ package com.maltaisn.swfconvert.core.text
 import com.maltaisn.swfconvert.core.FrameObject
 import com.maltaisn.swfconvert.core.image.Color
 
-
 /**
  * A object for text in the intermediate representation.
  * The is drawn from its bottom left corner at [x] and [y] coordinates.
@@ -34,16 +33,17 @@ import com.maltaisn.swfconvert.core.image.Color
  * The spacing values are in glyph space units, as defined by [GlyphData.EM_SQUARE_SIZE].
  * Positive values increase spacing, negative values decrease it.
  */
-data class TextObject(override val id: Int,
-                      val x: Float,
-                      val y: Float,
-                      val fontSize: Float,
-                      val color: Color,
-                      val font: Font,
-                      val text: String,
-                      val glyphOffsets: List<Float>) : FrameObject(id) {
+data class TextObject(
+    override val id: Int,
+    val x: Float,
+    val y: Float,
+    val fontSize: Float,
+    val color: Color,
+    val font: Font,
+    val text: String,
+    val glyphOffsets: List<Float>
+) : FrameObject {
 
     override fun toString() = "Text[$id](text='$text', x=$x, y=$y, size=$fontSize, " +
             "color=$color, font=${font.name}, glyphOffsets=$glyphOffsets)"
-
 }

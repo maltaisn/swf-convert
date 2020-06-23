@@ -20,11 +20,10 @@ import com.maltaisn.swfconvert.core.shape.Path
 import java.awt.geom.AffineTransform
 import java.awt.geom.Rectangle2D
 
-
 /**
  * An object containing other objects in the intermediate representation.
  */
-sealed class GroupObject(override val id: Int) : FrameObject(id) {
+sealed class GroupObject(override val id: Int) : FrameObject {
 
     val objects = mutableListOf<FrameObject>()
 

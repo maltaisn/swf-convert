@@ -16,7 +16,6 @@
 
 package com.maltaisn.swfconvert.core
 
-
 object Units {
 
     const val TWIPS_TO_INCH = 1 / 1440f

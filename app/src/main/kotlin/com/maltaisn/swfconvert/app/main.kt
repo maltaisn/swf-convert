@@ -25,7 +25,6 @@ import java.text.DecimalFormat
 import kotlin.system.exitProcess
 import kotlin.system.measureTimeMillis
 
-
 fun main(args: Array<String>) {
     // Parse program arguments into configurations.
     // This also prints configuration values.
@@ -35,13 +34,13 @@ fun main(args: Array<String>) {
     try {
         for ((i, config) in configs.withIndex()) {
             println("Converting collection ${i + 1} / ${configs.size}")
-            logger.info {"Started conversion of collection ${i + 1}, config: $config" }
+            logger.info { "Started conversion of collection ${i + 1}, config: $config" }
             val duration = measureTimeMillis {
                 runBlocking(Dispatchers.Default) {
                     SwfConvert(config).convert(SwfCollectionContext(i))
                 }
             }
-            println("Done in ${DURATION_FMT.format(duration / 1000.0)} s\n")
+            println("Done in ${DURATION_FMT.format(duration.toDouble() / MILLIS_IN_SECOND)} s\n")
             logger.info { "Finished conversion of collection ${i + 1}" }
         }
         exitProcess(0)
@@ -61,3 +60,4 @@ fun main(args: Array<String>) {
 private val logger = logger(object {}.javaClass.name)
 
 private val DURATION_FMT = DecimalFormat("0.00")
+private const val MILLIS_IN_SECOND = 1000

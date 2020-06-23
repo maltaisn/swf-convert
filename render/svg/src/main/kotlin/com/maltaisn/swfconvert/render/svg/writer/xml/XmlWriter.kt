@@ -16,14 +16,12 @@
 
 package com.maltaisn.swfconvert.render.svg.writer.xml
 
-
-
 /**
  * Base class for a XML writer.
  */
 internal abstract class XmlWriter {
 
-    abstract val currentTag: String
+    abstract val currentTag: String?
 
     /**
      * Start a new tag with a [name] and [attrs].

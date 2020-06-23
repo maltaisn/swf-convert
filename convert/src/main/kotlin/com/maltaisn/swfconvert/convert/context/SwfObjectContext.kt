@@ -16,13 +16,14 @@
 
 package com.maltaisn.swfconvert.convert.context
 
-
 /**
  * Context for an object in SWF being converted.
  * Object ID is the last of [ids], which form the tree of object IDs leading to this object.
  */
-internal class SwfObjectContext(parent: SwfFileContext,
-                                val ids: List<Int>) : ConvertContext(parent) {
+internal class SwfObjectContext(
+    parent: SwfFileContext,
+    private val ids: List<Int>
+) : ConvertContext(parent) {
 
     override val description: String
         get() = buildString {

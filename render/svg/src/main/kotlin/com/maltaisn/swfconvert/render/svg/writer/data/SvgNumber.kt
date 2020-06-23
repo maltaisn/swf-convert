@@ -16,20 +16,27 @@
 
 package com.maltaisn.swfconvert.render.svg.writer.data
 
-import com.maltaisn.swfconvert.render.svg.writer.numberFormat
+import com.maltaisn.swfconvert.render.svg.writer.format.DEBUG_SVG_PRECISION
+import com.maltaisn.swfconvert.render.svg.writer.format.format
+import com.maltaisn.swfconvert.render.svg.writer.format.formatOptimized
 import kotlin.math.sign
-
 
 /**
  * A numeric value used in SVG, can be associated with a length unit
  * or be dimensionless with [SvgUnit.USER].
  */
-internal data class SvgNumber(val value: Float,
-                              val units: SvgUnit = SvgUnit.USER) {
+internal data class SvgNumber(
+    val value: Float,
+    val units: SvgUnit = SvgUnit.USER
+) {
 
-    fun toSvg(precision: Int) = numberFormat.get().format(value) + units.symbol
+    fun toSvg(precision: Int, optimized: Boolean) = if (optimized) {
+        value.formatOptimized(precision)
+    } else {
+        value.format(precision)
+    } + units.symbol
 
-    override fun toString() = toSvg(3)
+    override fun toString() = toSvg(DEBUG_SVG_PRECISION, false)
 
     operator fun compareTo(other: SvgNumber): Int {
         require(units == other.units || value.sign != other.value.sign || value == 0f) {

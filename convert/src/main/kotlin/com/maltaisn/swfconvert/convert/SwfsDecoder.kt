@@ -26,15 +26,16 @@ import com.maltaisn.swfconvert.core.showStep
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
+import java.util.zip.DataFormatException
 import javax.inject.Inject
-
 
 /**
  * Decodes SWF files with `transform-swf` in parallel.
  */
 internal class SwfsDecoder @Inject constructor(
-        private val config: ConvertConfiguration,
-        private val progressCb: ProgressCallback
+    private val config: ConvertConfiguration,
+    private val progressCb: ProgressCallback
 ) {
 
     suspend fun decodeFiles(context: ConvertContext, files: List<File>): List<Movie> {
@@ -54,8 +55,10 @@ internal class SwfsDecoder @Inject constructor(
         withContext(Dispatchers.IO) {
             try {
                 swf.decodeFromFile(file)
-            } catch (e: Exception) {
-                conversionError(fileContext, "Error while decoding SWF file")
+            } catch (e: DataFormatException) {
+                conversionError(fileContext, "Error while decoding SWF file: bad format")
+            } catch (e: IOException) {
+                conversionError(fileContext, "Error while decoding SWF file: I/O exception")
             }
         }
         return swf

@@ -19,8 +19,7 @@ package com.maltaisn.swfconvert.render.ir.di
 import com.maltaisn.swfconvert.render.core.di.RenderCoreComponent
 import dagger.Component
 
-
 @Component(
-        modules = [RenderIrModule::class],
-        dependencies = [RenderCoreComponent::class])
+    modules = [RenderIrModule::class],
+    dependencies = [RenderCoreComponent::class])
 interface RenderIrComponent

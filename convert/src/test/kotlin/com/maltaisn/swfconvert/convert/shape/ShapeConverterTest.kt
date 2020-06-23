@@ -16,46 +16,50 @@
 
 package com.maltaisn.swfconvert.convert.shape
 
-import com.maltaisn.swfconvert.core.shape.PathElement.*
+import com.maltaisn.swfconvert.core.shape.PathElement.ClosePath
+import com.maltaisn.swfconvert.core.shape.PathElement.LineTo
+import com.maltaisn.swfconvert.core.shape.PathElement.MoveTo
+import com.maltaisn.swfconvert.core.shape.PathElement.Rectangle
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
-
 class ShapeConverterTest {
+
+    // FIXME: rectangle conversion doesn't work properly
 
     @Test
     fun `should not create rectangle with not enough path elements`() {
         assertNull(ShapeConverter.convertPathToRectangle(listOf(
-                MoveTo(0f, 0f),
-                LineTo(0f, 1f),
-                LineTo(1f, 0f),
-                ClosePath
+            MoveTo(0f, 0f),
+            LineTo(0f, 1f),
+            LineTo(1f, 0f),
+            ClosePath
         )))
     }
 
     @Test
     fun `should not create rectangle with too many path elements`() {
         assertNull(ShapeConverter.convertPathToRectangle(listOf(
-                MoveTo(0f, 0f),
-                LineTo(0f, 1f),
-                LineTo(1f, 2f),
-                LineTo(3f, 1f),
-                LineTo(3f, 0f),
-                ClosePath
+            MoveTo(0f, 0f),
+            LineTo(0f, 1f),
+            LineTo(1f, 2f),
+            LineTo(3f, 1f),
+            LineTo(3f, 0f),
+            ClosePath
         )))
     }
 
     @Test
     fun `should create rectangle (start from bottom left)`() {
         assertEquals(Rectangle(0f, 0f, 1f, 1f),
-                ShapeConverter.convertPathToRectangle(listOf(
+            ShapeConverter.convertPathToRectangle(listOf(
                 MoveTo(0f, 0f),
                 LineTo(0f, 1f),
                 LineTo(1f, 1f),
                 LineTo(1f, 0f),
                 ClosePath
-        )))
+            )))
     }
 
 }

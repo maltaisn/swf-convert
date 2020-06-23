@@ -18,15 +18,14 @@ package com.maltaisn.swfconvert.app
 
 import kotlin.contracts.contract
 
-
 /**
  * To be thrown when a configuration parameter value is wrong.
  */
 class ConfigException(message: String, cause: Throwable? = null) :
-        IllegalArgumentException(message, cause)
+    IllegalArgumentException(message, cause)
 
 fun configError(message: String, cause: Throwable? = null): Nothing =
-        throw ConfigException(message, cause)
+    throw ConfigException(message, cause)
 
 inline fun configError(condition: Boolean, message: () -> String) {
     contract {

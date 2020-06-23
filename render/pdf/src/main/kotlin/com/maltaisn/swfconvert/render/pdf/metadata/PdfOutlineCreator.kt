@@ -26,7 +26,6 @@ import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlin
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineNode
 import javax.inject.Inject
 
-
 internal class PdfOutlineCreator @Inject constructor() {
 
     fun createOutline(pdfDoc: PDDocument, items: List<PdfOutlineItem>, openLevel: Int) {
@@ -40,8 +39,10 @@ internal class PdfOutlineCreator @Inject constructor() {
         }
     }
 
-    private fun addItemToOutline(item: PdfOutlineItem, outline: PDOutlineNode,
-                                 level: Int, openLevel: Int) {
+    private fun addItemToOutline(
+        item: PdfOutlineItem, outline: PDOutlineNode,
+        level: Int, openLevel: Int
+    ) {
         val pdfItem = PDOutlineItem()
         val destination = createPdfOutlineDestination(item)
         pdfItem.title = item.title

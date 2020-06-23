@@ -20,13 +20,14 @@ import com.flagstone.transform.image.DefineImage
 import com.flagstone.transform.image.DefineImage2
 import com.maltaisn.swfconvert.convert.zlibDecompress
 
-
 @Suppress("ArrayInDataClass")
-internal class WDefineImage(val width: Int,
-                            val height: Int,
-                            data: ByteArray,
-                            val bits: Int,
-                            val tableSize: Int) {
+internal class WDefineImage(
+    val width: Int,
+    val height: Int,
+    data: ByteArray,
+    val bits: Int,
+    val tableSize: Int
+) {
 
     val data = data.zlibDecompress()
 

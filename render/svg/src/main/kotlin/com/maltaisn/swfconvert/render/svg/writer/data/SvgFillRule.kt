@@ -16,7 +16,6 @@
 
 package com.maltaisn.swfconvert.render.svg.writer.data
 
-
 internal enum class SvgFillRule(val svgName: String) {
     NON_ZERO("nonzero"),
     EVEN_ODD("evenodd")

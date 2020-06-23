@@ -11,25 +11,41 @@ buildscript {
 
 plugins {
     id "base"
+    id "io.gitlab.arturbosch.detekt" version "1.9.1"
 }
 
-allprojects {
+subprojects {
+    apply plugin: "io.gitlab.arturbosch.detekt"
+
     repositories {
         jcenter()
         mavenCentral()
     }
 
-    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-        kotlinOptions.freeCompilerArgs += [
-                "-Xuse-experimental=kotlin.Experimental",
-                "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes",
-                "-Xuse-experimental=kotlin.contracts.ExperimentalContracts",
-                "-XXLanguage:+InlineClasses",
-                "-XXLanguage:+NewInference"
-        ]
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
+        kotlinOptions {
+            jvmTarget = "1.8"
+            freeCompilerArgs += [
+                    "-Xuse-experimental=kotlin.Experimental",
+                    "-Xuse-experimental=kotlin.ExperimentalStdlibApi",
+                    "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes",
+                    "-Xuse-experimental=kotlin.contracts.ExperimentalContracts",
+                    "-XXLanguage:+InlineClasses",
+                    "-XXLanguage:+NewInference"
+            ]
+        }
     }
 }
 
 tasks.clean {
     delete(buildDir)
 }
+
+detekt {
+    failFast = true
+    buildUponDefaultConfig = true
+    parallel = true
+    config = rootProject.files("config/detekt/detekt.yml")
+}
+
+tasks.detekt.jvmTarget = "1.8"

@@ -24,15 +24,14 @@ import com.maltaisn.swfconvert.core.YAxisDirection
 import com.maltaisn.swfconvert.render.ir.IrConfiguration
 import java.io.File
 
-
 @Parameters(commandDescription = "Intermediate representation output format")
 class RenderIrParams : RenderParams<IrConfiguration> {
 
     @ParametersDelegate
     override var params = CoreParams(false) { "json" }.apply {
         // Keep fonts and images by default for IR output.
-        this.params[CoreParams.OPT_KEEP_FONTS] = true.toString()
-        this.params[CoreParams.OPT_KEEP_IMAGES] = true.toString()
+        this.params[CoreParams.PARAM_KEEP_FONTS] = true.toString()
+        this.params[CoreParams.PARAM_KEEP_IMAGES] = true.toString()
     }
 
     @Parameter(names = ["-y-direction"], description = "Y axis direction: up | down.", order = 1000)
@@ -40,7 +39,6 @@ class RenderIrParams : RenderParams<IrConfiguration> {
 
     @Parameter(names = ["--pretty"], description = "Whether to pretty print JSON or not.", order = 1010)
     var prettyPrint: Boolean = false
-
 
     override val yAxisDirection by lazy {
         when (yAxisDirectionName.toLowerCase()) {
@@ -50,14 +48,13 @@ class RenderIrParams : RenderParams<IrConfiguration> {
         }
     }
 
-
     override fun createConfigurations(inputs: List<List<File>>) = inputs.mapIndexed { i, input ->
         val tempDir = params.getTempDirForInput(input)
         IrConfiguration(
-                params.outputFiles[i],
-                tempDir,
-                prettyPrint,
-                params.parallelFrameRendering)
+            params.outputFiles[i],
+            tempDir,
+            prettyPrint,
+            params.parallelFrameRendering)
     }
 
     override fun print() {

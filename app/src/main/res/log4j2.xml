@@ -33,7 +33,7 @@
             <PatternLayout pattern="${patternLayout}"/>
             <Policies>
                 <TimeBasedTriggeringPolicy/>
-                <SizeBasedTriggeringPolicy size="1 MB" />
+                <SizeBasedTriggeringPolicy size="1 MB"/>
             </Policies>
             <DefaultRolloverStrategy>
                 <Delete basePath="${sys:user.home}/swfconvert/logs" maxDepth="2">

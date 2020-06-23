@@ -16,10 +16,11 @@
 
 package com.maltaisn.swfconvert.core.shape
 
-
-data class Path(val elements: List<PathElement>,
-                val fillStyle: PathFillStyle? = null,
-                val lineStyle: PathLineStyle? = null) {
+data class Path(
+    val elements: List<PathElement>,
+    val fillStyle: PathFillStyle? = null,
+    val lineStyle: PathLineStyle? = null
+) {
 
     fun toSvg(): String {
         val svg = StringBuilder()

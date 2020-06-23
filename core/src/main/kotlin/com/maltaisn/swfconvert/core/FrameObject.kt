@@ -16,9 +16,14 @@
 
 package com.maltaisn.swfconvert.core
 
-
 /**
  * Any object in the intermediate representation.
- * @property id ID of the object in SWF, or ID of the object it was derived from.
  */
-abstract class FrameObject(open val id: Int)
+interface FrameObject {
+
+    /**
+     * ID of the object in SWF, or ID of the object it was derived from
+     * if this object doesn't have a direct equivalent in SWF.
+     */
+    val id: Int
+}

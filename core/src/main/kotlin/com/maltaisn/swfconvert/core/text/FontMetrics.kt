@@ -16,7 +16,8 @@
 
 package com.maltaisn.swfconvert.core.text
 
-
-data class FontMetrics(val ascent: Float,
-                       val descent: Float,
-                       val scale: FontScale)
+data class FontMetrics(
+    val ascent: Float,
+    val descent: Float,
+    val scale: FontScale
+)

@@ -18,12 +18,13 @@ package com.maltaisn.swfconvert.core.text
 
 import com.maltaisn.swfconvert.core.shape.Path
 
-data class GlyphData(val advanceWidth: Float,
-                     val contours: List<Path>) {
+data class GlyphData(
+    val advanceWidth: Float,
+    val contours: List<Path>
+) {
 
     val isWhitespace: Boolean
         get() = contours.isEmpty()
-
 
     override fun toString() = buildString {
         append("GlyphData(advance=")
@@ -38,7 +39,6 @@ data class GlyphData(val advanceWidth: Float,
         }
         append("')")
     }
-
 
     companion object {
         /**

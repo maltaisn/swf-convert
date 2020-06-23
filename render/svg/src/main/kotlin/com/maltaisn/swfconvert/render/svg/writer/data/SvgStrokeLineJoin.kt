@@ -16,7 +16,6 @@
 
 package com.maltaisn.swfconvert.render.svg.writer.data
 
-
 internal sealed class SvgStrokeLineJoin(val svgName: String) {
     object Miter : SvgStrokeLineJoin("miter")
     object Round : SvgStrokeLineJoin("round")

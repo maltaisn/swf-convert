@@ -19,13 +19,16 @@ package com.maltaisn.swfconvert.render.svg.writer.data
 import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.render.svg.writer.toSvgUrlReference
 
-
 internal sealed class SvgFill {
     abstract fun toSvg(): String
     override fun toString() = toSvg()
 }
 
 internal data class SvgFillColor(val color: Color) : SvgFill() {
+    init {
+        require(color.a == Color.COMPONENT_MAX) { "Must use fill-opacity to define alpha component instead." }
+    }
+
     override fun toSvg(): String {
         val r = color.r
         val g = color.g
@@ -35,7 +38,7 @@ internal data class SvgFillColor(val color: Color) : SvgFill() {
             String(charArrayOf('#', HEX_CHARS[r and 0xF], HEX_CHARS[g and 0xF], HEX_CHARS[b and 0xF]))
         } else {
             // #xxxxxx
-            color.toStringNoAlpha().toLowerCase()
+            color.toStringNoAlpha()
         }
     }
 }
@@ -48,12 +51,12 @@ internal object SvgFillNone : SvgFill() {
     override fun toSvg() = "none"
 }
 
-
 /**
  * Returns whether the 4 most significant bits are equal to the 4 least
  * significant bits in the least significant byte of [this] int.
  * Basically this returns `true` for 0x00, 0x11, 0x22, 0x33, 0x44, etc.
  */
+@Suppress("MagicNumber")
 private val Int.isColorComponentFoldable: Boolean
     get() = (this and 0xF) == (this ushr 4)
 

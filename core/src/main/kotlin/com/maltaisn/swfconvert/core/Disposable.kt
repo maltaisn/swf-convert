@@ -16,7 +16,6 @@
 
 package com.maltaisn.swfconvert.core
 
-
 /**
  * Marker interface for a class that must be disposed after use.
  * Class shouldn't be used after having been disposed.

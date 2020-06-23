@@ -16,18 +16,30 @@
 
 package com.maltaisn.swfconvert.render.pdf
 
-import com.maltaisn.swfconvert.core.*
+import com.maltaisn.swfconvert.core.FrameGroup
+import com.maltaisn.swfconvert.core.FrameObject
+import com.maltaisn.swfconvert.core.GroupObject
+import com.maltaisn.swfconvert.core.ProgressCallback
 import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.core.image.ImageData
 import com.maltaisn.swfconvert.core.image.ImageDataCreator
 import com.maltaisn.swfconvert.core.image.flippedVertically
+import com.maltaisn.swfconvert.core.mapInParallel
 import com.maltaisn.swfconvert.core.shape.Path
-import com.maltaisn.swfconvert.core.shape.PathElement.*
+import com.maltaisn.swfconvert.core.shape.PathElement.ClosePath
+import com.maltaisn.swfconvert.core.shape.PathElement.CubicTo
+import com.maltaisn.swfconvert.core.shape.PathElement.LineTo
+import com.maltaisn.swfconvert.core.shape.PathElement.MoveTo
+import com.maltaisn.swfconvert.core.shape.PathElement.QuadTo
+import com.maltaisn.swfconvert.core.shape.PathElement.Rectangle
 import com.maltaisn.swfconvert.core.shape.PathFillStyle
 import com.maltaisn.swfconvert.core.shape.ShapeObject
+import com.maltaisn.swfconvert.core.showProgress
+import com.maltaisn.swfconvert.core.showStep
 import com.maltaisn.swfconvert.core.text.TextObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.apache.logging.log4j.kotlin.logger
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.font.PDFont
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject
@@ -35,26 +47,30 @@ import org.apache.pdfbox.rendering.ImageType
 import org.apache.pdfbox.rendering.PDFRenderer
 import java.awt.geom.AffineTransform
 import java.awt.image.BufferedImage
-import java.io.EOFException
 import java.io.File
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Provider
-
 
 /**
  * Rasterizes frame groups to optimize their size, if needed and enabled.
  */
 internal class FramesRasterizer @Inject constructor(
-        private val config: PdfConfiguration,
-        private val progressCb: ProgressCallback,
-        private val pdfFrameRendererProvider: Provider<PdfFrameRenderer>,
-        private val imageDataCreatorProvider: Provider<ImageDataCreator>
+    private val config: PdfConfiguration,
+    private val progressCb: ProgressCallback,
+    private val pdfFrameRendererProvider: Provider<PdfFrameRenderer>,
+    private val imageDataCreatorProvider: Provider<ImageDataCreator>
 ) {
 
-    suspend fun rasterizeFramesIfNeeded(pdfDoc: PDDocument,
-                                frameGroups: List<FrameGroup>, imagesDir: File,
-                                pdfImages: MutableMap<ImageData, PDImageXObject>,
-                                pdfFonts: Map<File, PDFont>): List<FrameGroup> {
+    private val logger = logger()
+
+    suspend fun rasterizeFramesIfNeeded(
+        pdfDoc: PDDocument,
+        frameGroups: List<FrameGroup>,
+        imagesDir: File,
+        pdfImages: MutableMap<ImageData, PDImageXObject>,
+        pdfFonts: Map<File, PDFont>
+    ): List<FrameGroup> {
         if (!config.rasterizationEnabled) {
             return frameGroups
         }
@@ -79,8 +95,11 @@ internal class FramesRasterizer @Inject constructor(
             framesToRasterize.mapInParallel(config.parallelRasterization) { i ->
                 val frameGroup = frameGroups[i]
                 val frameImagesDir = File(imagesDir, i.toString())
-                newFrameGroups[i] = rasterizeFrame(pdfDoc, frameGroup,
-                        frameImagesDir, pdfImages, pdfFonts)
+                val rasterizedFrame = rasterizeFrame(pdfDoc, frameGroup,
+                    frameImagesDir, pdfImages, pdfFonts)
+                if (rasterizedFrame != null) {
+                    newFrameGroups[i] = rasterizedFrame
+                }
                 progressCb.incrementProgress()
             }
         }
@@ -101,15 +120,15 @@ internal class FramesRasterizer @Inject constructor(
         is ShapeObject -> obj.paths.sumBy {
             when (it.fillStyle) {
                 null -> 0
-                is PathFillStyle.Image -> 0
+                is PathFillStyle.Image -> IMAGE_COMPLEXITY
                 else -> it.elements.sumBy { element ->
                     when (element) {
-                        is MoveTo -> 2
-                        is LineTo -> 2
-                        is QuadTo -> 4
-                        is CubicTo -> 6
-                        is Rectangle -> 4
-                        is ClosePath -> 0
+                        is MoveTo -> MOVE_TO_COMPLEXITY
+                        is LineTo -> LINE_TO_COMPLEXITY
+                        is QuadTo -> QUAD_TO_COMPLEXITY
+                        is CubicTo -> CUBIC_TO_COMPLEXITY
+                        is Rectangle -> RECTANGLE_COMPLEXITY
+                        is ClosePath -> CLOSE_PATH_COMPLEXITY
                     }
                 }
             }
@@ -122,10 +141,13 @@ internal class FramesRasterizer @Inject constructor(
      * them with an image. Texts are made transparent to hide them but allow selection.
      * Images created during rasterization are saved to [imagesDir].
      */
-    private suspend fun rasterizeFrame(pdfDoc: PDDocument,
-                               frameGroup: FrameGroup, imagesDir: File,
-                               pdfImages: MutableMap<ImageData, PDImageXObject>,
-                               pdfFonts: Map<File, PDFont>): FrameGroup {
+    private suspend fun rasterizeFrame(
+        pdfDoc: PDDocument,
+        frameGroup: FrameGroup,
+        imagesDir: File,
+        pdfImages: MutableMap<ImageData, PDImageXObject>,
+        pdfFonts: Map<File, PDFont>
+    ): FrameGroup? {
         imagesDir.mkdirs()
 
         // Extract all text from frame.
@@ -146,27 +168,31 @@ internal class FramesRasterizer @Inject constructor(
         // Render the image
         val imageData = withContext(Dispatchers.IO) {
             val pdfRenderer = PDFRenderer(frameDoc)
-            lateinit var pdfImage: BufferedImage
-            for (i in 0 until 3) {
+            var pdfImage: BufferedImage? = null
+            for (i in 0 until RASTERIZATION_MAX_TRIES) {
                 try {
                     pdfImage = pdfRenderer.renderImageWithDPI(
-                            0, config.rasterizationDpi, ImageType.RGB)
+                        0, config.rasterizationDpi, ImageType.RGB)
                     break
-                } catch (e: EOFException) {
-                    // Retry another time, this happens for seemingly no reason.
-                    if (i == 2) {
-                        println("Failed to rasterize frame after 2 tries.")
-                        throw e
+                } catch (e: IOException) {
+                    // Retry again, this happens for seemingly no reason.
+                    if (i == RASTERIZATION_MAX_TRIES - 1) {
+                        logger.error(e) { "Failed to rasterize PDF frame after $RASTERIZATION_MAX_TRIES tries." }
                     }
                 }
             }
             frameDoc.close()
 
+            if (pdfImage == null) {
+                // Rasterization failed.
+                return@withContext null
+            }
+
             // Create image data
             val imageData = imageDataCreatorProvider.get().createImageData(
-                    pdfImage.flippedVertically(),
-                    config.rasterizationFormat,
-                    config.rasterizationJpegQuality)
+                pdfImage.flippedVertically(),
+                config.rasterizationFormat,
+                config.rasterizationJpegQuality)
 
             // Create PDF image
             val imageFile = File(imagesDir, "frame.${imageData.format.extension}")
@@ -175,7 +201,7 @@ internal class FramesRasterizer @Inject constructor(
             pdfImages[imageData] = PDImageXObject.createFromFileByContent(imageFile, pdfDoc)
 
             imageData
-        }
+        } ?: return null
 
         // Add that image add the start of the text group.
         val imageObj = createRootImageObject(textFrame, imageData)
@@ -205,14 +231,28 @@ internal class FramesRasterizer @Inject constructor(
      * Create a rectangle [ShapeObject] with filled with an [image][imageData]
      * to be placed at the root of a [frameGroup].
      */
-    private fun createRootImageObject(frameGroup: FrameGroup,
-                                      imageData: ImageData): ShapeObject {
+    private fun createRootImageObject(
+        frameGroup: FrameGroup,
+        imageData: ImageData
+    ): ShapeObject {
         // Create frame image shape
         val w = frameGroup.width
         val h = frameGroup.height
         val imageTransform = AffineTransform(w, 0f, 0f, h, 0f, 0f)
         return ShapeObject(0, listOf(Path(listOf(Rectangle(0f, 0f, w, h)),
-                fillStyle = PathFillStyle.Image(0, imageTransform, imageData, false))))
+            fillStyle = PathFillStyle.Image(0, imageTransform, imageData, false))))
+    }
+
+    companion object {
+        private const val RASTERIZATION_MAX_TRIES = 3
+
+        private const val IMAGE_COMPLEXITY = 0
+        private const val MOVE_TO_COMPLEXITY = 2
+        private const val LINE_TO_COMPLEXITY = 2
+        private const val QUAD_TO_COMPLEXITY = 4
+        private const val CUBIC_TO_COMPLEXITY = 6
+        private const val RECTANGLE_COMPLEXITY = 4
+        private const val CLOSE_PATH_COMPLEXITY = 0
     }
 
 }

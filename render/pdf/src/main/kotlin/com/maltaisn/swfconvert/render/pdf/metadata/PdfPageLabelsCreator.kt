@@ -22,12 +22,11 @@ import org.apache.pdfbox.pdmodel.common.PDPageLabelRange
 import org.apache.pdfbox.pdmodel.common.PDPageLabels
 import javax.inject.Inject
 
-
 /**
  * Create optimized PDF page labels from a list of page names.
  */
 internal class PdfPageLabelsCreator @Inject constructor(
-        private val config: PdfConfiguration
+    private val config: PdfConfiguration
 ) {
 
     fun createPageLabels(pdfDoc: PDDocument, pageLabels: List<String>) {
@@ -47,9 +46,11 @@ internal class PdfPageLabelsCreator @Inject constructor(
         var lastNumber = -1
         for ((i, pageName) in pageLabels.withIndex()) {
             val range = createPageLabelRange(pageName)
-            if (lastRange == null || range.style != lastRange.style ||
-                    range.prefix != lastRange.prefix || range.start != lastNumber + 1) {
-                // Page name doesn't follow last range style, create new range.
+            if (lastRange == null || !range.hasSameStyleAs(lastRange) || range.start != lastNumber + 1) {
+                // Create new range because either:
+                // - There's no previous range
+                // - Previous range has different style has current one
+                // - New range numbering doesn't extend previous numbering.
                 lastRange = range
                 pdfPageLabels.setLabelItem(i, range)
             }
@@ -57,6 +58,9 @@ internal class PdfPageLabelsCreator @Inject constructor(
         }
         return pdfPageLabels
     }
+
+    private fun PDPageLabelRange.hasSameStyleAs(other: PDPageLabelRange) =
+        this.style == other.style && this.prefix == other.prefix
 
     /**
      * Create page labels with a range for each page name.

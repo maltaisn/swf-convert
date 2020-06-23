@@ -19,14 +19,13 @@ package com.maltaisn.swfconvert.convert
 import com.maltaisn.swfconvert.convert.context.ConvertContext
 import kotlin.contracts.contract
 
-
 class ConversionError(
-        val context: ConvertContext,
-        message: String? = ""
-) : IllegalStateException(message + ", context: $context")
+    val context: ConvertContext,
+    message: String? = ""
+) : IllegalStateException("$message, context: $context")
 
 fun conversionError(context: ConvertContext, message: String): Nothing =
-        throw ConversionError(context, message)
+    throw ConversionError(context, message)
 
 inline fun conversionError(condition: Boolean, context: ConvertContext, message: () -> String) {
     contract {

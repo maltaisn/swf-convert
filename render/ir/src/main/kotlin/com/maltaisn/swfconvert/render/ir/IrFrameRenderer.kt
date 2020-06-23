@@ -24,7 +24,13 @@ import com.maltaisn.swfconvert.core.shape.PathFillStyle
 import com.maltaisn.swfconvert.core.shape.PathLineStyle
 import com.maltaisn.swfconvert.core.shape.ShapeObject
 import com.maltaisn.swfconvert.core.text.TextObject
-import com.maltaisn.swfconvert.render.ir.data.*
+import com.maltaisn.swfconvert.render.ir.data.IrGradientColor
+import com.maltaisn.swfconvert.render.ir.data.IrImageData
+import com.maltaisn.swfconvert.render.ir.data.IrObject
+import com.maltaisn.swfconvert.render.ir.data.IrPath
+import com.maltaisn.swfconvert.render.ir.data.IrPathFillStyle
+import com.maltaisn.swfconvert.render.ir.data.IrPathLineStyle
+import com.maltaisn.swfconvert.render.ir.data.IrRectangle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -33,16 +39,15 @@ import java.awt.geom.AffineTransform
 import java.awt.geom.Rectangle2D
 import javax.inject.Inject
 
-
 internal class IrFrameRenderer @Inject constructor(
-        private val config: IrConfiguration
+    private val config: IrConfiguration
 ) {
 
     suspend fun renderFrame(index: Int, frame: FrameGroup) {
         // Serialize the frame group to JSON.
         val json = Json(JsonConfiguration.Stable.copy(
-                prettyPrint = config.prettyPrint,
-                encodeDefaults = false))
+            prettyPrint = config.prettyPrint,
+            encodeDefaults = false))
         val serializableFrame = frame.toSerializable()
         val frameJson = json.stringify(IrObject.serializer(), serializableFrame)
 
@@ -64,7 +69,7 @@ internal class IrFrameRenderer @Inject constructor(
         val objects = this.objects.map { it.toSerializable() }
         return when (this) {
             is FrameGroup -> IrObject.FrameGroup(id, width, height, actualWidth, actualHeight, padding,
-                    transform.toMatrixString(), objects)
+                transform.toMatrixString(), objects)
             is GroupObject.Simple -> IrObject.SimpleGroup(id, objects)
             is GroupObject.Transform -> IrObject.TransformGroup(id, transform.toMatrixString(), objects)
             is GroupObject.Blend -> IrObject.BlendGroup(id, blendMode, objects)
@@ -76,23 +81,23 @@ internal class IrFrameRenderer @Inject constructor(
     private fun ShapeObject.toSerializable() = IrObject.Shape(id, paths.map { it.toSerializable() })
 
     private fun Path.toSerializable() = IrPath(toSvg(),
-            fillStyle?.toSerializable(), lineStyle?.toSerializable())
+        fillStyle?.toSerializable(), lineStyle?.toSerializable())
 
     private fun PathFillStyle.toSerializable(): IrPathFillStyle = when (this) {
         is PathFillStyle.Solid -> IrPathFillStyle.Solid(color.toString())
         is PathFillStyle.Image -> IrPathFillStyle.Image(id, transform.toMatrixString(),
-                IrImageData(imageData.dataFile!!.name, imageData.alphaDataFile?.name))
+            IrImageData(imageData.dataFile!!.name, imageData.alphaDataFile?.name))
         is PathFillStyle.Gradient -> IrPathFillStyle.Gradient(
-                colors.map { IrGradientColor(it.color.toString(), it.ratio) },
-                transform.toMatrixString())
+            colors.map { IrGradientColor(it.color.toString(), it.ratio) },
+            transform.toMatrixString())
     }
 
     private fun PathLineStyle.toSerializable() =
-            IrPathLineStyle(color.toString(), width, cap, join, miterLimit)
+        IrPathLineStyle(color.toString(), width, cap, join, miterLimit)
 
     private fun TextObject.toSerializable() =
-            IrObject.Text(id, x, y, fontSize, color.toString(),
-                    font.fontFile?.nameWithoutExtension, text, glyphOffsets)
+        IrObject.Text(id, x, y, fontSize, color.toString(),
+            font.fontFile?.nameWithoutExtension, text, glyphOffsets)
 
     private fun Rectangle2D.toSerializable() = IrRectangle(x, y, width, height)
 

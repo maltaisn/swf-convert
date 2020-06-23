@@ -16,7 +16,6 @@
 
 package com.maltaisn.swfconvert.core
 
-
 /**
  * Direction for the Y axis in intermediate representation.
  */

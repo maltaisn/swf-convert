@@ -18,9 +18,10 @@ package com.maltaisn.swfconvert.core.shape
 
 import com.maltaisn.swfconvert.core.image.Color
 
-
-data class PathLineStyle(val color: Color,
-                         val width: Float,
-                         val cap: Int,
-                         val join: Int,
-                         val miterLimit: Float)
+data class PathLineStyle(
+    val color: Color,
+    val width: Float,
+    val cap: Int,
+    val join: Int,
+    val miterLimit: Float
+)

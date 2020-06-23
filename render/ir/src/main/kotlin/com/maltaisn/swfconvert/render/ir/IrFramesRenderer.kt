@@ -16,22 +16,26 @@
 
 package com.maltaisn.swfconvert.render.ir
 
-import com.maltaisn.swfconvert.core.*
+import com.maltaisn.swfconvert.core.FrameGroup
+import com.maltaisn.swfconvert.core.ProgressCallback
+import com.maltaisn.swfconvert.core.mapInParallel
+import com.maltaisn.swfconvert.core.showProgress
+import com.maltaisn.swfconvert.core.showStep
 import com.maltaisn.swfconvert.render.core.FramesRenderer
+import com.maltaisn.swfconvert.render.core.readAffirmativeAnswer
 import org.apache.logging.log4j.kotlin.logger
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Provider
 
-
 /**
  * Convert all frames from the intermediate representation to output format.
  */
 class IrFramesRenderer @Inject internal constructor(
-        private val config: IrConfiguration,
-        private val progressCb: ProgressCallback,
-        private val irFrameRendererProvider: Provider<IrFrameRenderer>
+    private val config: IrConfiguration,
+    private val progressCb: ProgressCallback,
+    private val irFrameRendererProvider: Provider<IrFrameRenderer>
 ) : FramesRenderer {
 
     private val logger = logger()
@@ -39,18 +43,16 @@ class IrFramesRenderer @Inject internal constructor(
     override suspend fun renderFrames(frameGroups: List<FrameGroup>) {
         var frames = frameGroups.withIndex().associate { (k, v) -> k to v }
 
-        save@ while (true) {
+        while (true) {
             frames = renderFrames(frames)
 
             if (frames.isNotEmpty()) {
                 // Some files couldn't be saved. Ask to retry.
-                print("Could not save ${frames.size} files. Retry (Y/N)? ")
-                retry@ while (true) {
-                    when (readLine()?.toLowerCase()) {
-                        "y" -> continue@save
-                        "n" -> return
-                        else -> continue@retry
-                    }
+                logger.warn { "Failed to save files ${frames.keys.joinToString { config.output[it].path }}" }
+                if (readAffirmativeAnswer("Could not save ${frames.size} files.")) {
+                    continue
+                } else {
+                    return
                 }
             } else {
                 return

@@ -16,13 +16,11 @@
 
 package com.maltaisn.swfconvert.render.svg.writer.xml
 
-import com.maltaisn.swfconvert.render.svg.writer.createNumberFormat
+import com.maltaisn.swfconvert.render.svg.writer.format.createNumberFormat
 import java.io.Closeable
 import java.io.Flushable
 import java.io.OutputStream
 import java.io.OutputStreamWriter
-import java.util.*
-
 
 /**
  * A class to write XML to an [outputStream]. XML is written as it's built, there's no
@@ -33,11 +31,11 @@ import java.util.*
  * @property prettyPrint Whether to pretty print XML or not.
  */
 internal class XmlStreamWriter(
-        outputStream: OutputStream,
-        private val namespaces: Map<String?, String> = emptyMap(),
-        private val prettyPrint: Boolean = false,
-        private val maxLineWidth: Int = 128,
-        private val indentSize: Int = 4
+    outputStream: OutputStream,
+    private val namespaces: Map<String?, String> = emptyMap(),
+    private val prettyPrint: Boolean = false,
+    private val maxLineWidth: Int = 128,
+    private val indentSize: Int = 4
 ) : XmlWriter(), Closeable, Flushable {
 
     private val writer = OutputStreamWriter(outputStream).buffered()
@@ -52,10 +50,10 @@ internal class XmlStreamWriter(
         get() = tagStack.size
 
     /** Stack of tags leading to current position. */
-    private val tagStack = LinkedList<Tag>()
+    private val tagStack = ArrayDeque<Tag>()
 
-    override val currentTag: String
-        get() = tagStack.peek().name
+    override val currentTag: String?
+        get() = tagStack.lastOrNull()?.name
 
     /** Whether writer has written the root tag or not. */
     private var hasRootTag = false
@@ -69,7 +67,6 @@ internal class XmlStreamWriter(
     /** Number of chars in current line. */
     private var currentLineWidth = 0
 
-
     override fun flush() {
         writer.flush()
     }
@@ -79,8 +76,10 @@ internal class XmlStreamWriter(
         writer.close()
     }
 
-    override fun start(name: String,
-                       vararg attrs: Pair<String, *>): XmlStreamWriter {
+    override fun start(
+        name: String,
+        vararg attrs: Pair<String, *>
+    ): XmlStreamWriter {
         check(!isRoot || !hasRootTag) { "There must be a single root tag" }
         name.checkXmlName()
 
@@ -94,7 +93,7 @@ internal class XmlStreamWriter(
             // Currently on root, mark root tag as written.
             hasRootTag = true
         }
-        tagStack.push(Tag(name, false))
+        tagStack += Tag(name, false)
         indentLevel += indentSize
 
         return this
@@ -105,7 +104,7 @@ internal class XmlStreamWriter(
 
         indentLevel -= indentSize
 
-        val tag = tagStack.pop()
+        val tag = tagStack.removeLast()
         if (tag.hasChildren) {
             writeIndent()
             write("</")
@@ -141,7 +140,7 @@ internal class XmlStreamWriter(
         closeStartTagIfNeeded()
         writeIndent()
         write(text.replace("&", "&amp;")
-                .replace("<", "&lt;"))
+            .replace("<", "&lt;"))
         writeLine()
     }
 
@@ -168,7 +167,6 @@ internal class XmlStreamWriter(
         }
         return arr.requireNoNulls()
     }
-
 
     private fun write(str: String) {
         writer.write(str)
@@ -204,7 +202,7 @@ internal class XmlStreamWriter(
 
     private fun closeStartTagIfNeeded() {
         // If last write was a start tag, close it.
-        val tag = tagStack.peek()
+        val tag = tagStack.lastOrNull()
         if (tag?.hasChildren == false) {
             write(">")
             writeLine()
@@ -235,15 +233,15 @@ internal class XmlStreamWriter(
 
     private fun writeAttribute(tagName: String, name: String, value: Any) {
         val valueStr = if (value is Number) {
-            numberFmt.format(value)  // For floating point, omit '.0'.
+            numberFmt.format(value) // For floating point, omit '.0'.
         } else {
             value.toString()
-                    .replace("&", "&amp;")
-                    .replace("<", "&lt;")
-                    .replace("\"", "&quot;")
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace("\"", "&quot;")
         }
 
-        val lineWidthAfter = currentLineWidth + name.length + valueStr.length + 3
+        val lineWidthAfter = currentLineWidth + name.length + valueStr.length + "=\"\"".length
 
         if (prettyPrint && attrIndentLevel == 0) {
             // Attribute indentation level wasn't set yet. (first attribute)
@@ -252,8 +250,7 @@ internal class XmlStreamWriter(
                 indentSize
             } else {
                 // First attribute will be on same line, align others with first.
-                // +2 chars for '<' and the space separating the tag and the first attribute.
-                tagName.length + 2
+                tagName.length + "< ".length
             }
         }
 
@@ -274,18 +271,18 @@ internal class XmlStreamWriter(
 
     private fun String.checkXmlName() {
         check(this.isNotEmpty()) { "Invalid empty name" }
-        check(ILLEGAL_CHARS_REGEX !in this
-                && INVALID_NAME_CHARS_REGEX !in this) { "Invalid chars in name" }
+        check(ILLEGAL_CHARS_REGEX !in this &&
+                INVALID_NAME_CHARS_REGEX !in this) { "Invalid chars in name" }
         if (':' in this) {
             check(this.substringBefore(':') in namespaces) { "Unknown attribute namespace" }
             check(this.count { it == ':' } == 1) { "Multiple colons in name" }
         }
     }
 
-
-    data class Tag(val name: String,
-                   var hasChildren: Boolean)
-
+    data class Tag(
+        val name: String,
+        var hasChildren: Boolean
+    )
 
     companion object {
         private const val XML_PROLOG = "?xml"
@@ -295,4 +292,3 @@ internal class XmlStreamWriter(
     }
 
 }
-

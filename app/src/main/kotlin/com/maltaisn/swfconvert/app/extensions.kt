@@ -19,7 +19,6 @@ package com.maltaisn.swfconvert.app
 import com.maltaisn.swfconvert.core.image.Color
 import java.io.File
 
-
 /**
  * Attempts to fix [https://github.com/cbeust/jcommander/issues/365].
  * Unknown options are not getting caught, so this must be checked for
@@ -38,8 +37,9 @@ fun String.toBooleanOrNull() = when (this.toLowerCase()) {
     else -> null
 }
 
+@Suppress("MagicNumber")
 fun String.toColorOrNull(): Color? = when (this.length) {
-    7 -> this.substring(1).toIntOrNull(16)?.let { Color(it).withAlpha(0xFF) }
+    7 -> this.substring(1).toIntOrNull(16)?.let { Color(it).opaque }
     9 -> this.substring(1).toIntOrNull(16)?.let { Color(it) }
     else -> null
 }
@@ -54,6 +54,6 @@ inline fun <T> String.toListOrNull(crossinline parseElement: (String) -> T?): Li
         return null
     }
     return this.substring(1, this.length - 1)
-            .split(',')
-            .map { parseElement(it.trim()) ?: return null }
+        .split(',')
+        .map { parseElement(it.trim()) ?: return null }
 }

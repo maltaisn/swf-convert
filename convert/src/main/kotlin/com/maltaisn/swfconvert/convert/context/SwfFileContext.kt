@@ -18,13 +18,14 @@ package com.maltaisn.swfconvert.convert.context
 
 import java.io.File
 
-
 /**
  * Context for a SWF [file] at index [fileIndex] being converted.
  */
-internal class SwfFileContext(parent: ConvertContext?,
-                              val file: File,
-                              val fileIndex: Int) : ConvertContext(parent) {
+internal class SwfFileContext(
+    parent: ConvertContext?,
+    val file: File,
+    val fileIndex: Int
+) : ConvertContext(parent) {
 
     override val description: String
         get() = "file #$fileIndex ($file)"

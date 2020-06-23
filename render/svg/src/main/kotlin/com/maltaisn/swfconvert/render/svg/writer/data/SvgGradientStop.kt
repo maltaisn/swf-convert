@@ -18,10 +18,11 @@ package com.maltaisn.swfconvert.render.svg.writer.data
 
 import com.maltaisn.swfconvert.core.image.Color
 
-
-internal data class SvgGradientStop(val offset: Float,
-                                    val color: Color,
-                                    val opacity: Float) {
+internal data class SvgGradientStop(
+    val offset: Float,
+    val color: Color,
+    val opacity: Float
+) {
     init {
         require(offset in 0f..1f) { "Gradient stop offset must be between 0 and 1" }
     }

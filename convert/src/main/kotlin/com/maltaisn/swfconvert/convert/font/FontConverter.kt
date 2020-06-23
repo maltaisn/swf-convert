@@ -31,19 +31,24 @@ import com.maltaisn.swfconvert.convert.wrapper.WDefineFont
 import com.maltaisn.swfconvert.core.ProgressCallback
 import com.maltaisn.swfconvert.core.showProgress
 import com.maltaisn.swfconvert.core.showStep
-import com.maltaisn.swfconvert.core.text.*
+import com.maltaisn.swfconvert.core.text.BaseFont
+import com.maltaisn.swfconvert.core.text.Font
+import com.maltaisn.swfconvert.core.text.FontGlyph
+import com.maltaisn.swfconvert.core.text.FontId
+import com.maltaisn.swfconvert.core.text.FontMetrics
+import com.maltaisn.swfconvert.core.text.GlyphData
+import com.maltaisn.swfconvert.core.toHexString
 import org.apache.logging.log4j.kotlin.logger
 import java.io.File
 import java.text.NumberFormat
-import java.util.*
+import java.util.UUID
 import javax.inject.Inject
 
-
 internal class FontConverter @Inject constructor(
-        private val config: ConvertConfiguration,
-        private val progressCb: ProgressCallback,
-        private val glyphPathParser: GlyphPathParser,
-        private val fontBuilder: FontBuilder
+    private val config: ConvertConfiguration,
+    private val progressCb: ProgressCallback,
+    private val glyphPathParser: GlyphPathParser,
+    private val fontBuilder: FontBuilder
 ) {
 
     private val logger = logger()
@@ -128,7 +133,7 @@ internal class FontConverter @Inject constructor(
 
     private fun createSwfFonts(context: SwfFileContext, swf: Movie, fileIndex: Int): List<Font> {
         val fonts = mutableListOf<Font>()
-        loop@ for (obj in swf.objects) {
+        for (obj in swf.objects) {
             if (obj !is DefineTag) {
                 continue
             }
@@ -136,14 +141,7 @@ internal class FontConverter @Inject constructor(
             val objContext = SwfObjectContext(context, listOf(obj.identifier))
 
             // Check if object is a font
-            val wfont = when (obj) {
-                is DefineFont -> conversionError(objContext, "Unsupported DefineFont tag")
-                is DefineFont2 -> WDefineFont(obj, config.fontScale2)
-                is DefineFont3 -> WDefineFont(obj, config.fontScale3)
-                is DefineFont4 -> conversionError(objContext, "Unsupported DefineFont4 tag")
-                else -> continue@loop
-            }
-
+            val wfont = obj.toFontWrapperOrNull(context) ?: continue
             if (wfont.kernings.isNotEmpty()) {
                 conversionError(objContext, "Unsupported font kerning")
             }
@@ -162,14 +160,21 @@ internal class FontConverter @Inject constructor(
             val scale = wfont.scale
             val fontId = FontId(fileIndex, wfont.identifier)
             val metrics = FontMetrics(wfont.ascent * scale.scaleX,
-                    wfont.descent * scale.scaleX, scale)
+                wfont.descent * scale.scaleX, scale)
             fonts += Font(fontId, wfont.name, metrics, glyphs)
         }
         return fonts
     }
 
-    private fun createFontGlyph(data: GlyphData, code: Int,
-                                assignedCodes: Set<Char>): FontGlyph {
+    private fun DefineTag.toFontWrapperOrNull(context: SwfFileContext) = when (this) {
+        is DefineFont -> conversionError(context, "Unsupported DefineFont tag")
+        is DefineFont2 -> WDefineFont(this, config.fontScale2)
+        is DefineFont3 -> WDefineFont(this, config.fontScale3)
+        is DefineFont4 -> conversionError(context, "Unsupported DefineFont4 tag")
+        else -> null
+    }
+
+    private fun createFontGlyph(data: GlyphData, code: Int, assignedCodes: Set<Char>): FontGlyph {
         var char = code.toChar()
         var newUnknownChar = false
         when {
@@ -225,7 +230,6 @@ internal class FontConverter @Inject constructor(
         return FontGlyph(char, data)
     }
 
-
     private fun mergeFonts(allFonts: List<Font>): List<FontGroup> {
         val fontsByName = allFonts.groupBy { it.name }
         val allGroups = mutableListOf<FontGroup>()
@@ -233,7 +237,7 @@ internal class FontConverter @Inject constructor(
             // Create font groups
             val groups = fonts.map { font ->
                 FontGroup(font.name, font.metrics, mutableListOf(font),
-                        font.glyphs.associateByTo(mutableMapOf()) { it.char })
+                    font.glyphs.associateByTo(mutableMapOf()) { it.char })
             }
 
             // Merge groups
@@ -246,8 +250,10 @@ internal class FontConverter @Inject constructor(
         return mergeFontGroups(allGroups, false)
     }
 
-    private fun mergeFontGroups(groups: List<FontGroup>,
-                                requireCommon: Boolean): List<FontGroup> {
+    private fun mergeFontGroups(
+        groups: List<FontGroup>,
+        requireCommon: Boolean
+    ): List<FontGroup> {
         if (!config.groupFonts) {
             return groups
         }
@@ -297,10 +303,12 @@ internal class FontConverter @Inject constructor(
         }
     }
 
-    private fun Int.toCharHex() = this.toString(16).toUpperCase().padStart(4, '0')
+    private fun Int.toCharHex() = this.toHexString().padStart(UNICODE_LITERAL_MIN_LENGTH, '0')
 
     companion object {
         private const val FIRST_CODE_FOR_UNKNOWN = 0xE000
+
+        private const val UNICODE_LITERAL_MIN_LENGTH = 4
 
         private val PERCENT_FMT = NumberFormat.getPercentInstance().apply {
             maximumFractionDigits = 2

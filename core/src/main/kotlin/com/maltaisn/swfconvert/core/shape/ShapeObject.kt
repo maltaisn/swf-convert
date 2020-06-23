@@ -18,10 +18,10 @@ package com.maltaisn.swfconvert.core.shape
 
 import com.maltaisn.swfconvert.core.FrameObject
 
-
-class ShapeObject(override val id: Int,
-                  val paths: List<Path>) : FrameObject(id) {
+class ShapeObject(
+    override val id: Int,
+    val paths: List<Path>
+) : FrameObject {
 
     override fun toString() = "Shape[$id](paths=$paths)"
-
 }

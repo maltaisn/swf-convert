@@ -16,75 +16,91 @@
 
 package com.maltaisn.swfconvert.render.ir.data
 
-
 import com.maltaisn.swfconvert.core.BlendMode
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-
 
 @Serializable
 internal sealed class IrObject {
 
     @Serializable
     @SerialName("frame_group")
-    data class FrameGroup(val id: Int,
-                          val width: Float,
-                          val height: Float,
-                          val actualWidth: Float,
-                          val actualHeight: Float,
-                          val padding: Float,
-                          val transform: String,
-                          val objects: List<IrObject>) : IrObject()
+    data class FrameGroup(
+        val id: Int,
+        val width: Float,
+        val height: Float,
+        val actualWidth: Float,
+        val actualHeight: Float,
+        val padding: Float,
+        val transform: String,
+        val objects: List<IrObject>
+    ) : IrObject()
 
     @Serializable
     @SerialName("simple_group")
-    data class SimpleGroup(val id: Int,
-                           val objects: List<IrObject>) : IrObject()
+    data class SimpleGroup(
+        val id: Int,
+        val objects: List<IrObject>
+    ) : IrObject()
 
     @Serializable
     @SerialName("transform_group")
-    data class TransformGroup(val id: Int,
-                              val transform: String,
-                              val objects: List<IrObject>) : IrObject()
+    data class TransformGroup(
+        val id: Int,
+        val transform: String,
+        val objects: List<IrObject>
+    ) : IrObject()
 
     @Serializable
     @SerialName("blend_group")
-    data class BlendGroup(val id: Int,
-                          val blendMode: BlendMode,
-                          val objects: List<IrObject>) : IrObject()
+    data class BlendGroup(
+        val id: Int,
+        val blendMode: BlendMode,
+        val objects: List<IrObject>
+    ) : IrObject()
 
     @Serializable
     @SerialName("clip_group")
-    data class ClipGroup(val id: Int,
-                         val clips: List<IrPath>,
-                         val objects: List<IrObject>) : IrObject()
+    data class ClipGroup(
+        val id: Int,
+        val clips: List<IrPath>,
+        val objects: List<IrObject>
+    ) : IrObject()
 
     @Serializable
     @SerialName("masked_group")
-    data class MaskedGroup(val id: Int,
-                           val bounds: IrRectangle,
-                           val objects: List<IrObject>) : IrObject()
+    data class MaskedGroup(
+        val id: Int,
+        val bounds: IrRectangle,
+        val objects: List<IrObject>
+    ) : IrObject()
 
     @Serializable
     @SerialName("shape")
-    data class Shape(val id: Int,
-                     val paths: List<IrPath>) : IrObject()
+    data class Shape(
+        val id: Int,
+        val paths: List<IrPath>
+    ) : IrObject()
 
     @Serializable
     @SerialName("text")
-    data class Text(val id: Int,
-                    val x: Float,
-                    val y: Float,
-                    val fontSize: Float,
-                    val color: String,
-                    val font: String?,
-                    val text: String,
-                    val glyphOffsets: List<Float>) : IrObject()
+    data class Text(
+        val id: Int,
+        val x: Float,
+        val y: Float,
+        val fontSize: Float,
+        val color: String,
+        val font: String?,
+        val text: String,
+        val glyphOffsets: List<Float>
+    ) : IrObject()
 
 }
 
 @Serializable
-internal data class IrRectangle(val x: Double,
-                                val y: Double,
-                                val width: Double,
-                                val height: Double)
+internal data class IrRectangle(
+    val x: Double,
+    val y: Double,
+    val width: Double,
+    val height: Double
+)

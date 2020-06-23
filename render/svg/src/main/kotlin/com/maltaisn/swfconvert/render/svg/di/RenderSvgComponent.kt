@@ -19,8 +19,7 @@ package com.maltaisn.swfconvert.render.svg.di
 import com.maltaisn.swfconvert.render.core.di.RenderCoreComponent
 import dagger.Component
 
-
 @Component(
-        modules = [RenderSvgModule::class],
-        dependencies = [RenderCoreComponent::class])
+    modules = [RenderSvgModule::class],
+    dependencies = [RenderCoreComponent::class])
 interface RenderSvgComponent

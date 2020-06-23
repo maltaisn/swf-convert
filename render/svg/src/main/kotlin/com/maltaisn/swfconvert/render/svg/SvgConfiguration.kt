@@ -19,38 +19,37 @@ package com.maltaisn.swfconvert.render.svg
 import com.maltaisn.swfconvert.render.core.RenderConfiguration
 import java.io.File
 
-
 /**
  * Configuration for the SVG output format.
  */
 data class SvgConfiguration(
 
-        override val output: List<File>,
-        override val tempDir: File,
+    override val output: List<File>,
+    override val tempDir: File,
 
-        /**
-         * Whether to pretty print SVG or not. Pretty printing will also make
-         * paths and values list more readable by optimizing them less.
-         */
-        val prettyPrint: Boolean,
+    /**
+     * Whether to pretty print SVG or not. Pretty printing will also make
+     * paths and values list more readable by optimizing them less.
+     */
+    val prettyPrint: Boolean,
 
-        /** Whether to use the SVGZ format or not (gzip compression). */
-        val compress: Boolean,
+    /** Whether to use the SVGZ format or not (gzip compression). */
+    val compress: Boolean,
 
-        /** General number precision used for path, position and dimension values. */
-        val precision: Int,
+    /** General number precision used for path, position and dimension values. */
+    val precision: Int,
 
-        /** Number precision used for scale and shear componenets of transforms. */
-        val transformPrecision: Int,
+    /** Number precision used for scale and shear componenets of transforms. */
+    val transformPrecision: Int,
 
-        /** Number precision used for percentage values (gradient stops and opacity). */
-        val percentPrecision: Int,
+    /** Number precision used for percentage values (gradient stops and opacity). */
+    val percentPrecision: Int,
 
-        /** Whether to write XML prolog in SVG documents or not. */
-        val writeProlog: Boolean,
+    /** Whether to write XML prolog in SVG documents or not. */
+    val writeProlog: Boolean,
 
-        // DEBUG OPTIONS
+    // DEBUG OPTIONS
 
-        override val parallelFrameRendering: Boolean
+    override val parallelFrameRendering: Boolean
 
 ) : RenderConfiguration

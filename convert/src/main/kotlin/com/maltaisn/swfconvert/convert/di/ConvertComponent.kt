@@ -21,7 +21,6 @@ import com.maltaisn.swfconvert.core.ProgressCallback
 import dagger.BindsInstance
 import dagger.Component
 
-
 @Component(modules = [ConvertModule::class])
 interface ConvertComponent {
 
@@ -29,7 +28,9 @@ interface ConvertComponent {
 
     @Component.Factory
     interface Factory {
-        fun create(@BindsInstance config: ConvertConfiguration,
-                   @BindsInstance progressCallback: ProgressCallback): ConvertComponent
+        fun create(
+            @BindsInstance config: ConvertConfiguration,
+            @BindsInstance progressCallback: ProgressCallback
+        ): ConvertComponent
     }
 }

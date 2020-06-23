@@ -14,85 +14,12 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.render.svg.writer
+package com.maltaisn.swfconvert.render.svg.writer.format
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.junit.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotSame
-import kotlin.test.assertSame
 
-
-class SvgExtensionsTest {
-
-    @Test
-    fun `should return different NumberFormat instances on different threads`() = runBlocking {
-        val nbFmt0 = numberFormat.get()
-        val nbFmt1 = numberFormat.get()
-        val nbFmt2 = withContext(Dispatchers.IO) {
-            numberFormat.get()
-        }
-        assertSame(nbFmt0, nbFmt1)
-        assertNotSame(nbFmt1, nbFmt2)
-    }
-
-    @Test
-    fun `should format value precision=0`() {
-        assertEquals("1", 1.123456f.format(0))
-    }
-
-    @Test
-    fun `should format value precision=2`() {
-        assertEquals("1.12", 1.123456f.format(2))
-    }
-
-    @Test
-    fun `should format value leading zero`() {
-        assertEquals("0.1", 0.1f.format(1))
-    }
-
-    @Test
-    fun `should format value negative`() {
-        assertEquals("-1.3", (-1.3f).format(2))
-    }
-
-    @Test
-    fun `should format value leading zero and negative`() {
-        assertEquals("-0.3", (-0.3f).format(2))
-    }
-
-    @Test
-    fun `should format value minus zero`() {
-        assertEquals("-0", (-0f).format(1))
-    }
-
-    @Test
-    fun `should format value optimized precision=2`() {
-        assertEquals("1.12", 1.123456f.format(2))
-    }
-
-    @Test
-    fun `should format value optimized leading zero`() {
-        assertEquals(".1", 0.1f.formatOptimized(1))
-    }
-
-    @Test
-    fun `should format value optimized minus zero`() {
-        assertEquals("0", (-0f).formatOptimized(1))
-    }
-
-    @Test
-    fun `should format value optimized negative`() {
-        assertEquals("-1.3", (-1.3f).formatOptimized(2))
-    }
-
-    @Test
-    fun `should format value optimized leading zero and negative`() {
-        assertEquals("-.3", (-0.3f).formatOptimized(2))
-    }
-
+class ValuesListFormatTest {
 
     @Test
     fun `should append values list no values`() {

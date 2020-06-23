@@ -19,11 +19,12 @@ package com.maltaisn.swfconvert.render.ir.data
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-
 @Serializable
-internal data class IrPath(val data: String,
-                           val fillStyle: IrPathFillStyle? = null,
-                           val lineStyle: IrPathLineStyle? = null)
+internal data class IrPath(
+    val data: String,
+    val fillStyle: IrPathFillStyle? = null,
+    val lineStyle: IrPathLineStyle? = null
+)
 
 @Serializable
 internal sealed class IrPathFillStyle {
@@ -34,27 +35,37 @@ internal sealed class IrPathFillStyle {
 
     @Serializable
     @SerialName("image")
-    data class Image(val id: Int,
-                     val transform: String,
-                     val image: IrImageData) : IrPathFillStyle()
+    data class Image(
+        val id: Int,
+        val transform: String,
+        val image: IrImageData
+    ) : IrPathFillStyle()
 
     @Serializable
     @SerialName("gradient")
-    data class Gradient(val colors: List<IrGradientColor>,
-                        val transform: String) : IrPathFillStyle()
+    data class Gradient(
+        val colors: List<IrGradientColor>,
+        val transform: String
+    ) : IrPathFillStyle()
 }
 
 @Serializable
-internal data class IrImageData(val dataFile: String,
-                                val alphaDataFile: String? = null)
+internal data class IrImageData(
+    val dataFile: String,
+    val alphaDataFile: String? = null
+)
 
 @Serializable
-internal data class IrGradientColor(val color: String,
-                                    val ratio: Float)
+internal data class IrGradientColor(
+    val color: String,
+    val ratio: Float
+)
 
 @Serializable
-internal data class IrPathLineStyle(val color: String,
-                                    val width: Float,
-                                    val cap: Int,
-                                    val join: Int,
-                                    val miterLimit: Float)
+internal data class IrPathLineStyle(
+    val color: String,
+    val width: Float,
+    val cap: Int,
+    val join: Int,
+    val miterLimit: Float
+)

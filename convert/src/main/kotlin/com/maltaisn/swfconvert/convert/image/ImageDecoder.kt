@@ -16,7 +16,12 @@
 
 package com.maltaisn.swfconvert.convert.image
 
-import com.flagstone.transform.image.*
+import com.flagstone.transform.image.DefineImage
+import com.flagstone.transform.image.DefineImage2
+import com.flagstone.transform.image.DefineJPEGImage2
+import com.flagstone.transform.image.DefineJPEGImage3
+import com.flagstone.transform.image.DefineJPEGImage4
+import com.flagstone.transform.image.ImageTag
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
 import com.maltaisn.swfconvert.convert.context.SwfObjectContext
 import com.maltaisn.swfconvert.convert.conversionError
@@ -24,8 +29,11 @@ import com.maltaisn.swfconvert.convert.wrapper.WDefineImage
 import com.maltaisn.swfconvert.convert.zlibDecompress
 import com.maltaisn.swfconvert.core.Disposable
 import com.maltaisn.swfconvert.core.YAxisDirection
-import com.maltaisn.swfconvert.core.image.*
+import com.maltaisn.swfconvert.core.image.Color
+import com.maltaisn.swfconvert.core.image.ImageData
+import com.maltaisn.swfconvert.core.image.ImageDataCreator
 import com.maltaisn.swfconvert.core.image.ImageFormat
+import com.maltaisn.swfconvert.core.image.flippedVertically
 import com.mortennobel.imagescaling.ResampleOp
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
@@ -33,32 +41,33 @@ import javax.imageio.ImageIO
 import javax.inject.Inject
 import kotlin.math.roundToInt
 
-
 /**
  * Converts SWF image tags to binary image data, optionally applying a color transform.
  * Doesn't support [DefineJPEGImage4] for now. (deblocking filter)
  * See [https://www.adobe.com/content/dam/acom/en/devnet/pdf/swf-file-format-spec.pdf].
  */
 internal class ImageDecoder @Inject constructor(
-        private val config: ConvertConfiguration,
-        private val imageDataCreator: ImageDataCreator
+    private val config: ConvertConfiguration,
+    private val imageDataCreator: ImageDataCreator
 ) : Disposable {
 
     override fun dispose() {
         imageDataCreator.dispose()
     }
 
-    fun convertImage(context: SwfObjectContext,
-                     image: ImageTag,
-                     colorTransform: CompositeColorTransform,
-                     density: Float) =
-            when (image) {
-                is DefineImage -> convertDefineImage(context, WDefineImage(image), colorTransform, density)
-                is DefineImage2 -> convertDefineImage2(context, WDefineImage(image), colorTransform, density)
-                is DefineJPEGImage2 -> convertJpegImage2(image, colorTransform, density)
-                is DefineJPEGImage3 -> convertJpegImage3(image, colorTransform, density)
-                else -> conversionError(context, "Unsupported image type ${image.javaClass.simpleName}")
-            }
+    fun convertImage(
+        context: SwfObjectContext,
+        image: ImageTag,
+        colorTransform: CompositeColorTransform,
+        density: Float
+    ) =
+        when (image) {
+            is DefineImage -> convertDefineImage(context, WDefineImage(image), colorTransform, density)
+            is DefineImage2 -> convertDefineImage2(context, WDefineImage(image), colorTransform, density)
+            is DefineJPEGImage2 -> convertJpegImage2(image, colorTransform, density)
+            is DefineJPEGImage3 -> convertJpegImage3(image, colorTransform, density)
+            else -> conversionError(context, "Unsupported image type ${image.javaClass.simpleName}")
+        }
 
     // DEFINE BITS LOSSLESS DECODING
 
@@ -68,15 +77,20 @@ internal class ImageDecoder @Inject constructor(
      * - RGB555 (16 bits) encoded bitmap.
      * - RGB888 (24 bits) encoded bitmap.
      */
-    private fun convertDefineImage(context: SwfObjectContext,
-                                   image: WDefineImage,
-                                   colorTransform: CompositeColorTransform,
-                                   density: Float): ImageData {
+    private fun convertDefineImage(
+        context: SwfObjectContext,
+        image: WDefineImage,
+        colorTransform: CompositeColorTransform,
+        density: Float
+    ): ImageData {
         // Create buffered image. RGB channels only, no alpha.
         val buffImage = when (image.bits) {
-            8 -> convertIndexedImage(image, BufferedImage.TYPE_INT_RGB, 3, (Color)::fromRgbBytes)
-            16 -> convertRawImage(image, BufferedImage.TYPE_INT_RGB, 2, (Color)::fromPix15Bytes)
-            24 -> convertRawImage(image, BufferedImage.TYPE_INT_RGB, 4, (Color)::fromPix24Bytes)
+            INDEXED_RGB_BITS -> convertIndexedImage(image, BufferedImage.TYPE_INT_RGB,
+                INDEXED_RGB_BYTES, ByteArray::rgbBytesToColor)
+            RAW_PIX15_BITS -> convertRawImage(image, BufferedImage.TYPE_INT_RGB,
+                RAW_PIX15_BYTES, ByteArray::pix15BytesToColor)
+            RAW_PIX24_BITS -> convertRawImage(image, BufferedImage.TYPE_INT_RGB,
+                RAW_PIX24_BYTES, ByteArray::pix24BytesToColor)
             else -> conversionError(context, "Invalid number of image bits ${image.bits}")
         }
         return createTransformedImageData(buffImage, colorTransform, density, ImageFormat.PNG)
@@ -87,14 +101,18 @@ internal class ImageDecoder @Inject constructor(
      * - An indexed bitmap image with 256 32-bit colors table. (RGBA)
      * - ARGB8888 (32 bits) encoded bitmap.
      */
-    private fun convertDefineImage2(context: SwfObjectContext,
-                                    image: WDefineImage,
-                                    colorTransform: CompositeColorTransform,
-                                    density: Float): ImageData {
+    private fun convertDefineImage2(
+        context: SwfObjectContext,
+        image: WDefineImage,
+        colorTransform: CompositeColorTransform,
+        density: Float
+    ): ImageData {
         // Create buffered image. RGB channels + alpha channel.
         val buffImage = when (image.bits) {
-            8 -> convertIndexedImage(image, BufferedImage.TYPE_INT_ARGB, 4, (Color)::fromRgbaBytes)
-            32 -> convertRawImage(image, BufferedImage.TYPE_INT_ARGB, 4, (Color)::fromArgbBytes)
+            INDEXED_RGBA_BITS -> convertIndexedImage(image, BufferedImage.TYPE_INT_ARGB,
+                INDEXED_RGBA_BYTES, ByteArray::rgbaBytesToColor)
+            RAW_ARGB_BITS -> convertRawImage(image, BufferedImage.TYPE_INT_ARGB,
+                RAW_ARGB_BYTES, ByteArray::argbBytesToColor)
             else -> conversionError(context, "Invalid number of image bits ${image.bits}")
         }
         return createTransformedImageData(buffImage, colorTransform, density, ImageFormat.PNG)
@@ -105,24 +123,29 @@ internal class ImageDecoder @Inject constructor(
      * to a [BufferedImage]. Colors in table occupy a certain number of [bytes]
      * and are decoded to ARGB values using [bitsConverter].
      */
-    private fun convertIndexedImage(image: WDefineImage, type: Int, bytes: Int,
-                                    bitsConverter: (ByteArray, Int) -> Color): BufferedImage {
+    private fun convertIndexedImage(
+        image: WDefineImage,
+        type: Int,
+        bytes: Int,
+        bitsConverter: ByteArray.(Int) -> Color
+    ): BufferedImage {
         // Image data is color table then pixel data as indices in color table.
         // Color table colors is either RGB or RGBA.
         val colors = IntArray(image.tableSize) {
-            bitsConverter(image.data, it * bytes).value
+            image.data.bitsConverter(it * bytes).value
         }
         val buffImage = BufferedImage(image.width, image.height, type)
-        var pos = image.tableSize * bytes
-        var i = 0
+        var pos = image.tableSize * bytes // Current pos in image data including color table
+        var i = 0 // Current pos in image data, excluding color table
         for (y in 0 until image.height) {
             for (x in 0 until image.width) {
-                buffImage.setRGB(x, y, colors[image.data[pos].toInt() and 0xFF])
+                buffImage.setRGB(x, y, colors[image.data[pos].toUByte().toInt()])
                 pos++
                 i++
             }
-            while (i % 4 != 0) {
-                // Pad to 32-bits (relative to the start of the pixel data!)
+            while (i % IMAGE_DATA_PAD_BYTES != 0) {
+                // Account for padding. Note that padding is relative to the start of the
+                // color table, not the start of the image data.
                 pos++
                 i++
             }
@@ -136,8 +159,12 @@ internal class ImageDecoder @Inject constructor(
      * a [BufferedImage]. Colors in the bitmap occupy a certain number of [bytes],
      * and are decoded to ARGB values using [bitsConverter]
      */
-    private fun convertRawImage(image: WDefineImage, type: Int, bytes: Int,
-                                bitsConverter: (ByteArray, Int) -> Color): BufferedImage {
+    private fun convertRawImage(
+        image: WDefineImage,
+        type: Int,
+        bytes: Int,
+        bitsConverter: (ByteArray, Int) -> Color
+    ): BufferedImage {
         // Image data only. Data can be PIX15, PIX24 or ARGB.
         val buffImage = BufferedImage(image.width, image.height, type)
         var i = 0
@@ -146,21 +173,23 @@ internal class ImageDecoder @Inject constructor(
                 buffImage.setRGB(x, y, bitsConverter(image.data, i).value)
                 i += bytes
             }
-            while (i % 4 != 0) {
-                i++  // Pad to 32-bits
+            while (i % IMAGE_DATA_PAD_BYTES != 0) {
+                i++ // Account for padding by skipping data bytes
             }
         }
         return buffImage
     }
-
 
     // DEFINE JPEG DECODING
 
     /**
      * DefineBitsJPEG2 tag is just plain JPEG data, without alpha channel.
      */
-    private fun convertJpegImage2(image: DefineJPEGImage2, colorTransform: CompositeColorTransform,
-                                  density: Float): ImageData {
+    private fun convertJpegImage2(
+        image: DefineJPEGImage2,
+        colorTransform: CompositeColorTransform,
+        density: Float
+    ): ImageData {
         val buffImage = ImageIO.read(ByteArrayInputStream(image.image))
         return createTransformedImageData(buffImage, colorTransform, density, ImageFormat.JPG)
     }
@@ -168,8 +197,11 @@ internal class ImageDecoder @Inject constructor(
     /**
      * DefineBitsJPEG3 tag is JPEG data with a ZLIB compressed alpha channel.
      */
-    private fun convertJpegImage3(image: DefineJPEGImage3, colorTransform: CompositeColorTransform,
-                                  density: Float): ImageData {
+    private fun convertJpegImage3(
+        image: DefineJPEGImage3,
+        colorTransform: CompositeColorTransform,
+        density: Float
+    ): ImageData {
         // JPEG/PNG/GIF image where alpha channel is stored separatedly.
         val w = image.width
         val h = image.height
@@ -190,8 +222,8 @@ internal class ImageDecoder @Inject constructor(
         var i = 0
         for (y in 0 until h) {
             for (x in 0 until w) {
-                var color = Color(buffImage.getRGB(x, y))  // Get pixel color without alpha
-                color = color.withAlpha(alphaBytes[i].toInt() and 0xFF)  // Set alpha value on color
+                var color = Color(buffImage.getRGB(x, y)) // Get pixel color without alpha
+                color = color.withAlpha(alphaBytes[i].toUByte().toInt()) // Set alpha value on color
                 color = color.divideAlpha()
                 newImage.setRGB(x, y, color.value)
                 i++
@@ -211,10 +243,12 @@ internal class ImageDecoder @Inject constructor(
      * @param density Density of [buffImage] in DPI. Use `null` to disable downsampling.
      * @param colorTransform Color transform to apply on [buffImage]. Use `null` for none.
      */
-    private fun createTransformedImageData(buffImage: BufferedImage,
-                                           colorTransform: CompositeColorTransform?,
-                                           density: Float?,
-                                           defaultFormat: ImageFormat): ImageData {
+    private fun createTransformedImageData(
+        buffImage: BufferedImage,
+        colorTransform: CompositeColorTransform?,
+        density: Float?,
+        defaultFormat: ImageFormat
+    ): ImageData {
         // Transform image
         var image = buffImage
         colorTransform?.transform(image)
@@ -235,11 +269,13 @@ internal class ImageDecoder @Inject constructor(
      * if its [currentDensity] is over [maxDensity]. New density will be [maxDensity].
      * If density is already below or downsampling is disabled, the same image is returned.
      */
-    private fun BufferedImage.downsampled(currentDensity: Float,
-                                          maxDensity: Float): BufferedImage {
+    private fun BufferedImage.downsampled(
+        currentDensity: Float,
+        maxDensity: Float
+    ): BufferedImage {
         val min = config.downsampleMinSize.toFloat()
-        if (!config.downsampleImages || currentDensity < maxDensity ||
-                this.width < min || this.height < min) {
+        val isTooSmall = this.width < min || this.height < min
+        if (!config.downsampleImages || currentDensity < maxDensity || isTooSmall) {
             // Downsampling disabled, or density is below maximum, or size is already very small.
             return this
         }
@@ -265,6 +301,30 @@ internal class ImageDecoder @Inject constructor(
         // TODO implement "fast" filter
         val destImage = BufferedImage(iw, ih, this.type)
         return resizeOp.filter(this, destImage)
+    }
+
+    companion object {
+        // Constants defined in DefineImage and DefineImage2 for `image.tableSize`.
+        private const val INDEXED_RGB_BITS = 8
+        private const val INDEXED_RGBA_BITS = 8
+
+        // Constants defined in DefineImage and DefineImage2 for `image.pixelSize`.
+        private const val RAW_PIX15_BITS = 16
+        private const val RAW_PIX24_BITS = 24
+        private const val RAW_ARGB_BITS = 32
+
+        // Number of bytes occupied by colors in indexed image formats
+        private const val INDEXED_RGB_BYTES = 3
+        private const val INDEXED_RGBA_BYTES = 4
+
+        // Number of bytes occupied by colors in raw image formats
+        private const val RAW_PIX15_BYTES = 2
+        private const val RAW_PIX24_BYTES = 4
+        private const val RAW_ARGB_BYTES = 4
+
+        // Image data records pad each image line data to 32-bit relative to start of data.
+        // See the note on the COLORMAPDATA and ALPHACOLORMAPDATA records in SWF reference.
+        private const val IMAGE_DATA_PAD_BYTES = 4
     }
 
 }

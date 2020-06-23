@@ -20,9 +20,13 @@ import com.maltaisn.swfconvert.core.BlendMode
 import com.maltaisn.swfconvert.core.FrameGroup
 import com.maltaisn.swfconvert.core.FrameObject
 import com.maltaisn.swfconvert.core.GroupObject
-import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.core.shape.Path
-import com.maltaisn.swfconvert.core.shape.PathElement.*
+import com.maltaisn.swfconvert.core.shape.PathElement.ClosePath
+import com.maltaisn.swfconvert.core.shape.PathElement.CubicTo
+import com.maltaisn.swfconvert.core.shape.PathElement.LineTo
+import com.maltaisn.swfconvert.core.shape.PathElement.MoveTo
+import com.maltaisn.swfconvert.core.shape.PathElement.QuadTo
+import com.maltaisn.swfconvert.core.shape.PathElement.Rectangle
 import com.maltaisn.swfconvert.core.shape.PathFillStyle
 import com.maltaisn.swfconvert.core.shape.PathLineStyle
 import com.maltaisn.swfconvert.core.shape.ShapeObject
@@ -30,7 +34,20 @@ import com.maltaisn.swfconvert.core.text.GlyphData
 import com.maltaisn.swfconvert.core.text.TextObject
 import com.maltaisn.swfconvert.render.svg.writer.SvgPathWriter
 import com.maltaisn.swfconvert.render.svg.writer.SvgStreamWriter
-import com.maltaisn.swfconvert.render.svg.writer.data.*
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgFillColor
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgFillId
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgFillNone
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgFillRule
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgGradientStop
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgGradientUnits
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgGraphicsState
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgMixBlendMode
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgNumber
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgPreserveAspectRatio
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgStrokeLineCap
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgStrokeLineJoin
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgTransform
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgUnit
 import java.awt.BasicStroke
 import java.awt.geom.AffineTransform
 import java.awt.geom.Rectangle2D
@@ -40,9 +57,8 @@ import java.io.OutputStream
 import java.util.zip.GZIPOutputStream
 import javax.inject.Inject
 
-
 internal class SvgFrameRenderer @Inject constructor(
-        private val config: SvgConfiguration
+    private val config: SvgConfiguration
 ) {
 
     private lateinit var svg: SvgStreamWriter
@@ -60,8 +76,10 @@ internal class SvgFrameRenderer @Inject constructor(
     private lateinit var imagesDir: File
     private lateinit var fontsDir: File
 
-    fun renderFrame(index: Int, frame: FrameGroup,
-                    imagesDir: File, fontsDir: File) {
+    fun renderFrame(
+        index: Int, frame: FrameGroup,
+        imagesDir: File, fontsDir: File
+    ) {
         val outputFile = config.output[index]
         val outputDir = outputFile.parentFile
         this.imagesDir = imagesDir.relativeToOrSelf(outputDir)
@@ -75,16 +93,16 @@ internal class SvgFrameRenderer @Inject constructor(
 
         outputStream.use {
             svg = SvgStreamWriter(outputStream, config.precision, config.transformPrecision,
-                    config.percentPrecision, config.prettyPrint)
+                config.percentPrecision, config.prettyPrint)
 
             svg.start(SvgNumber(frame.actualWidth, SvgUnit.PT),
-                    SvgNumber(frame.actualHeight, SvgUnit.PT),
-                    Rectangle2D.Float(0f, 0f, frame.width, frame.height),
-                    config.writeProlog,
-                    SvgGraphicsState(
-                            fillRule = SvgFillRule.EVEN_ODD,
-                            clipPathRule = SvgFillRule.EVEN_ODD,
-                            preserveAspectRatio = SvgPreserveAspectRatio.NONE))
+                SvgNumber(frame.actualHeight, SvgUnit.PT),
+                Rectangle2D.Float(0f, 0f, frame.width, frame.height),
+                config.writeProlog,
+                SvgGraphicsState(
+                    fillRule = SvgFillRule.EVEN_ODD,
+                    clipPathRule = SvgFillRule.EVEN_ODD,
+                    preserveAspectRatio = SvgPreserveAspectRatio.NONE))
             // FrameGroup transform is ignored because the transform is already created by the
             // viewBox having a different size than the one set by 'width' and 'height'.
             drawSimpleGroup(frame)
@@ -172,7 +190,6 @@ internal class SvgFrameRenderer @Inject constructor(
         }
     }
 
-
     private fun drawText(text: TextObject) {
         // Create font definition if not already created.
         val fontFile = File(getFontsFile(text.font.fontFile!!.name))
@@ -193,7 +210,7 @@ internal class SvgFrameRenderer @Inject constructor(
         }
 
         svg.text(SvgNumber(text.x), SvgNumber(text.y), dx, fontId, text.fontSize, text.text,
-                SvgGraphicsState(fill = SvgFillColor(text.color), fillOpacity = text.color.floatAlpha))
+            SvgGraphicsState(fill = SvgFillColor(text.color.opaque), fillOpacity = text.color.floatA))
     }
 
     private fun drawPath(path: Path) {
@@ -211,7 +228,7 @@ internal class SvgFrameRenderer @Inject constructor(
         var grState = line?.toSvgGraphicsState()
         if (fill is PathFillStyle.Solid) {
             grState = (grState ?: SvgStreamWriter.NULL_GRAPHICS_STATE)
-                    .copy(fill = SvgFillColor(fill.color), fillOpacity = fill.color.floatAlpha)
+                .copy(fill = SvgFillColor(fill.color.opaque), fillOpacity = fill.color.floatA)
         }
         if (grState != null) {
             svg.path(grState) {
@@ -244,8 +261,8 @@ internal class SvgFrameRenderer @Inject constructor(
         transform.scale(1.0 / imageData.width, 1.0 / imageData.height)
 
         svg.image(imageHref, grState = SvgGraphicsState(
-                transforms = transform.toSvgTransformList(),
-                maskId = maskId))
+            transforms = transform.toSvgTransformList(),
+            maskId = maskId))
 
         if (imageFill.clip) {
             svg.endGroup()
@@ -255,13 +272,13 @@ internal class SvgFrameRenderer @Inject constructor(
     private fun drawGradient(path: Path, gradient: PathFillStyle.Gradient) {
         // Create gradient stops
         val stops = gradient.colors.map {
-            SvgGradientStop(it.ratio, it.color, it.color.floatAlpha)
+            SvgGradientStop(it.ratio, it.color.opaque, it.color.floatA)
         }
 
         val id = nextDefId
         svg.writeDef(id) {
             linearGradient(stops, SvgGradientUnits.USER_SPACE_ON_USE,
-                    gradient.transform.toSvgTransformList(), x1 = -16384f, x2 = 16384f)
+                gradient.transform.toSvgTransformList(), x1 = -16384f, x2 = 16384f)
         }
         svg.path(SvgGraphicsState(fill = SvgFillId(id))) {
             writePath(path, this)
@@ -301,33 +318,32 @@ internal class SvgFrameRenderer @Inject constructor(
 
     private fun Int.toDefId(): String {
         var v = this
-        return buildString(4) {
-            // Use base 52 for first char to use only letters.
-            append(BASE_64_ALPHABET[v % 52])
-            v /= 52
+        return buildString {
+            // See https://www.w3.org/TR/2008/REC-xml-20081126/#NT-Name. XML IDs have different chars
+            // valid for the first char and the rest of the ID.
+            append(XML_NAME_START_CHARS[v % XML_NAME_START_CHARS.length])
+            v /= XML_NAME_START_CHARS.length
             while (v > 0) {
                 // Use base 64 for following chars.
-                append(BASE_64_ALPHABET[v % 64])
-                v /= 64
+                append(XML_NAME_CHARS[v % XML_NAME_CHARS.length])
+                v /= XML_NAME_CHARS.length
             }
         }
     }
 
-    private val Color.floatAlpha: Float
-        get() = this.a / 255f
-
     private fun AffineTransform.toSvgTransformList() = when {
-        this.isIdentity -> null
-        scaleX == 1.0 && scaleY == 1.0 && shearX == 0.0 && shearY == 0.0 -> {
+        isIdentity -> null
+        type == AffineTransform.TYPE_TRANSLATION -> {
             // Translate only
             listOf(SvgTransform.Translate(translateX.toFloat(), translateY.toFloat()))
         }
-        shearX == 0.0 && shearY == 0.0 && translateX == 0.0 && translateY == 0.0 -> {
+        type == AffineTransform.TYPE_UNIFORM_SCALE ||
+                type == AffineTransform.TYPE_GENERAL_SCALE -> {
             // Scale only
             listOf(SvgTransform.Scale(scaleX.toFloat(), scaleY.toFloat()))
         }
         else -> listOf(SvgTransform.Matrix(scaleX.toFloat(), shearY.toFloat(), shearX.toFloat(),
-                scaleY.toFloat(), translateX.toFloat(), translateY.toFloat()))
+            scaleY.toFloat(), translateX.toFloat(), translateY.toFloat()))
     }
 
     private fun BlendMode.toSvgMixBlendMode() = when (this) {
@@ -341,33 +357,33 @@ internal class SvgFrameRenderer @Inject constructor(
     }
 
     private fun PathLineStyle.toSvgGraphicsState() = SvgGraphicsState(
-            fill = SvgFillNone,
-            stroke = SvgFillColor(this.color),
-            strokeOpacity = this.color.floatAlpha,
-            strokeWidth = this.width,
-            strokeLineCap = when (this.cap) {
-                BasicStroke.CAP_BUTT -> SvgStrokeLineCap.BUTT
-                BasicStroke.CAP_ROUND -> SvgStrokeLineCap.ROUND
-                BasicStroke.CAP_SQUARE -> SvgStrokeLineCap.SQUARE
-                else -> error("Unknown stroke line cap")
-            },
-            strokeLineJoin = when (this.join) {
-                BasicStroke.JOIN_BEVEL -> SvgStrokeLineJoin.Bevel
-                BasicStroke.JOIN_MITER -> if (this.miterLimit == 0f) {
-                    SvgStrokeLineJoin.Miter
-                } else {
-                    SvgStrokeLineJoin.MiterClip(this.miterLimit)
-                }
-                BasicStroke.JOIN_ROUND -> SvgStrokeLineJoin.Bevel
-                else -> error("Unknown stroke line join")
-            })
+        fill = SvgFillNone,
+        stroke = SvgFillColor(this.color.opaque),
+        strokeOpacity = this.color.floatA,
+        strokeWidth = this.width,
+        strokeLineCap = when (this.cap) {
+            BasicStroke.CAP_BUTT -> SvgStrokeLineCap.BUTT
+            BasicStroke.CAP_ROUND -> SvgStrokeLineCap.ROUND
+            BasicStroke.CAP_SQUARE -> SvgStrokeLineCap.SQUARE
+            else -> error("Unknown stroke line cap")
+        },
+        strokeLineJoin = when (this.join) {
+            BasicStroke.JOIN_BEVEL -> SvgStrokeLineJoin.Bevel
+            BasicStroke.JOIN_MITER -> if (this.miterLimit == 0f) {
+                SvgStrokeLineJoin.Miter
+            } else {
+                SvgStrokeLineJoin.MiterClip(this.miterLimit)
+            }
+            BasicStroke.JOIN_ROUND -> SvgStrokeLineJoin.Bevel
+            else -> error("Unknown stroke line join")
+        })
 
     private fun getImagesFile(name: String) = File(imagesDir, name).invariantSeparatorsPath
     private fun getFontsFile(name: String) = File(fontsDir, name).invariantSeparatorsPath
 
-
     companion object {
-        private const val BASE_64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"
+        private const val XML_NAME_START_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_:"
+        private const val XML_NAME_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_:-."
     }
 
 }

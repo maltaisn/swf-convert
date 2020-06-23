@@ -17,57 +17,66 @@
 package com.maltaisn.swfconvert.render.svg.writer
 
 import com.maltaisn.swfconvert.core.image.Color
-import com.maltaisn.swfconvert.render.svg.writer.data.*
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgFillColor
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgFillRule
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgGraphicsState
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgMixBlendMode
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgNumber
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgStrokeLineCap
 import org.junit.Test
 import java.awt.geom.Rectangle2D
 import java.io.ByteArrayOutputStream
 import kotlin.test.assertEquals
 
-
 class SvgStreamWriterTest {
 
     @Test
     fun `should create empty svg`() {
-        assertEquals("""<?xml version="1.1" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" """  +
-                """xmlns:xlink="http://www.w3.org/1999/xlink" version="2.0" width="10" height="10"/>""",
-                createSvg {
-                    start(SvgNumber(10f), SvgNumber(10f))
-                })
+        assertEquals("""
+            |<?xml version="1.1" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg"
+            | xmlns:xlink="http://www.w3.org/1999/xlink" version="2.0" width="10" height="10"/>
+        """.trimMargin().asSingleLine(),
+            createSvg {
+                start(SvgNumber(10f), SvgNumber(10f))
+            })
     }
 
     @Test
     fun `should svg with viewbox and graphics state attrs`() {
-        assertEquals("""<?xml version="1.1" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" """ +
-                """xmlns:xlink="http://www.w3.org/1999/xlink" version="2.0" width="10" height="10" viewBox="0 0 100 100" fill="#fa0000"/>""",
-                createSvg {
-                    start(SvgNumber(10f), SvgNumber(10f), Rectangle2D.Float(0f, 0f, 100f, 100f), true,
-                            SvgGraphicsState(fill = SvgFillColor(Color(250, 0, 0))))
-                })
+        assertEquals("""
+                |<?xml version="1.1" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg"
+                | xmlns:xlink="http://www.w3.org/1999/xlink" version="2.0" width="10" height="10"
+                | viewBox="0 0 100 100" fill="#fa0000"/>
+            """.trimMargin().asSingleLine(),
+            createSvg {
+                start(SvgNumber(10f), SvgNumber(10f), Rectangle2D.Float(0f, 0f, 100f, 100f), true,
+                    SvgGraphicsState(fill = SvgFillColor(Color(250, 0, 0))))
+            })
     }
 
     @Test
     fun `should create group def`() {
         assertEquals("""<defs><g id="foo"/></defs>""",
-                createSvg(start = true) {
-                    writeDef("foo") {
-                        group()
-                    }
-                }.onlySvgContent())
+            createSvg(start = true) {
+                writeDef("foo") {
+                    group()
+                }
+            }.onlySvgContent())
     }
 
     @Test
     fun `should create def while creating another def`() {
         assertEquals("""<defs><g id="def1"><g/></g><g id="def2"/></defs>""",
-                createSvg(start = true) {
-                    writeDef("def1") {
-                        group {
+            createSvg(start = true) {
+                writeDef("def1") {
+                    group {
+                        group()
+                        writeDef("def2") {
                             group()
-                            writeDef("def2") {
-                                group()
-                            }
                         }
                     }
-                }.onlySvgContent())
+                }
+            }.onlySvgContent())
     }
 
     @Test(expected = IllegalStateException::class)
@@ -89,74 +98,84 @@ class SvgStreamWriterTest {
 
     @Test
     fun `should only write modified graphics state attributes`() {
-        assertEquals("""<g fill="#fa0000"><g fill-opacity="0.5"><g stroke-linecap="round">""" +
-                """<g style="mix-blend-mode:multiply"/></g></g></g>""",
-                createSvg(start = true) {
-                    group(SvgGraphicsState(fill = SvgFillColor(Color(250, 0, 0)))) {
-                        group(SvgGraphicsState(fill = SvgFillColor(Color(250, 0, 0)), fillOpacity = 0.5f)) {
-                            group(SvgGraphicsState(strokeLineCap = SvgStrokeLineCap.ROUND)) {
-                                group(SvgGraphicsState(strokeLineCap = SvgStrokeLineCap.ROUND,
-                                        mixBlendMode = SvgMixBlendMode.MULTIPLY))
-                            }
+        assertEquals("""
+                    |<g fill="#fa0000"><g fill-opacity=".5"><g stroke-linecap="round">
+                    |<g style="mix-blend-mode:multiply"/></g></g></g>
+                """.trimMargin().asSingleLine(),
+            createSvg(start = true) {
+                group(SvgGraphicsState(fill = SvgFillColor(Color(250, 0, 0)))) {
+                    group(SvgGraphicsState(fill = SvgFillColor(Color(250, 0, 0)), fillOpacity = 0.5f)) {
+                        group(SvgGraphicsState(strokeLineCap = SvgStrokeLineCap.ROUND)) {
+                            group(SvgGraphicsState(strokeLineCap = SvgStrokeLineCap.ROUND,
+                                mixBlendMode = SvgMixBlendMode.MULTIPLY))
                         }
                     }
-                }.onlySvgContent())
+                }
+            }.onlySvgContent())
     }
 
     @Test
     fun `should create clip path and use it`() {
-        assertEquals("""<path d="M0 0h20v20h-20Z" clip-path="url(#clip1)" clip-rule="evenodd"/>""" +
-                """<defs><clipPath id="clip1"><path d="M5 5h5v5h-5Z"/></clipPath></defs>""",
-                createSvg(start = true) {
-                    writeDef("clip1") {
-                        clipPath {
-                            path("M5 5h5v5h-5Z")
-                        }
+        assertEquals("""
+                |<path d="M0 0h20v20h-20Z" clip-path="url(#clip1)" clip-rule="evenodd"/><defs><clipPath id="clip1">
+                |<path d="M5 5h5v5h-5Z"/></clipPath></defs>
+            """.trimMargin().asSingleLine(),
+            createSvg(start = true) {
+                writeDef("clip1") {
+                    clipPath {
+                        path("M5 5h5v5h-5Z")
                     }
-                    path("M0 0h20v20h-20Z", SvgGraphicsState(clipPathId = "clip1",
-                            clipPathRule = SvgFillRule.EVEN_ODD))
-                }.onlySvgContent())
+                }
+                path("M0 0h20v20h-20Z", SvgGraphicsState(clipPathId = "clip1",
+                    clipPathRule = SvgFillRule.EVEN_ODD))
+            }.onlySvgContent())
     }
 
     @Test
     fun `should write mask and use it`() {
-        assertEquals("""<path d="M0 0h20v20h-20Z" mask="url(#mask1)"/>""" +
-                """<defs><mask id="mask1"><path d="M5 5h5v5h-5Z"/></mask></defs>""",
-                createSvg(start = true) {
-                    writeDef("mask1") {
-                        mask {
-                            path("M5 5h5v5h-5Z")
-                        }
+        assertEquals("""
+                |<path d="M0 0h20v20h-20Z" mask="url(#mask1)"/><defs><mask id="mask1">
+                |<path d="M5 5h5v5h-5Z"/></mask></defs>
+            """.trimMargin().asSingleLine(),
+            createSvg(start = true) {
+                writeDef("mask1") {
+                    mask {
+                        path("M5 5h5v5h-5Z")
                     }
-                    path("M0 0h20v20h-20Z", SvgGraphicsState(maskId = "mask1"))
-                }.onlySvgContent())
+                }
+                path("M0 0h20v20h-20Z", SvgGraphicsState(maskId = "mask1"))
+            }.onlySvgContent())
     }
 
     @Test
     fun `should write text`() {
         assertEquals("""<text x="100" y="100" dx="1 2 3 4" font-family="foo" font-size="32">Text</text>""",
-                createSvg(start = true) {
-                    text(SvgNumber(100f), SvgNumber(100f),
-                            floatArrayOf(1f, 2f, 3f, 4f), "foo", 32f, "Text")
-                }.onlySvgContent())
+            createSvg(start = true) {
+                text(SvgNumber(100f), SvgNumber(100f),
+                    floatArrayOf(1f, 2f, 3f, 4f), "foo", 32f, "Text")
+            }.onlySvgContent())
     }
-
 
     private fun createSvg(start: Boolean = false, build: SvgStreamWriter.() -> Unit): String {
         return ByteArrayOutputStream().use { outputStream ->
             SvgStreamWriter(outputStream, 1, 2, 2, false)
-                    .apply {
-                        if (start) {
-                            start(SvgNumber(10f), SvgNumber(10f))
-                        }
-                        build()
-                        end()
+                .apply {
+                    if (start) {
+                        start(SvgNumber(10f), SvgNumber(10f))
                     }
+                    build()
+                    end()
+                }
             outputStream.toString()
         }
     }
 
     private fun String.onlySvgContent() = """<svg .*?>([\s\S]*)</svg>$""".toRegex()
-            .find(this)?.groupValues?.get(1) ?: error("No SVG found")
+        .find(this)?.groupValues?.get(1) ?: error("No SVG found")
+
+    private fun String.asSingleLine() = this.replace("""
+        |
+        |
+        """.trimMargin(), "")
 
 }

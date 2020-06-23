@@ -18,7 +18,6 @@ package com.maltaisn.swfconvert.core
 
 import java.awt.geom.AffineTransform
 
-
 /**
  * A group object representing the root of a SWF file structure.
  * This is the root element of the intermediate representation.
@@ -31,16 +30,17 @@ import java.awt.geom.AffineTransform
  * @param height Frame height in twips.
  * @param padding Padding added around frame in twips.
  */
-data class FrameGroup(val width: Float,
-                      val height: Float,
-                      val padding: Float,
-                      override val transform: AffineTransform) :
-        GroupObject.Transform(0, transform) {
+data class FrameGroup(
+    val width: Float,
+    val height: Float,
+    val padding: Float,
+    override val transform: AffineTransform
+) :
+    GroupObject.Transform(0, transform) {
 
     // Scaled frame dimensions in points (including padding).
     val actualWidth get() = (width + padding * 2) * Units.TWIPS_TO_POINT
     val actualHeight get() = (height + padding * 2) * Units.TWIPS_TO_POINT
-
 
     override fun copyWithoutObjects() = this.copy()
 
@@ -49,9 +49,13 @@ data class FrameGroup(val width: Float,
 
     companion object {
 
-        fun create(width: Float, height: Float, padding: Float,
-                   yAxisDirection: YAxisDirection): FrameGroup {
-            val scale =  Units.TWIPS_TO_POINT
+        fun create(
+            width: Float,
+            height: Float,
+            padding: Float,
+            yAxisDirection: YAxisDirection
+        ): FrameGroup {
+            val scale = Units.TWIPS_TO_POINT
             val scaleY = when (yAxisDirection) {
                 YAxisDirection.DOWN -> 1f
                 YAxisDirection.UP -> -1f

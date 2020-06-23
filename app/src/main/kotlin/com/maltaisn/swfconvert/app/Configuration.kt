@@ -19,10 +19,10 @@ package com.maltaisn.swfconvert.app
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
 import com.maltaisn.swfconvert.render.core.RenderConfiguration
 
-
 /**
  * Configuration used for converting a SWF file collection to the output format.
  */
 data class Configuration(
-        val convert: ConvertConfiguration,
-        val render: RenderConfiguration)
+    val convert: ConvertConfiguration,
+    val render: RenderConfiguration
+)

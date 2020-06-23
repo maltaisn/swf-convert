@@ -22,7 +22,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 
-
 class XmlWriterTest {
 
     @Test
@@ -70,12 +69,12 @@ class XmlWriterTest {
     fun `should wrap long attribute (pretty)`() {
         assertEquals("""
             |<tag
-            |    attr1="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus porttitor mattis augue dapibus consequat. Vestibulum"
+            |    attr1="${"x".repeat(200)}"
             |    attr2="text" attr3="3"/>
         """.trimMargin().fixLineBreaks(), createXml(pretty = true) {
-            "tag"("attr1" to "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus porttitor mattis augue dapibus consequat. Vestibulum",
-                    "attr2" to "text",
-                    "attr3" to 3)
+            "tag"("attr1" to "x".repeat(200),
+                "attr2" to "text",
+                "attr3" to 3)
         })
     }
 
@@ -119,16 +118,9 @@ class XmlWriterTest {
     }
 
     @Test
-    fun `should format floating point attr value`() {
-        assertEquals("""<tag float="1" double="-1"/>""", createXml {
-            "tag"("float" to 1f, "double" to -1.0)
-        })
-    }
-
-    @Test
     fun `should write namespaces on root tag`() {
         assertEquals("""<tag xmlns="foo" xmlns:ns="bar"/>""", createXml(
-                mapOf(null to "foo", "ns" to "bar")) {
+            mapOf(null to "foo", "ns" to "bar")) {
             "tag"()
         })
     }
@@ -136,7 +128,7 @@ class XmlWriterTest {
     @Test
     fun `should create self-closing tag with namespaces and attributes`() {
         assertEquals("""<tag xmlns="https://www.example.com" attr1="1" attr2="text"/>""", createXml(
-                mapOf(null to "https://www.example.com")) {
+            mapOf(null to "https://www.example.com")) {
             "tag"("attr1" to 1, "attr2" to "text")
         })
     }
@@ -144,7 +136,7 @@ class XmlWriterTest {
     @Test
     fun `should create self-closing tag with namespaces and namespaced attributes`() {
         assertEquals("""<ns:tag xmlns:ns="https://www.example.com" ns:attr1="1" ns:attr2="text"/>""", createXml(
-                mapOf("ns" to "https://www.example.com")) {
+            mapOf("ns" to "https://www.example.com")) {
             "ns:tag"("ns:attr1" to 1, "ns:attr2" to "text")
         })
     }
@@ -517,16 +509,18 @@ class XmlWriterTest {
         }
     }
 
-    private fun createXml(namespaces: Map<String?, String> = emptyMap(),
-                          pretty: Boolean = false,
-                          maxLineWidth: Int = 128,
-                          indentSize: Int = 4,
-                          build: XmlStreamWriter.() -> Unit): String {
+    private fun createXml(
+        namespaces: Map<String?, String> = emptyMap(),
+        pretty: Boolean = false,
+        maxLineWidth: Int = 128,
+        indentSize: Int = 4,
+        build: XmlStreamWriter.() -> Unit
+    ): String {
         return ByteArrayOutputStream().use { outputStream ->
             XmlStreamWriter(outputStream, namespaces, pretty,
-                    maxLineWidth, indentSize)
-                    .apply(build)
-                    .close()
+                maxLineWidth, indentSize)
+                .apply(build)
+                .close()
             outputStream.toString()
         }
     }

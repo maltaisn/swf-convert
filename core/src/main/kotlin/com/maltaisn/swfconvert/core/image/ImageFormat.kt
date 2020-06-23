@@ -16,7 +16,6 @@
 
 package com.maltaisn.swfconvert.core.image
 
-
 enum class ImageFormat(val extension: String) {
     PNG("png"),
     JPG("jpg")

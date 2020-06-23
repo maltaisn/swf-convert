@@ -18,15 +18,13 @@ package com.maltaisn.swfconvert.app
 
 import com.maltaisn.swfconvert.core.ProgressCallback
 import org.apache.logging.log4j.kotlin.logger
-import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
-
 
 class ProgressPrinter : ProgressCallback {
 
     private val logger = logger()
 
-    private val stepStack = LinkedList<Step>()
+    private val stepStack = ArrayDeque<Step>()
 
     private var progressShown = false
     private var total = -1
@@ -38,9 +36,8 @@ class ProgressPrinter : ProgressCallback {
      */
     private var actionAfterEnd = false
 
-
     override fun beginStep(name: String, important: Boolean) {
-        stepStack.addLast(Step(name, important))
+        stepStack += Step(name, important)
         actionAfterEnd = true
         updateLine()
         logger.info { stepStack.joinToString(": ") { it.name } }
@@ -65,7 +62,7 @@ class ProgressPrinter : ProgressCallback {
     }
 
     override fun endProgress() {
-        check(progressShown) { "No progress shown." }
+        checkProgressShown()
         progressShown = false
         updateLine()
         this.total = -1
@@ -74,7 +71,7 @@ class ProgressPrinter : ProgressCallback {
 
     @Synchronized
     override fun incrementProgress() {
-        check(progressShown) { "No progress shown." }
+        checkProgressShown()
         val value = progress.incrementAndGet()
         check(value <= total) { "Progress value is greater than total." }
         updateLine()
@@ -82,24 +79,26 @@ class ProgressPrinter : ProgressCallback {
 
     @Synchronized
     override fun publishProgress(value: Int) {
-        check(progressShown) { "No progress shown." }
+        checkProgressShown()
         check(value <= total) { "Progress value is greater than total." }
         progress.set(value)
         updateLine()
     }
 
+    private fun checkProgressShown() = check(progressShown) { "No progress shown." }
+
     private fun updateLine() {
         // Print step name
         for ((i, step) in stepStack.withIndex()) {
             if (step.important) {
-                print("\u001b[1m")  // Enable bold
+                print("\u001b[1m") // Enable bold
             }
             print(step.name)
             if (i != stepStack.lastIndex) {
                 print(": ")
             }
             if (step.important) {
-                print("\u001b[0m")  // Disable bold
+                print("\u001b[0m") // Disable bold
             }
         }
         print(" ")
@@ -117,7 +116,6 @@ class ProgressPrinter : ProgressCallback {
     }
 
     private data class Step(val name: String, val important: Boolean)
-
 
     companion object {
         private const val PROGRESS_BAR_SIZE = 30

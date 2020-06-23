@@ -18,17 +18,18 @@ package com.maltaisn.swfconvert.core.image
 
 import java.io.File
 
-
 /**
  * Data for an image. An image is made of RGB channels encoded in [data],
  * optional alpha channel encoded in [alphaData] (use empty byte array for none),
  * a [format] used to encode both channels data, and dimensions.
  */
-class ImageData(val data: ByteArray,
-                val alphaData: ByteArray,
-                val format: ImageFormat,
-                val width: Int,
-                val height: Int) {
+class ImageData(
+    val data: ByteArray,
+    val alphaData: ByteArray,
+    val format: ImageFormat,
+    val width: Int,
+    val height: Int
+) {
 
     var dataFile: File? = null
     var alphaDataFile: File? = null
@@ -51,5 +52,4 @@ class ImageData(val data: ByteArray,
         }
         return hash
     }
-
 }
