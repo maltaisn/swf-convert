@@ -267,7 +267,7 @@ class CoreParams(
     private val fontScale2 by dynamicParam("fontScale2", DEFAULT_FONTSCALE_2, String::toFontScaleOrNull)
     private val fontScale3 by dynamicParam("fontScale3", DEFAULT_FONTSCALE_3, String::toFontScaleOrNull)
     private val ignoreGlyphOffsetsThreshold by dynamicParam("ignoreGlyphOffsetsThreshold",
-        GlyphData.EM_SQUARE_SIZE / 16f, String::toFloatOrNull)
+        GlyphData.EM_SQUARE_SIZE / 32f, String::toFloatOrNull)
 
     private fun <T> dynamicParam(
         name: String,
@@ -283,6 +283,7 @@ class CoreParams(
     fun createConfigurations(yAxisDirection: YAxisDirection): List<ConvertConfiguration> {
         configError(downsampleMinSize >= 3) { "Minimum downsampling size must be at least 3 px." }
         configError(maxDpi in 10f..2000f) { "Maximum image density must be between 10 and 2000 DPI." }
+        configError(ignoreGlyphOffsetsThreshold >= 0) { "Ignore glyph offsets threshold must be positive." }
 
         return inputFileCollections.map { input ->
             val tempDir = getTempDirForInput(input)

@@ -146,4 +146,3 @@ data class ConvertConfiguration(
     val imagesDir = File(tempDir, "images")
 
 }
-

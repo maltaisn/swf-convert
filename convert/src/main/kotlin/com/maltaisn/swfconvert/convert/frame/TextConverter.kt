@@ -40,6 +40,7 @@ import com.maltaisn.swfconvert.core.text.GlyphData
 import com.maltaisn.swfconvert.core.text.TextObject
 import java.awt.geom.AffineTransform
 import javax.inject.Inject
+import kotlin.math.absoluteValue
 
 /**
  * Converts SWF text tags to [TextObject] intermediate representation.
@@ -246,15 +247,16 @@ internal class TextConverter @Inject constructor(
             val actualAdvance = glyphIndex.advance / (fontScale.unscaleX * fontSize) * GlyphData.EM_SQUARE_SIZE
             val diff = actualAdvance - defaultAdvance
 
-            if (diff <= config.ignoreGlyphOffsetsThreshold) {
+            if (diff.absoluteValue < config.ignoreGlyphOffsetsThreshold) {
                 // Ignore below threshold difference, use zero offset. But accumulate deviation from
                 // expected total span advance to avoid adding up error due to ignored offsets over time.
-                glyphOffsets += 0f
                 advanceDeviation += diff
-                if (advanceDeviation > config.ignoreGlyphOffsetsThreshold) {
+                if (advanceDeviation.absoluteValue >= config.ignoreGlyphOffsetsThreshold) {
                     // Accumulated advance deviation is above threshold, reset it and add offset.
-                    advanceDeviation = 0f
                     glyphOffsets += advanceDeviation
+                    advanceDeviation = 0f
+                } else {
+                    glyphOffsets += 0f
                 }
             } else {
                 glyphOffsets += diff

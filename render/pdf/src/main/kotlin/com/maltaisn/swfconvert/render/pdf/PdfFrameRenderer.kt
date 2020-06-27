@@ -25,6 +25,7 @@ import com.maltaisn.swfconvert.core.shape.PathElement
 import com.maltaisn.swfconvert.core.shape.PathFillStyle
 import com.maltaisn.swfconvert.core.shape.PathLineStyle
 import com.maltaisn.swfconvert.core.shape.ShapeObject
+import com.maltaisn.swfconvert.core.text.GlyphData
 import com.maltaisn.swfconvert.core.text.TextObject
 import org.apache.pdfbox.cos.COSArray
 import org.apache.pdfbox.cos.COSDictionary
@@ -324,7 +325,7 @@ class PdfFrameRenderer @Inject internal constructor(
                 currRun.append(c)
                 if (offset != 0f) {
                     textParts += currRun.toString()
-                    textParts += offset
+                    textParts += -offset / GlyphData.EM_SQUARE_SIZE * PDF_EM_SQUARE_SIZE
                     currRun.clear()
                 }
             }
@@ -392,5 +393,9 @@ class PdfFrameRenderer @Inject internal constructor(
             is GroupObject -> countGroupBlendableChildren(it)
             else -> 1
         }
+    }
+
+    companion object {
+        private const val PDF_EM_SQUARE_SIZE = 1000f
     }
 }
