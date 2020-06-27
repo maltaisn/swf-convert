@@ -34,6 +34,7 @@ import com.maltaisn.swfconvert.core.image.ImageData
 import com.maltaisn.swfconvert.core.image.ImageDataCreator
 import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.maltaisn.swfconvert.core.image.flippedVertically
+import com.mortennobel.imagescaling.ResampleFilter
 import com.mortennobel.imagescaling.ResampleOp
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
@@ -294,13 +295,28 @@ internal class ImageDecoder @Inject constructor(
             h = min
         }
 
-        val iw = w.roundToInt()
-        val ih = h.roundToInt()
-        val resizeOp = ResampleOp(iw, ih)
-        resizeOp.filter = config.downsampleFilter!!
-        // TODO implement "fast" filter
-        val destImage = BufferedImage(iw, ih, this.type)
-        return resizeOp.filter(this, destImage)
+        return this.downsampleWithFilter(config.downsampleFilter, w.roundToInt(), h.roundToInt())
+    }
+
+    /**
+     * Downsample [this] image with a [filter] to a [width] and [height].
+     * If [filter] is `null`, use native Java API to resize.
+     */
+    private fun BufferedImage.downsampleWithFilter(filter: ResampleFilter?, width: Int, height: Int): BufferedImage {
+        val result = BufferedImage(width, height, this.type)
+        if (filter == null) {
+            // Resize with Graphics2D
+            val graphics = result.createGraphics()
+            graphics.drawImage(this, 0, 0, width, height, null)
+            graphics.dispose()
+
+        } else {
+            // Resize with third party lib
+            val resizeOp = ResampleOp(width, height)
+            resizeOp.filter = filter
+            resizeOp.filter(this, result)
+        }
+        return result
     }
 
     companion object {
