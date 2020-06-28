@@ -23,7 +23,7 @@ import com.flagstone.transform.shape.Line
 import com.flagstone.transform.shape.Shape
 import com.flagstone.transform.shape.ShapeStyle
 import com.flagstone.transform.shape.ShapeStyle2
-import com.maltaisn.swfconvert.convert.context.SwfObjectContext
+import com.maltaisn.swfconvert.convert.context.ConvertContext
 import com.maltaisn.swfconvert.convert.shape.ShapeConverter.Edge.CurveEdge
 import com.maltaisn.swfconvert.convert.shape.ShapeConverter.Edge.LineEdge
 import com.maltaisn.swfconvert.convert.wrapper.WShapeStyle
@@ -47,7 +47,7 @@ import javax.inject.Inject
  */
 internal open class ShapeConverter @Inject constructor() {
 
-    protected lateinit var context: SwfObjectContext
+    protected lateinit var context: ConvertContext
 
     private lateinit var shape: Shape
     private lateinit var transform: AffineTransform
@@ -68,7 +68,7 @@ internal open class ShapeConverter @Inject constructor() {
     private val paths = mutableListOf<Path>()
 
     fun parseShape(
-        context: SwfObjectContext,
+        context: ConvertContext,
         shape: Shape,
         fillStyles: List<FillStyle>,
         lineStyles: List<LineStyle>,
@@ -186,7 +186,8 @@ internal open class ShapeConverter @Inject constructor() {
 
     private fun createPath(
         elements: MutableList<PathElement>,
-        fillStyle: PathFillStyle? = null, lineStyle: PathLineStyle? = null
+        fillStyle: PathFillStyle? = null,
+        lineStyle: PathLineStyle? = null
     ) {
         if (elements.isNotEmpty() && (fillStyle != null || lineStyle != null)) {
             // FIXME rectangle optimization not working correctly, see test class
@@ -221,8 +222,9 @@ internal open class ShapeConverter @Inject constructor() {
             }
             when {
                 shapeStyle != null -> {
-                    if (shapeStyle.lineStyle != null || shapeStyle.fillStyle0 != null
-                        || shapeStyle.fillStyle1 != null
+                    if (shapeStyle.lineStyle != null ||
+                        shapeStyle.fillStyle0 != null ||
+                        shapeStyle.fillStyle1 != null
                     ) {
                         processSubPath(subPath, currLineStyleIdx, currFillStyleIdx0, currFillStyleIdx1)
                         subPath.clear()
@@ -237,9 +239,7 @@ internal open class ShapeConverter @Inject constructor() {
                     }
                     // Check if all styles are reset to 0.
                     // This (probably) means that a new group starts with the next record
-                    if (shapeStyle.lineStyle == 0 && shapeStyle.fillStyle0 == 0
-                        && shapeStyle.fillStyle1 == 0
-                    ) {
+                    if (shapeStyle.lineStyle == 0 && shapeStyle.fillStyle0 == 0 && shapeStyle.fillStyle1 == 0) {
                         cleanEdgeMap(currFillEdgeMap)
                         cleanEdgeMap(currLineEdgeMap)
                         fillEdgeMaps += currFillEdgeMap
@@ -315,8 +315,10 @@ internal open class ShapeConverter @Inject constructor() {
     }
 
     private fun processSubPath(
-        subPath: List<Edge>, lineStyleIdx: Int,
-        fillStyleIdx0: Int, fillStyleIdx1: Int
+        subPath: List<Edge>,
+        lineStyleIdx: Int,
+        fillStyleIdx0: Int,
+        fillStyleIdx1: Int
     ) {
         if (fillStyleIdx0 != 0) {
             // Wrong side is being filled. Reverse the entire path to correct this.

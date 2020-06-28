@@ -18,6 +18,7 @@ package com.maltaisn.swfconvert.convert.font
 
 import com.flagstone.transform.shape.Shape
 import com.flagstone.transform.shape.ShapeData
+import com.maltaisn.swfconvert.convert.context.SwfGlyphContext
 import com.maltaisn.swfconvert.convert.context.SwfObjectContext
 import com.maltaisn.swfconvert.convert.shape.ShapeConverter
 import com.maltaisn.swfconvert.convert.wrapper.WDefineFont
@@ -45,29 +46,36 @@ internal class GlyphPathParser @Inject constructor(
             wfont.scale.scaleY.toDouble() * SWF_TO_TTF_EM_SCALE)
 
         return wfont.codes.indices.map { i ->
+            val glyphContext = SwfGlyphContext(context, i)
             val advance = if (wfont.advances.isEmpty()) {
                 // FontFlagsHasLayout is false
                 0f
             } else {
                 wfont.advances[i] * wfont.scale.scaleX
             }
+
             val shapeData = wfont.shapes[i].objects.first() as ShapeData
-            val contours = try {
-                val shape = Shape.shapeFromData(shapeData)
-                parseGlyphShape(context, shape, transform)
-            } catch (e: IOException) {
-                logger.error(e) { "Could not parse glyph shape data at $context: I/O exception" }
+            val contours = if (shapeData.data.size == 1) {
+                // swftools sometimes create empty SHAPE records with a single byte, where as shapes with no
+                // record should have at least a EndShapeRecord (6 x 0 bits) according to the SWF reference.
+                // transform-swf doesn't support those shapes, so it's handled separatedly.
                 emptyList()
-            } catch (e: ArrayIndexOutOfBoundsException) {
-                logger.error(e) { "Could not parse glyph shape data at $context: unknown exception" }
+            } else try {
+                // transform-swf lazily decodes glyph data with a [ShapeData] record
+                // that must be decoded later to a shape.
+                val shape = Shape.shapeFromData(shapeData)
+                parseGlyphShape(glyphContext, shape, transform)
+            } catch (e: IOException) {
+                logger.error(e) { "Could not parse glyph shape data at $glyphContext" }
                 emptyList()
             }
+
             GlyphData(advance, contours)
         }
     }
 
     private fun parseGlyphShape(
-        context: SwfObjectContext,
+        context: SwfGlyphContext,
         shape: Shape,
         transform: AffineTransform
     ): List<Path> {

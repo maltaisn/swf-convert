@@ -23,7 +23,7 @@ import com.flagstone.transform.image.DefineJPEGImage3
 import com.flagstone.transform.image.DefineJPEGImage4
 import com.flagstone.transform.image.ImageTag
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
-import com.maltaisn.swfconvert.convert.context.SwfObjectContext
+import com.maltaisn.swfconvert.convert.context.ConvertContext
 import com.maltaisn.swfconvert.convert.conversionError
 import com.maltaisn.swfconvert.convert.wrapper.WDefineImage
 import com.maltaisn.swfconvert.convert.zlibDecompress
@@ -57,7 +57,7 @@ internal class ImageDecoder @Inject constructor(
     }
 
     fun convertImage(
-        context: SwfObjectContext,
+        context: ConvertContext,
         image: ImageTag,
         colorTransform: CompositeColorTransform,
         density: Float
@@ -79,7 +79,7 @@ internal class ImageDecoder @Inject constructor(
      * - RGB888 (24 bits) encoded bitmap.
      */
     private fun convertDefineImage(
-        context: SwfObjectContext,
+        context: ConvertContext,
         image: WDefineImage,
         colorTransform: CompositeColorTransform,
         density: Float
@@ -103,7 +103,7 @@ internal class ImageDecoder @Inject constructor(
      * - ARGB8888 (32 bits) encoded bitmap.
      */
     private fun convertDefineImage2(
-        context: SwfObjectContext,
+        context: ConvertContext,
         image: WDefineImage,
         colorTransform: CompositeColorTransform,
         density: Float
