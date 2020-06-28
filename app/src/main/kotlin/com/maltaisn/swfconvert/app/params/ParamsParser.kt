@@ -21,7 +21,8 @@ import com.beust.jcommander.ParameterException
 import com.maltaisn.swfconvert.app.ConfigException
 import com.maltaisn.swfconvert.app.Configuration
 import com.maltaisn.swfconvert.app.configError
-import org.apache.logging.log4j.core.config.Configurator
+import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.core.LoggerContext
 import kotlin.system.exitProcess
 
 class ParamsParser {
@@ -60,7 +61,8 @@ class ParamsParser {
 
             showVersionIfNeeded()
             showHelpIfNeeded()
-            Configurator.setRootLevel(mainParams.logLevel)
+
+            setConsoleLogLevel()
 
             val command = commands[jc.parsedCommand] ?: return emptyList()
 
@@ -106,4 +108,12 @@ class ParamsParser {
         }
     }
 
+    private fun setConsoleLogLevel() {
+        val context = LogManager.getContext(false) as LoggerContext
+        val config = context.configuration
+        config.rootLogger.let {
+            it.removeAppender("stdout")
+            it.addAppender(config.getAppender("stdout"), mainParams.logLevel, null)
+        }
+    }
 }

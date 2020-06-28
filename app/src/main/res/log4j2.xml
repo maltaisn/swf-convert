@@ -24,11 +24,11 @@
     </Properties>
 
     <Appenders>
-        <Console name="Stdout" target="SYSTEM_OUT">
+        <Console name="stdout" target="SYSTEM_OUT">
             <PatternLayout pattern="${patternLayout}"/>
         </Console>
 
-        <RollingFile name="File" fileName="${filename}" filePattern="${filenamePattern}"
+        <RollingFile name="file" fileName="${filename}" filePattern="${filenamePattern}"
                      bufferedIO="true" immediateFlush="true" append="true">
             <PatternLayout pattern="${patternLayout}"/>
             <Policies>
@@ -37,17 +37,21 @@
             </Policies>
             <DefaultRolloverStrategy>
                 <Delete basePath="${sys:user.home}/swfconvert/logs" maxDepth="2">
-                    <IfFileName glob="app*.log.gz"/>
-                    <IfLastModified age="7d"/>
+                    <IfFileName glob="app*.log.gz">
+                        <IfAny>
+                            <IfLastModified age="7d"/>
+                            <IfAccumulatedFileSize exceeds="64 MB"/>
+                        </IfAny>
+                    </IfFileName>
                 </Delete>
             </DefaultRolloverStrategy>
         </RollingFile>
     </Appenders>
 
     <Loggers>
-        <Root>
-            <appender-ref ref="Stdout" level="ERROR"/>
-            <appender-ref ref="File" level="ALL"/>
+        <Root level="all">
+            <AppenderRef ref="stdout" level="all"/>
+            <AppenderRef ref="file" level="all"/>
         </Root>
     </Loggers>
 
