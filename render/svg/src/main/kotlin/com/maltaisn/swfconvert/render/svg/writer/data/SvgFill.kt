@@ -56,8 +56,10 @@ internal object SvgFillNone : SvgFill() {
  * significant bits in the least significant byte of [this] int.
  * Basically this returns `true` for 0x00, 0x11, 0x22, 0x33, 0x44, etc.
  */
-@Suppress("MagicNumber")
 private val Int.isColorComponentFoldable: Boolean
-    get() = (this and 0xF) == (this ushr 4)
+    get() = (this and LOWER_NIB) == (this ushr UPPER_NIB_SHIFT)
 
 private const val HEX_CHARS = "0123456789abcdef"
+
+private const val LOWER_NIB = 0x0F
+private const val UPPER_NIB_SHIFT = 4

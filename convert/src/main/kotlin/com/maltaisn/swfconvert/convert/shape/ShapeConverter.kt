@@ -30,10 +30,10 @@ import com.maltaisn.swfconvert.convert.wrapper.WShapeStyle
 import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.core.shape.Path
 import com.maltaisn.swfconvert.core.shape.PathElement
+import com.maltaisn.swfconvert.core.shape.PathElement.ClosePath
 import com.maltaisn.swfconvert.core.shape.PathElement.LineTo
 import com.maltaisn.swfconvert.core.shape.PathElement.MoveTo
 import com.maltaisn.swfconvert.core.shape.PathElement.QuadTo
-import com.maltaisn.swfconvert.core.shape.PathElement.Rectangle
 import com.maltaisn.swfconvert.core.shape.PathFillStyle
 import com.maltaisn.swfconvert.core.shape.PathLineStyle
 import java.awt.geom.AffineTransform
@@ -44,6 +44,9 @@ import javax.inject.Inject
  * Converts SWF shapes to the [Path] intermediate format.
  * Most shape parsing logic was taken from:
  * [https://github.com/claus/as3swf/blob/master/src/com/codeazur/as3swf/data/SWFShape.as].
+ *
+ * Note that [ClosePath] is never added to the path, but most often than not, the most ends
+ * on the same point as it started so the effect is the same.
  */
 internal open class ShapeConverter @Inject constructor() {
 
@@ -52,7 +55,6 @@ internal open class ShapeConverter @Inject constructor() {
     private lateinit var shape: Shape
     private lateinit var transform: AffineTransform
     private var ignoreStyles = false
-    private var allowRectangles = false
 
     protected lateinit var currentTransform: AffineTransform
 
@@ -74,8 +76,7 @@ internal open class ShapeConverter @Inject constructor() {
         lineStyles: List<LineStyle>,
         transform: AffineTransform,
         currentTransform: AffineTransform,
-        ignoreStyles: Boolean,
-        allowRectangles: Boolean
+        ignoreStyles: Boolean
     ): List<Path> {
         this.context = context
         this.shape = shape
@@ -87,7 +88,6 @@ internal open class ShapeConverter @Inject constructor() {
 
         this.transform = transform
         this.ignoreStyles = ignoreStyles
-        this.allowRectangles = allowRectangles
 
         this.currentTransform = currentTransform
 
@@ -190,14 +190,6 @@ internal open class ShapeConverter @Inject constructor() {
         lineStyle: PathLineStyle? = null
     ) {
         if (elements.isNotEmpty() && (fillStyle != null || lineStyle != null)) {
-            // FIXME rectangle optimization not working correctly, see test class
-//            val rect = if (allowRectangles) {
-//                convertPathToRectangle(elements)
-//            } else {
-//                null
-//            }
-//            paths += Path(if (rect != null) listOf(rect) else elements.toList(),
-//                fillStyle.takeUnless { ignoreStyles }, lineStyle.takeUnless { ignoreStyles })
             paths += Path(elements.toList(),
                 fillStyle.takeUnless { ignoreStyles }, lineStyle.takeUnless { ignoreStyles })
         }
@@ -443,49 +435,6 @@ internal open class ShapeConverter @Inject constructor() {
         private const val NO_STYLE_INDEX = Int.MAX_VALUE
         private val NO_POINT = Point(Int.MAX_VALUE, Int.MAX_VALUE)
         private val SOLID_BLACK_FILL = PathFillStyle.Solid(Color.BLACK)
-
-        internal fun convertPathToRectangle(elements: List<PathElement>): Rectangle? {
-            TODO()
-//            if (elements.size != 5) {
-//                return null
-//            }
-//
-//            val first = elements[0]
-//            var last: PathElement = first
-//            var lastWasHorizontal: Boolean? = null
-//            var width = 0f
-//            var height = 0f
-//            for (i in 1 until elements.size) {
-//                val e = elements[i]
-//                if (e !is LineTo) return null
-//                val dx = e.x - last.x
-//                val dy = e.y - last.y
-//                when {
-//                    dy == 0f -> {
-//                        if (lastWasHorizontal == true) return null
-//                        if (width == 0f) {
-//                            width = dx
-//                        } else if (width != -dx) {
-//                            return null
-//                        }
-//                        lastWasHorizontal = true
-//                    }
-//                    dx == 0f -> {
-//                        if (lastWasHorizontal == false) return null
-//                        if (height == 0f) {
-//                            height = dy
-//                        } else if (height != -dy) {
-//                            return null
-//                        }
-//                        lastWasHorizontal = false
-//                    }
-//                    else -> return null
-//                }
-//                last = e
-//            }
-//
-//            return Rectangle(first.x, first.y, width, height)
-        }
     }
 
 }

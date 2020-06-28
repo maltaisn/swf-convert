@@ -206,6 +206,7 @@ internal class SvgFrameRenderer @Inject constructor(
             // value is the offset between the 1st and 2nd char. So add leading 0 offset.
             val offset = text.glyphOffsets.getOrElse(it - 1) { 0f }
             // SVG dx values are in user space units, not glyph space units.
+            // SVG font size is the size of the EM square so we multiply by that.
             offset / GlyphData.EM_SQUARE_SIZE * text.fontSize
         }
 

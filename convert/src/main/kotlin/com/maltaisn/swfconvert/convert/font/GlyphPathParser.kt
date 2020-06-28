@@ -83,7 +83,7 @@ internal class GlyphPathParser @Inject constructor(
         val paths = converter.parseShape(context, shape,
             emptyList(), emptyList(),
             transform, IDENTITY_TRANSFORM,
-            ignoreStyles = true, allowRectangles = false)
+            ignoreStyles = true)
 
         // Separate glyph shape into contours, each having a single move to element.
         val contours = mutableListOf<Path>()

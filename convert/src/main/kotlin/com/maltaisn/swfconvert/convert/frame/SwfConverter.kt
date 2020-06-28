@@ -324,7 +324,7 @@ internal class SwfConverter @Inject constructor(
         // Parse the shape into paths and images.
         val paths = shapeParser.parseShape(objContext, shapeTag.shape,
             shapeTag.fillStyles, shapeTag.lineStyles, transform,
-            transformStack.last(), placeTag.hasClip, true)
+            transformStack.last(), placeTag.hasClip)
         val shapeObject = ShapeObject(shapeTag.identifier, paths)
 
         if (placeTag.hasClip) {
