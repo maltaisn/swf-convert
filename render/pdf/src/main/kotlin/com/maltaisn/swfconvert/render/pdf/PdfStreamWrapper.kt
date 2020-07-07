@@ -16,16 +16,14 @@
 
 package com.maltaisn.swfconvert.render.pdf
 
-import com.maltaisn.swfconvert.core.BlendMode
 import com.maltaisn.swfconvert.core.image.Color
-import org.apache.logging.log4j.kotlin.logger
+import org.apache.pdfbox.pdmodel.graphics.blend.BlendMode
 import org.apache.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState
 import org.apache.pdfbox.util.Matrix
 import java.awt.BasicStroke
 import java.awt.geom.AffineTransform
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
-import org.apache.pdfbox.pdmodel.graphics.blend.BlendMode as PdfBlendMode
 
 /**
  * A wrapper around PDF content [stream], so that changing a property to
@@ -33,27 +31,12 @@ import org.apache.pdfbox.pdmodel.graphics.blend.BlendMode as PdfBlendMode
  */
 internal class PdfStreamWrapper(val stream: PdfContentStream) {
 
-    private val logger = logger()
-
     private val stateStack = ArrayDeque<State>()
     var restoringState = false
 
     var blendMode: BlendMode by stateProperty(BlendMode.NORMAL) { new, _ ->
         setExtendedState {
-            blendMode = when (new) {
-                BlendMode.NORMAL -> PdfBlendMode.NORMAL
-                BlendMode.LAYER -> PdfBlendMode.NORMAL
-                BlendMode.MULTIPLY -> PdfBlendMode.MULTIPLY
-                BlendMode.LIGHTEN -> PdfBlendMode.LIGHTEN
-                BlendMode.DARKEN -> PdfBlendMode.DARKEN
-                BlendMode.HARDLIGHT -> PdfBlendMode.HARD_LIGHT
-                BlendMode.SCREEN -> PdfBlendMode.SCREEN
-                BlendMode.OVERLAY -> PdfBlendMode.OVERLAY
-                else -> {
-                    logger.error { "Unsupported blend mode in PDF: $new" }
-                    return@stateProperty
-                }
-            }
+            blendMode = new
         }
     }
 
@@ -134,6 +117,10 @@ internal class PdfStreamWrapper(val stream: PdfContentStream) {
         restoreState()
     }
 
+    /**
+     * Set extended state on PDF stream. Note that setting this has a relatively high overhead
+     * on the generated file size. Use sparingly.
+     */
     inline fun setExtendedState(config: PDExtendedGraphicsState.() -> Unit) {
         val state = PDExtendedGraphicsState()
         state.config()

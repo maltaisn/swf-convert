@@ -16,6 +16,7 @@
 
 package com.maltaisn.swfconvert.render.pdf
 
+import com.maltaisn.swfconvert.core.BlendMode
 import com.maltaisn.swfconvert.core.FrameGroup
 import com.maltaisn.swfconvert.core.FrameObject
 import com.maltaisn.swfconvert.core.GroupObject
@@ -27,6 +28,7 @@ import com.maltaisn.swfconvert.core.shape.PathLineStyle
 import com.maltaisn.swfconvert.core.shape.ShapeObject
 import com.maltaisn.swfconvert.core.text.GlyphData
 import com.maltaisn.swfconvert.core.text.TextObject
+import org.apache.logging.log4j.kotlin.logger
 import org.apache.pdfbox.cos.COSArray
 import org.apache.pdfbox.cos.COSDictionary
 import org.apache.pdfbox.cos.COSFloat
@@ -45,10 +47,13 @@ import java.awt.geom.AffineTransform
 import java.awt.geom.Rectangle2D
 import java.io.File
 import javax.inject.Inject
+import org.apache.pdfbox.pdmodel.graphics.blend.BlendMode as PdfBlendMode
 
 class PdfFrameRenderer @Inject internal constructor(
     private val config: PdfConfiguration
 ) {
+
+    private val logger = logger()
 
     private lateinit var pdfDoc: PDDocument
     private lateinit var pdfImages: Map<ImageData, PDImageXObject>
@@ -195,10 +200,17 @@ class PdfFrameRenderer @Inject internal constructor(
     }
 
     private fun drawBlendGroup(group: GroupObject.Blend) {
+        val newBlendMode = group.blendMode.toPdfBlendModeOrNull()
+        if (newBlendMode == null || newBlendMode == streamWrapper.blendMode) {
+            // Unsupported or unchanged blend mode, ignore it.
+            drawSimpleGroup(group)
+            return
+        }
+
         if (countGroupBlendableChildren(group) == 1) {
             // Single object, blend can be applied directly.
             streamWrapper.withState {
-                streamWrapper.blendMode = group.blendMode
+                streamWrapper.blendMode = newBlendMode
                 drawObject(group.objects.first())
             }
 
@@ -208,7 +220,7 @@ class PdfFrameRenderer @Inject internal constructor(
                 drawSimpleGroup(group)
             }
             streamWrapper.withState {
-                streamWrapper.blendMode = group.blendMode
+                streamWrapper.blendMode = newBlendMode
                 streamWrapper.stream.drawForm(contentGroup)
             }
         }
@@ -358,6 +370,21 @@ class PdfFrameRenderer @Inject internal constructor(
             }
             currX = e.x
             currY = e.y
+        }
+    }
+
+    private fun BlendMode.toPdfBlendModeOrNull() = when (this) {
+        BlendMode.NORMAL -> PdfBlendMode.NORMAL
+        BlendMode.LAYER -> PdfBlendMode.NORMAL
+        BlendMode.MULTIPLY -> PdfBlendMode.MULTIPLY
+        BlendMode.LIGHTEN -> PdfBlendMode.LIGHTEN
+        BlendMode.DARKEN -> PdfBlendMode.DARKEN
+        BlendMode.HARDLIGHT -> PdfBlendMode.HARD_LIGHT
+        BlendMode.SCREEN -> PdfBlendMode.SCREEN
+        BlendMode.OVERLAY -> PdfBlendMode.OVERLAY
+        else -> {
+            logger.error { "Unsupported blend mode in PDF: $this" }
+            null
         }
     }
 
