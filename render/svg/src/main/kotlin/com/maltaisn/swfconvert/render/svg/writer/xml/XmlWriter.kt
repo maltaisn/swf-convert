@@ -27,7 +27,7 @@ internal abstract class XmlWriter {
      * Start a new tag with a [name] and [attrs].
      * The started tag becomes the current tag.
      */
-    abstract fun start(name: String, vararg attrs: Pair<String, *>): XmlWriter
+    abstract fun start(name: String, attrs: AttributesArray = emptyArray()): XmlWriter
 
     /**
      * End the current tag, returning the name of the ended tag.
@@ -37,7 +37,7 @@ internal abstract class XmlWriter {
     /**
      * Write XML prolog with [attrs] at current position.
      */
-    abstract fun prolog(vararg attrs: Pair<String, Any?>)
+    abstract fun prolog(attrs: AttributesArray = emptyArray())
 
     /**
      * Write text at current position.
@@ -47,8 +47,8 @@ internal abstract class XmlWriter {
     /**
      * Builder factory function to write a new tag with [this] name and [attrs].
      */
-    inline operator fun String.invoke(vararg attrs: Pair<String, *>, @XmlDsl build: XmlWriter.() -> Unit = {}) {
-        val writer = start(this, *attrs)
+    inline operator fun String.invoke(attrs: AttributesArray = emptyArray(), @XmlDsl build: XmlWriter.() -> Unit = {}) {
+        val writer = start(this, attrs)
         writer.build()
         end()
     }
@@ -61,3 +61,5 @@ inline operator fun <T : XmlWriter> T.invoke(@XmlDsl build: T.() -> Unit) = appl
 
 @DslMarker
 internal annotation class XmlDsl
+
+internal typealias AttributesArray = Array<out Pair<String, Any?>>

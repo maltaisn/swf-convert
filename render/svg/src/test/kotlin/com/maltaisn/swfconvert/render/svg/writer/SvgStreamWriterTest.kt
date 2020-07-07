@@ -23,6 +23,7 @@ import com.maltaisn.swfconvert.render.svg.writer.data.SvgGraphicsState
 import com.maltaisn.swfconvert.render.svg.writer.data.SvgMixBlendMode
 import com.maltaisn.swfconvert.render.svg.writer.data.SvgNumber
 import com.maltaisn.swfconvert.render.svg.writer.data.SvgStrokeLineCap
+import com.maltaisn.swfconvert.render.svg.writer.data.SvgTransform
 import org.junit.Test
 import java.awt.geom.Rectangle2D
 import java.io.ByteArrayOutputStream
@@ -115,6 +116,36 @@ class SvgStreamWriterTest {
     }
 
     @Test
+    fun `should write same transforms twice`() {
+        assertEquals("""<g transform="translate(10 10)"><g transform="translate(10 10)"/></g>""",
+            createSvg(start = true) {
+                group(SvgGraphicsState(transforms = listOf(SvgTransform.Translate(10f, 10f)))) {
+                    group(SvgGraphicsState(transforms = listOf(SvgTransform.Translate(10f, 10f))))
+                }
+            }.onlySvgContent())
+    }
+
+    @Test
+    fun `should not discard empty group`() {
+        assertEquals("<g><g/></g>",
+            createSvg(start = true) {
+                group {
+                    group(discardIfEmpty = false)
+                }
+            }.onlySvgContent())
+    }
+
+    @Test
+    fun `should discard empty groups`() {
+        assertEquals("",
+            createSvg(start = true) {
+                group(discardIfEmpty = true) {
+                    group(discardIfEmpty = true)
+                }
+            }.onlySvgContent())
+    }
+
+    @Test
     fun `should create clip path and use it`() {
         assertEquals("""
                 |<path d="M0 0h20v20h-20Z" clip-path="url(#clip1)" clip-rule="evenodd"/><defs><clipPath id="clip1">
@@ -171,7 +202,7 @@ class SvgStreamWriterTest {
     }
 
     private fun String.onlySvgContent() = """<svg .*?>([\s\S]*)</svg>$""".toRegex()
-        .find(this)?.groupValues?.get(1) ?: error("No SVG found")
+        .find(this)?.groupValues?.get(1) ?: ""
 
     private fun String.asSingleLine() = this.replace("""
         |

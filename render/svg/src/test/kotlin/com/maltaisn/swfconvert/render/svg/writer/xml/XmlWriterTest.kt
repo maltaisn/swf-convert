@@ -54,14 +54,14 @@ class XmlWriterTest {
     @Test
     fun `should create self-closing tag with attributes`() {
         assertEquals("""<tag attr1="1" attr2="text"/>""", createXml {
-            "tag"("attr1" to 1, "attr2" to "text")
+            "tag"(arrayOf("attr1" to 1, "attr2" to "text"))
         })
     }
 
     @Test
     fun `should create self-closing tag with attributes (pretty)`() {
         assertEquals("""<tag attr1="1" attr2="text"/>""", createXml(pretty = true) {
-            "tag"("attr1" to 1, "attr2" to "text")
+            "tag"(arrayOf("attr1" to 1, "attr2" to "text"))
         })
     }
 
@@ -72,9 +72,11 @@ class XmlWriterTest {
             |    attr1="${"x".repeat(200)}"
             |    attr2="text" attr3="3"/>
         """.trimMargin().fixLineBreaks(), createXml(pretty = true) {
-            "tag"("attr1" to "x".repeat(200),
+            "tag"(arrayOf(
+                "attr1" to "x".repeat(200),
                 "attr2" to "text",
-                "attr3" to 3)
+                "attr3" to 3
+            ))
         })
     }
 
@@ -88,7 +90,7 @@ class XmlWriterTest {
         lateinit var addTag: XmlWriter.(String, Int) -> Unit
         addTag = { tag, n ->
             if (n > 0) {
-                tag("attr1" to "value1", "attr2" to "value2") {
+                tag(arrayOf("attr1" to "value1", "attr2" to "value2")) {
                     this.addTag(tag, n - 1)
                 }
             }
@@ -129,7 +131,7 @@ class XmlWriterTest {
     fun `should create self-closing tag with namespaces and attributes`() {
         assertEquals("""<tag xmlns="https://www.example.com" attr1="1" attr2="text"/>""", createXml(
             mapOf(null to "https://www.example.com")) {
-            "tag"("attr1" to 1, "attr2" to "text")
+            "tag"(arrayOf("attr1" to 1, "attr2" to "text"))
         })
     }
 
@@ -137,14 +139,14 @@ class XmlWriterTest {
     fun `should create self-closing tag with namespaces and namespaced attributes`() {
         assertEquals("""<ns:tag xmlns:ns="https://www.example.com" ns:attr1="1" ns:attr2="text"/>""", createXml(
             mapOf("ns" to "https://www.example.com")) {
-            "ns:tag"("ns:attr1" to 1, "ns:attr2" to "text")
+            "ns:tag"(arrayOf("ns:attr1" to 1, "ns:attr2" to "text"))
         })
     }
 
     @Test
     fun `should create empty tag (omit null attributes)`() {
         assertEquals("<tag/>", createXml {
-            "tag"("attr1" to null, "attr2" to null)
+            "tag"(arrayOf("attr1" to null, "attr2" to null))
         })
     }
 
@@ -315,22 +317,22 @@ class XmlWriterTest {
     @Test
     fun `should escape chars in attributes`() {
         assertEquals("""<tag text="&lt;>&amp;'&quot;"/>""", createXml {
-            "tag"("text" to "<>&'\"")
+            "tag"(arrayOf("text" to "<>&'\""))
         })
     }
 
     @Test
     fun `should write prolog`() {
         assertEquals("""<?xml version="1.1" encoding="utf-8"?>""", createXml {
-            prolog("version" to "1.1", "encoding" to "utf-8")
+            prolog(arrayOf("version" to "1.1", "encoding" to "utf-8"))
         })
     }
 
     @Test
     fun `should write prolog and root tag`() {
         assertEquals("""<?xml foo="bar"?><root bar="baz"/>""", createXml {
-            prolog("foo" to "bar")
-            "root"("bar" to "baz")
+            prolog(arrayOf("foo" to "bar"))
+            "root"(arrayOf("bar" to "baz"))
         })
     }
 
@@ -340,8 +342,8 @@ class XmlWriterTest {
             |<?xml foo="bar"?>
             |<root bar="baz"/>
         """.trimMargin().fixLineBreaks(), createXml(pretty = true) {
-            prolog("foo" to "bar")
-            "root"("bar" to "baz")
+            prolog(arrayOf("foo" to "bar"))
+            "root"(arrayOf("bar" to "baz"))
         })
     }
 
@@ -384,7 +386,7 @@ class XmlWriterTest {
         assertEquals("""<tag1><tag2><tag3 foo="bar"><tag4/></tag3>text</tag2></tag1>""", createXml {
             "tag1" {
                 write(XmlTag("tag2")() {
-                    "tag3"("foo" to "bar") {
+                    "tag3"(arrayOf("foo" to "bar")) {
                         "tag4"()
                     }
                     text("text")
@@ -426,7 +428,7 @@ class XmlWriterTest {
     @Test(expected = IllegalStateException::class)
     fun `should fail empty attr name`() {
         createXml {
-            "tag"("" to 0)
+            "tag"(arrayOf("" to 0))
         }
     }
 
@@ -447,14 +449,14 @@ class XmlWriterTest {
     @Test(expected = IllegalStateException::class)
     fun `should fail illegal chars in attr`() {
         createXml {
-            "tag"("<" to 0)
+            "tag"(arrayOf("<" to 0))
         }
     }
 
     @Test(expected = IllegalStateException::class)
     fun `should fail illegal chars in attr 2`() {
         createXml {
-            "tag"("\uFFFF" to 0)
+            "tag"(arrayOf("\uFFFF" to 0))
         }
     }
 
@@ -477,7 +479,7 @@ class XmlWriterTest {
     @Test(expected = IllegalStateException::class)
     fun `should fail multiple colon in attr`() {
         createXml(mapOf("ns" to "_")) {
-            "tag"("ns:foo:bar" to 0)
+            "tag"(arrayOf("ns:foo:bar" to 0))
         }
     }
 
@@ -491,7 +493,7 @@ class XmlWriterTest {
     @Test(expected = IllegalStateException::class)
     fun `should fail invalid attr namespace`() {
         createXml(mapOf("ns" to "_")) {
-            "tag"("foo:bar" to 0)
+            "tag"(arrayOf("foo:bar" to 0))
         }
     }
 

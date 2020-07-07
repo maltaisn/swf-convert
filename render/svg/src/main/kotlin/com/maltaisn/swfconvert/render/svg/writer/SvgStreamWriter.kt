@@ -112,15 +112,15 @@ internal class SvgStreamWriter(
         grStateStack += grState
 
         if (writeProlog) {
-            xml.prolog(ATTR_VERSION to "1.1", ATTR_ENCODING to "UTF-8")
+            xml.prolog(arrayOf(ATTR_VERSION to "1.1", ATTR_ENCODING to "UTF-8"))
         }
 
-        xmlWriter = xml.start(TAG_SVG,
+        xmlWriter = xml.start(TAG_SVG, arrayOf(
             ATTR_VERSION to "2.0",
             ATTR_WIDTH to width.toSvg(precision, !prettyPrint),
             ATTR_HEIGHT to height.toSvg(precision, !prettyPrint),
             ATTR_VIEWBOX to viewBox?.toSvgValuesList(),
-            *getNewGraphicsStateAttrs())
+            *getNewGraphicsStateAttrs()))
     }
 
     /**
@@ -158,12 +158,20 @@ internal class SvgStreamWriter(
         return id
     }
 
-    fun startGroup(grState: SvgGraphicsState = NULL_GRAPHICS_STATE) {
+    /**
+     * Start a new group element with a [grState]. Returns `true` if the group was started.
+     * @param discardIfEmpty Whether to discard the group if it has no attributes (therefore being useless).
+     */
+    fun startGroup(grState: SvgGraphicsState = NULL_GRAPHICS_STATE, discardIfEmpty: Boolean = false): Boolean {
         val xmlWriter = checkIfStarted()
         currentGrStateStack += grState
-        this.xmlWriter = xmlWriter.start(TAG_GROUP,
-            ATTR_ID to consumeDefId(),
-            *getNewGraphicsStateAttrs())
+        val attrs = arrayOf(ATTR_ID to consumeDefId(), *getNewGraphicsStateAttrs())
+        return if (attrs.any { it.second != null } || !discardIfEmpty) {
+            this.xmlWriter = xmlWriter.start(TAG_GROUP, attrs)
+            true
+        } else {
+            false
+        }
     }
 
     fun endGroup() {
@@ -171,15 +179,21 @@ internal class SvgStreamWriter(
         currentGrStateStack.removeLast()
     }
 
-    inline fun group(grState: SvgGraphicsState = NULL_GRAPHICS_STATE, build: () -> Unit = {}) {
-        startGroup(grState)
+    inline fun group(
+        grState: SvgGraphicsState = NULL_GRAPHICS_STATE,
+        discardIfEmpty: Boolean = false,
+        build: () -> Unit = {}
+    ) {
+        val started = startGroup(grState, discardIfEmpty)
         build()
-        endGroup()
+        if (started) {
+            endGroup()
+        }
     }
 
     fun startClipPath() {
         val xmlWriter = checkIfStarted()
-        this.xmlWriter = xmlWriter.start(TAG_CLIP_PATH, ATTR_ID to consumeDefId())
+        this.xmlWriter = xmlWriter.start(TAG_CLIP_PATH, arrayOf(ATTR_ID to consumeDefId()))
     }
 
     fun endClipPath() {
@@ -205,7 +219,7 @@ internal class SvgStreamWriter(
 
     fun startMask() {
         val xmlWriter = checkIfStarted()
-        this.xmlWriter = xmlWriter.start(TAG_MASK, ATTR_ID to consumeDefId())
+        this.xmlWriter = xmlWriter.start(TAG_MASK, arrayOf(ATTR_ID to consumeDefId()))
     }
 
     fun endMask() {
@@ -222,10 +236,11 @@ internal class SvgStreamWriter(
         val xmlWriter = checkIfStarted()
         withGraphicsState(grState) {
             xmlWriter {
-                TAG_PATH(
+                TAG_PATH(arrayOf(
                     ATTR_ID to consumeDefId(),
                     ATTR_DATA to data,
-                    *getNewGraphicsStateAttrs())
+                    *getNewGraphicsStateAttrs()
+                ))
             }
         }
     }
@@ -253,14 +268,15 @@ internal class SvgStreamWriter(
         val xmlWriter = checkIfStarted()
         withGraphicsState(grState) {
             xmlWriter {
-                TAG_IMAGE(
+                TAG_IMAGE(arrayOf(
                     ATTR_ID to consumeDefId(),
                     ATTR_X to x.takeIf { it.value != 0f }?.toSvg(precision, !prettyPrint),
                     ATTR_Y to y.takeIf { it.value != 0f }?.toSvg(precision, !prettyPrint),
                     ATTR_WIDTH to width,
                     ATTR_HEIGHT to height,
                     ATTR_XLINK_HREF to href,
-                    *getNewGraphicsStateAttrs())
+                    *getNewGraphicsStateAttrs()
+                ))
             }
         }
     }
@@ -279,7 +295,7 @@ internal class SvgStreamWriter(
         val xmlWriter = checkIfStarted()
         withGraphicsState(grState) {
             xmlWriter {
-                TAG_LINEAR_GRADIENT(
+                TAG_LINEAR_GRADIENT(arrayOf(
                     ATTR_ID to consumeDefId(),
                     ATTR_X1 to x1.takeIf { x1 != 0f }?.formatOptimizedOrNot(precision),
                     ATTR_Y1 to y1.takeIf { y1 != 0f }?.formatOptimizedOrNot(precision),
@@ -287,12 +303,15 @@ internal class SvgStreamWriter(
                     ATTR_Y2 to y2.takeIf { y2 != 0f }?.formatOptimizedOrNot(precision),
                     ATTR_GRADIENT_UNITS to units.takeIf { it != SvgGradientUnits.OBJECT_BOUNDING_BOX }?.svgName,
                     ATTR_GRADIENT_TRANSFORM to transforms?.toSvgTransformList(transformPrecision, !prettyPrint),
-                    *getNewGraphicsStateAttrs()) {
+                    *getNewGraphicsStateAttrs()
+                )) {
                     for (stop in stops) {
-                        TAG_STOP(ATTR_OFFSET to stop.offset.format(percentPrecision),
+                        TAG_STOP(arrayOf(
+                            ATTR_OFFSET to stop.offset.format(percentPrecision),
                             ATTR_STOP_COLOR to SvgFillColor(stop.color).toSvg(),
                             ATTR_STOP_OPACITY to stop.opacity.takeIf { it != 1f }
-                                ?.formatOptimizedOrNot(percentPrecision))
+                                ?.formatOptimizedOrNot(percentPrecision)
+                        ))
                     }
                 }
             }
@@ -302,7 +321,7 @@ internal class SvgStreamWriter(
     fun font(name: String, path: String) {
         val xmlWriter = checkIfStarted()
         xmlWriter {
-            TAG_STYLE(ATTR_TYPE to "text/css") {
+            TAG_STYLE(arrayOf(ATTR_TYPE to "text/css")) {
                 text("@$CSS_FONT_FACE{$CSS_FONT_FAMILY:$name;" +
                         "$CSS_SRC:url('$path');}")
             }
@@ -322,14 +341,15 @@ internal class SvgStreamWriter(
         val xmlWriter = checkIfStarted()
         withGraphicsState(grState) {
             xmlWriter {
-                TAG_TEXT(
+                TAG_TEXT(arrayOf(
                     ATTR_ID to consumeDefId(),
                     ATTR_X to x.takeIf { it.value != 0f }?.toSvg(precision, !prettyPrint),
                     ATTR_Y to y.takeIf { it.value != 0f }?.toSvg(precision, !prettyPrint),
                     ATTR_DX to dxValue,
                     ATTR_FONT_FAMILY to fontId,
                     ATTR_FONT_SIZE to fontSize?.formatOptimizedOrNot(precision),
-                    *getNewGraphicsStateAttrs()) {
+                    *getNewGraphicsStateAttrs()
+                )) {
                     text(text)
                 }
             }
@@ -359,8 +379,7 @@ internal class SvgStreamWriter(
         ATTR_CLIP_PATH to getNewGraphicsStateProperty { clipPathId }?.toSvgUrlReference(),
         ATTR_CLIP_RULE to getNewGraphicsStateProperty { clipPathRule }?.svgName,
         ATTR_MASK to getNewGraphicsStateProperty { maskId }?.toSvgUrlReference(),
-        ATTR_TRANSFORM to getNewGraphicsStateProperty { transforms }?.toSvgTransformList(transformPrecision,
-            !prettyPrint),
+        ATTR_TRANSFORM to currentGrStateStack.last().transforms?.toSvgTransformList(transformPrecision, !prettyPrint),
         ATTR_PRESERVE_ASPECT_RATIO to getNewGraphicsStateProperty { preserveAspectRatio }?.toSvg(),
         ATTR_STYLE to getGraphicsStateCssStyle()
     )

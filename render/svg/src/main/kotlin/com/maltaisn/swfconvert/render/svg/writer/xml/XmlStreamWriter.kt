@@ -76,10 +76,7 @@ internal class XmlStreamWriter(
         writer.close()
     }
 
-    override fun start(
-        name: String,
-        vararg attrs: Pair<String, *>
-    ): XmlStreamWriter {
+    override fun start(name: String, attrs: AttributesArray): XmlStreamWriter {
         check(!isRoot || !hasRootTag) { "There must be a single root tag" }
         name.checkXmlName()
 
@@ -120,7 +117,7 @@ internal class XmlStreamWriter(
         return this
     }
 
-    override fun prolog(vararg attrs: Pair<String, Any?>) {
+    override fun prolog(attrs: AttributesArray) {
         check(!hasRootTag) { "Prolog must be the first XML element" }
 
         write("<")
@@ -150,12 +147,12 @@ internal class XmlStreamWriter(
      */
     fun write(element: XmlElement) {
         when (element) {
-            is XmlTag -> element.name(*element.attrs.toTypedArray()) {
+            is XmlTag -> element.name(element.attrs.toTypedArray()) {
                 for (child in element.children) {
                     write(child)
                 }
             }
-            is XmlProlog -> prolog(*element.attrs.toTypedArray())
+            is XmlProlog -> prolog(element.attrs.toTypedArray())
             is XmlText -> text(element.text)
         }
     }

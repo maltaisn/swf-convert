@@ -32,7 +32,7 @@ internal data class XmlTag(
     override val currentTag: String
         get() = name
 
-    override fun start(name: String, vararg attrs: Pair<String, *>): XmlWriter {
+    override fun start(name: String, attrs: AttributesArray): XmlWriter {
         val tag = XmlTag(name, attrs.toMap(mutableMapOf()), mutableListOf(), this)
         children += tag
         return tag
@@ -40,7 +40,7 @@ internal data class XmlTag(
 
     override fun end() = parent
 
-    override fun prolog(vararg attrs: Pair<String, Any?>) {
+    override fun prolog(attrs: AttributesArray) {
         children += XmlProlog(attrs.toMap(mutableMapOf()))
     }
 

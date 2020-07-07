@@ -147,18 +147,13 @@ internal class SvgFrameRenderer @Inject constructor(
     }
 
     private fun drawClipGroup(group: GroupObject.Clip) {
-        if (group.clips.isEmpty()) {
-            drawSimpleGroup(group)
-            return
-        }
-
-        svg.group(createClipSvgGraphicsState(group.clips)) {
+        svg.group(createClipSvgGraphicsState(group.clips), discardIfEmpty = true) {
             drawSimpleGroup(group)
         }
     }
 
     private fun drawBlendGroup(group: GroupObject.Blend) {
-        svg.group(SvgGraphicsState(mixBlendMode = group.blendMode.toSvgMixBlendMode())) {
+        svg.group(SvgGraphicsState(mixBlendMode = group.blendMode.toSvgMixBlendModeOrNull()), discardIfEmpty = true) {
             drawSimpleGroup(group)
         }
     }
@@ -286,6 +281,9 @@ internal class SvgFrameRenderer @Inject constructor(
     }
 
     private fun createClipSvgGraphicsState(paths: List<Path>): SvgGraphicsState {
+        if (paths.isEmpty()) {
+            return SvgStreamWriter.NULL_GRAPHICS_STATE
+        }
         val id = nextDefId
         svg.writeDef(id) {
             clipPathData {
@@ -346,7 +344,7 @@ internal class SvgFrameRenderer @Inject constructor(
             scaleY.toFloat(), translateX.toFloat(), translateY.toFloat()))
     }
 
-    private fun BlendMode.toSvgMixBlendMode() = when (this) {
+    private fun BlendMode.toSvgMixBlendModeOrNull() = when (this) {
         // See: https://drafts.fxtf.org/compositing-1/#blendingseparable
         BlendMode.NULL, BlendMode.NORMAL, BlendMode.LAYER -> SvgMixBlendMode.NORMAL
         BlendMode.MULTIPLY -> SvgMixBlendMode.MULTIPLY
