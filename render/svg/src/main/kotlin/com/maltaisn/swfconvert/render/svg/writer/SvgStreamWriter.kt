@@ -34,7 +34,6 @@ import com.maltaisn.swfconvert.render.svg.writer.data.SvgTransform
 import com.maltaisn.swfconvert.render.svg.writer.data.toSvgTransformList
 import com.maltaisn.swfconvert.render.svg.writer.data.validateGradientStops
 import com.maltaisn.swfconvert.render.svg.writer.format.appendValuesList
-import com.maltaisn.swfconvert.render.svg.writer.format.appendValuesListOptimized
 import com.maltaisn.swfconvert.render.svg.writer.format.format
 import com.maltaisn.swfconvert.render.svg.writer.format.formatOptimized
 import com.maltaisn.swfconvert.render.svg.writer.format.requireSvgPrecision
@@ -429,7 +428,16 @@ internal class SvgStreamWriter(
         if (prettyPrint) {
             appendValuesList(precision, values)
         } else {
-            appendValuesListOptimized(precision, null, values)
+            // Some browsers don't support optimized values lists so it might be better not to use them.
+            // It's also not part of the official syntax reference.
+            // appendValuesListOptimized(precision, null, values)
+            for (value in values) {
+                append(value.formatOptimized(precision))
+                append(' ')
+            }
+            if (values.isNotEmpty()) {
+                deleteCharAt(length - 1)
+            }
         }
     }
 
