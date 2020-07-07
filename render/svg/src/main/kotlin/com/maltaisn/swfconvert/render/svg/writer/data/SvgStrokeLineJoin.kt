@@ -16,10 +16,10 @@
 
 package com.maltaisn.swfconvert.render.svg.writer.data
 
-internal sealed class SvgStrokeLineJoin(val svgName: String) {
-    object Miter : SvgStrokeLineJoin("miter")
-    object Round : SvgStrokeLineJoin("round")
-    object Bevel : SvgStrokeLineJoin("bevel")
-    object Arcs : SvgStrokeLineJoin("arcs")
-    class MiterClip(val limit: Float) : SvgStrokeLineJoin("miter-clip")
+internal enum class SvgStrokeLineJoin(val svgName: String) {
+    MITER("miter"),
+    ROUND("round"),
+    BEVEL("bevel"),
+    ARCS("arcs"),
+    MITER_CLIP("miter-clip")
 }

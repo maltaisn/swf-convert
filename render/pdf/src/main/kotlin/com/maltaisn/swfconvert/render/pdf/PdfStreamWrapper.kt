@@ -140,8 +140,10 @@ internal class PdfStreamWrapper(val stream: PdfContentStream) {
         stream.setGraphicsStateParameters(state)
     }
 
-    private inline fun <T> stateProperty(value: T, crossinline write: (new: T, old: T) -> Unit)
-            : ReadWriteProperty<PdfStreamWrapper, T> =
+    private inline fun <T> stateProperty(
+        value: T,
+        crossinline write: (new: T, old: T) -> Unit
+    ): ReadWriteProperty<PdfStreamWrapper, T> =
         object : ReadWriteProperty<PdfStreamWrapper, T> {
             var value = value
 

@@ -23,6 +23,7 @@ import com.maltaisn.swfconvert.convert.ConvertConfiguration
 import com.maltaisn.swfconvert.convert.context.SwfFileContext
 import com.maltaisn.swfconvert.convert.context.SwfObjectContext
 import com.maltaisn.swfconvert.convert.conversionError
+import com.maltaisn.swfconvert.convert.font.FontsMap
 import com.maltaisn.swfconvert.convert.image.CompositeColorTransform
 import com.maltaisn.swfconvert.convert.toAffineTransformOrIdentity
 import com.maltaisn.swfconvert.convert.toColor
@@ -53,7 +54,7 @@ internal class TextConverter @Inject constructor(
 
     private lateinit var textTag: StaticTextTag
     private lateinit var colorTransform: CompositeColorTransform
-    private lateinit var fontsMap: Map<FontId, Font>
+    private lateinit var fontsMap: FontsMap
 
     // Text span style
     private var font: Font? = null
@@ -73,7 +74,7 @@ internal class TextConverter @Inject constructor(
         context: SwfObjectContext,
         textTag: StaticTextTag,
         colorTransform: CompositeColorTransform,
-        fontsMap: Map<FontId, Font>
+        fontsMap: FontsMap
     ): List<FrameObject> {
         this.context = context
         this.textTag = textTag

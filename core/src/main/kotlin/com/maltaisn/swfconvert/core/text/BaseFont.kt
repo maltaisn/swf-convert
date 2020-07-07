@@ -19,10 +19,8 @@ package com.maltaisn.swfconvert.core.text
 import java.io.File
 
 interface BaseFont {
-
     var name: String
     val metrics: FontMetrics
     val glyphs: List<FontGlyph>
     var fontFile: File?
-
 }

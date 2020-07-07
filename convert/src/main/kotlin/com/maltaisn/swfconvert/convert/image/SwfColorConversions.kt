@@ -23,7 +23,7 @@ package com.maltaisn.swfconvert.convert.image
 import com.maltaisn.swfconvert.core.image.Color
 import kotlin.math.roundToInt
 
-fun ByteArray.pix15BytesToColor(offset: Int): Color {
+internal fun ByteArray.pix15BytesToColor(offset: Int): Color {
     // PIX15 record is 2 bytes wide, color components each take 5 bits (MSB is always 0).
     val v = (this[offset].asUInt() shl 8) or
             (this[offset + 1].asUInt())
@@ -33,7 +33,7 @@ fun ByteArray.pix15BytesToColor(offset: Int): Color {
     return Color(r, g, b)
 }
 
-fun ByteArray.pix24BytesToColor(offset: Int): Color {
+internal fun ByteArray.pix24BytesToColor(offset: Int): Color {
     // PIX24 record is 3 bytes wide, color components each take one byte.
     val r = this[offset + 1].asUInt()
     val g = this[offset + 2].asUInt()
@@ -41,14 +41,14 @@ fun ByteArray.pix24BytesToColor(offset: Int): Color {
     return Color(r, g, b)
 }
 
-fun ByteArray.rgbBytesToColor(offset: Int): Color {
+internal fun ByteArray.rgbBytesToColor(offset: Int): Color {
     val r = this[offset].asUInt()
     val g = this[offset + 1].asUInt()
     val b = this[offset + 2].asUInt()
     return Color(r, g, b)
 }
 
-fun ByteArray.rgbaBytesToColor(offset: Int): Color {
+internal fun ByteArray.rgbaBytesToColor(offset: Int): Color {
     val r = this[offset].asUInt()
     val g = this[offset + 1].asUInt()
     val b = this[offset + 2].asUInt()
@@ -56,7 +56,7 @@ fun ByteArray.rgbaBytesToColor(offset: Int): Color {
     return Color(r, g, b, a)
 }
 
-fun ByteArray.argbBytesToColor(offset: Int): Color {
+internal fun ByteArray.argbBytesToColor(offset: Int): Color {
     val r = this[offset + 1].asUInt()
     val g = this[offset + 2].asUInt()
     val b = this[offset + 3].asUInt()
@@ -64,7 +64,7 @@ fun ByteArray.argbBytesToColor(offset: Int): Color {
     return Color(r, g, b, a)
 }
 
-fun Color.divideAlpha(): Color {
+internal fun Color.divideAlpha(): Color {
     val m = if (a == 0) 0f else Color.COMPONENT_MAX_F / a
     val r = (r * m).roundToInt().coerceAtMost(Color.COMPONENT_MAX)
     val g = (g * m).roundToInt().coerceAtMost(Color.COMPONENT_MAX)

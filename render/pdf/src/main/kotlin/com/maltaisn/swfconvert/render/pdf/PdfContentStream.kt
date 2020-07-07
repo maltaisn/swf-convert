@@ -35,8 +35,8 @@ import org.apache.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState
 import org.apache.pdfbox.pdmodel.graphics.state.RenderingMode
 import org.apache.pdfbox.util.Matrix
 
-// Why the hell PDFBox has no interface for these two classes, I don't know!
-// So here's a painful solution.
+// Note: all content streams in PDFBox 3.x correctly inherit PDAbstractContentStream.
+// But we'll keep using PDFBox 2.x for stability.
 
 internal interface PdfContentStream {
     fun beginText()

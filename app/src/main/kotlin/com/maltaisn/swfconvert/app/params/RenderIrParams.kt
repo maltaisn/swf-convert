@@ -25,7 +25,7 @@ import com.maltaisn.swfconvert.render.ir.IrConfiguration
 import java.io.File
 
 @Parameters(commandDescription = "Intermediate representation output format")
-class RenderIrParams : RenderParams<IrConfiguration> {
+internal class RenderIrParams : RenderParams<IrConfiguration> {
 
     @ParametersDelegate
     override var params = CoreParams(false) { "json" }.apply {

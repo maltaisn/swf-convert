@@ -30,7 +30,7 @@ import dagger.multibindings.IntoMap
 abstract class RenderIrModule {
 
     @get:[Binds IntoMap FramesRendererKey(IrConfiguration::class)]
-    abstract val IrFramesRenderer.bindsPdfFramesRenderer: FramesRenderer
+    internal abstract val IrFramesRenderer.bindsPdfFramesRenderer: FramesRenderer
 
     companion object {
         @Provides

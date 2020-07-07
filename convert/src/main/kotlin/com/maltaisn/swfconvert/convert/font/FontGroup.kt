@@ -54,26 +54,32 @@ internal data class FontGroup(
             }
             metrics == other.metrics -> {
                 // Both font have same metrics, check glyphs.
-                var hasCommonChar = false
-                for ((char, glyph) in glyphsMap) {
-                    val otherGlyph = other.glyphsMap[char]
-                    if (otherGlyph != null) {
-                        if (glyph != otherGlyph) {
-                            // Two glyphs with same character but different shape, so these two fonts are different.
-                            return false
-                        } else if (!glyph.isWhitespace) {
-                            hasCommonChar = true
-                        }
-                    }
-                }
-                // If no character is common between the two fonts, we can't say if they
-                // are compatible, so it's better to assume they're not for the moment, to
-                // make further merging more efficient.
-                hasCommonChar || !requireCommon
+                // If they have incompatible chars, they can't be merged.
+                // Otherwise check if they have at least one common char (if required).
+                !hasIncompatibleCharWith(other) &&
+                        (!requireCommon || hasCommonCharWith(other))
             }
             else -> false
         }
     }
+
+    /**
+     * Returns `true` if this group has a common non-whitespace char with the [other] group.
+     */
+    private fun hasCommonCharWith(other: FontGroup) =
+        glyphsMap.entries.find { (char, glyph) ->
+            !glyph.isWhitespace && glyph == other.glyphsMap[char]
+        } != null
+
+    /**
+     * Returns `true` if this group has a char with the same code
+     * as another char in [other], but different contours.
+     * */
+    private fun hasIncompatibleCharWith(other: FontGroup) =
+        glyphsMap.entries.find { (char, glyph) ->
+            val otherGlyph = other.glyphsMap[char]
+            otherGlyph != null && glyph != otherGlyph
+        } != null
 
     fun merge(font: FontGroup) {
         glyphsMap += font.glyphsMap

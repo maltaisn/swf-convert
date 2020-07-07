@@ -27,7 +27,7 @@ import org.apache.logging.log4j.kotlin.logger
 import java.io.File
 
 @Parameters(commandDescription = "SVG output format")
-class RenderSvgParams : RenderParams<SvgConfiguration> {
+internal class RenderSvgParams : RenderParams<SvgConfiguration> {
 
     private val logger = logger()
 

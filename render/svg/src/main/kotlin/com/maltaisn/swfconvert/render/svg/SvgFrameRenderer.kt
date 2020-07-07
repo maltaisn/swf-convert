@@ -375,15 +375,19 @@ internal class SvgFrameRenderer @Inject constructor(
             else -> error("Unknown stroke line cap")
         },
         strokeLineJoin = when (this.join) {
-            BasicStroke.JOIN_BEVEL -> SvgStrokeLineJoin.Bevel
+            BasicStroke.JOIN_BEVEL -> SvgStrokeLineJoin.BEVEL
             BasicStroke.JOIN_MITER -> if (this.miterLimit == 0f) {
-                SvgStrokeLineJoin.Miter
+                SvgStrokeLineJoin.MITER
             } else {
-                SvgStrokeLineJoin.MiterClip(this.miterLimit)
+                SvgStrokeLineJoin.MITER_CLIP
             }
-            BasicStroke.JOIN_ROUND -> SvgStrokeLineJoin.Bevel
+            BasicStroke.JOIN_ROUND -> SvgStrokeLineJoin.ROUND
             else -> error("Unknown stroke line join")
-        })
+        },
+        strokeMiterLimit = this.miterLimit.takeIf {
+            this.join == BasicStroke.JOIN_MITER && it != 0f
+        }
+    )
 
     private fun getImagesFile(name: String) = File(imagesDir, name).invariantSeparatorsPath
     private fun getFontsFile(name: String) = File(fontsDir, name).invariantSeparatorsPath

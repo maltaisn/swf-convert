@@ -24,10 +24,10 @@ class ConversionError(
     message: String? = ""
 ) : IllegalStateException("$message, context: $context")
 
-fun conversionError(context: ConvertContext, message: String): Nothing =
+internal fun conversionError(context: ConvertContext, message: String): Nothing =
     throw ConversionError(context, message)
 
-inline fun conversionError(condition: Boolean, context: ConvertContext, message: () -> String) {
+internal inline fun conversionError(condition: Boolean, context: ConvertContext, message: () -> String) {
     contract {
         returns() implies condition
     }

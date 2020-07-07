@@ -21,7 +21,6 @@ import com.maltaisn.swfconvert.render.core.RenderConfiguration
 import dagger.BindsInstance
 import dagger.Component
 
-
 @Component
 interface RenderCoreComponent {
 
@@ -30,7 +29,9 @@ interface RenderCoreComponent {
 
     @Component.Factory
     interface Factory {
-        fun create(@BindsInstance config: RenderConfiguration,
-                   @BindsInstance progressCallback: ProgressCallback): RenderCoreComponent
+        fun create(
+            @BindsInstance config: RenderConfiguration,
+            @BindsInstance progressCallback: ProgressCallback
+        ): RenderCoreComponent
     }
 }

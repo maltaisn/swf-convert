@@ -18,14 +18,27 @@ package com.maltaisn.swfconvert.convert.frame.data
 
 import com.flagstone.transform.DefineTag
 import com.maltaisn.swfconvert.convert.context.SwfObjectContext
+import com.maltaisn.swfconvert.convert.wrapper.WPlace
 
-internal data class SwfFrame(
+internal sealed class SwfFrameObject {
+    abstract val context: SwfObjectContext
+    abstract val id: Int
+    abstract val place: WPlace
+    abstract val tag: DefineTag
+}
+
+internal data class SwfObject(
     override val context: SwfObjectContext,
     override val id: Int,
-    val dictionary: SwfDictionary,
-    val width: Int,
-    val height: Int,
-    override val objects: List<SwfFrameObject>
-) : SwfObjectGroup
+    override val place: WPlace,
+    override val tag: DefineTag
+) : SwfFrameObject()
 
-internal typealias SwfDictionary = Map<Int, DefineTag>
+internal data class SwfSprite(
+    override val context: SwfObjectContext,
+    override val id: Int,
+    override val place: WPlace,
+    override val tag: DefineTag,
+    override val objects: List<SwfFrameObject>
+) : SwfFrameObject(),
+    SwfObjectGroup

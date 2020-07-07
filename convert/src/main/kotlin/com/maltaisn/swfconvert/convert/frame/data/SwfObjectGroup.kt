@@ -14,17 +14,12 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.convert.context
+package com.maltaisn.swfconvert.convert.frame.data
 
-/**
- * Context for a glyph being converted in a SWF font object.
- */
-internal class SwfGlyphContext(
-    parent: SwfObjectContext,
-    private val glyphIndex: Int
-) : ConvertContext(parent) {
+import com.maltaisn.swfconvert.convert.context.SwfObjectContext
 
-    override val description: String
-        get() = "glyph at index $glyphIndex"
-
+internal interface SwfObjectGroup {
+    val context: SwfObjectContext
+    val id: Int
+    val objects: List<SwfFrameObject>
 }

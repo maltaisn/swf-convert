@@ -36,7 +36,7 @@ import javax.inject.Provider
 /**
  * Convert all frames from the intermediate representation to SVG.
  */
-class SvgFramesRenderer @Inject internal constructor(
+internal class SvgFramesRenderer @Inject internal constructor(
     private val config: SvgConfiguration,
     private val progressCb: ProgressCallback,
     private val svgFrameRendererProvider: Provider<SvgFrameRenderer>

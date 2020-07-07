@@ -30,7 +30,7 @@ import org.apache.logging.log4j.kotlin.logger
 import javax.inject.Inject
 import javax.inject.Provider
 
-class SwfConvert(private val config: Configuration) {
+internal class SwfConvert(private val config: Configuration) {
 
     private val logger = logger()
 

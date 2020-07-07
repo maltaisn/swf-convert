@@ -20,14 +20,13 @@ import com.flagstone.transform.Movie
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
 import com.maltaisn.swfconvert.convert.context.ConvertContext
 import com.maltaisn.swfconvert.convert.context.SwfFileContext
+import com.maltaisn.swfconvert.convert.font.FontsMap
 import com.maltaisn.swfconvert.convert.frame.data.SwfFrame
 import com.maltaisn.swfconvert.core.FrameGroup
 import com.maltaisn.swfconvert.core.ProgressCallback
 import com.maltaisn.swfconvert.core.mapInParallel
 import com.maltaisn.swfconvert.core.showProgress
 import com.maltaisn.swfconvert.core.showStep
-import com.maltaisn.swfconvert.core.text.Font
-import com.maltaisn.swfconvert.core.text.FontId
 import com.maltaisn.swfconvert.core.use
 import javax.inject.Inject
 import javax.inject.Provider
@@ -45,7 +44,7 @@ internal class SwfsConverter @Inject constructor(
     suspend fun createFrameGroups(
         context: ConvertContext,
         swfs: List<Movie>,
-        fontsMap: Map<FontId, Font>
+        fontsMap: FontsMap
     ): List<List<FrameGroup>> {
         val frames = findAllFrames(context, swfs)
         return createAllFrameGroups(frames, fontsMap)
@@ -72,7 +71,7 @@ internal class SwfsConverter @Inject constructor(
 
     private suspend fun createAllFrameGroups(
         frames: List<List<SwfFrame>>,
-        fontsMap: Map<FontId, Font>
+        fontsMap: FontsMap
     ): List<List<FrameGroup>> {
         // Create all frame groups as a single list
         val allFrames = frames.flatten()

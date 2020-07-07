@@ -355,6 +355,7 @@ internal class SvgStreamWriter(
         ATTR_STROKE_WIDTH to getNewGraphicsStateProperty { strokeWidth },
         ATTR_STROKE_LINE_JOIN to getNewGraphicsStateProperty { strokeLineJoin }?.svgName,
         ATTR_STROKE_LINE_CAP to getNewGraphicsStateProperty { strokeLineCap }?.svgName,
+        ATTR_STROKE_MITER_LIMIT to getNewGraphicsStateProperty { strokeMiterLimit }?.formatOptimizedOrNot(precision),
         ATTR_CLIP_PATH to getNewGraphicsStateProperty { clipPathId }?.toSvgUrlReference(),
         ATTR_CLIP_RULE to getNewGraphicsStateProperty { clipPathRule }?.svgName,
         ATTR_MASK to getNewGraphicsStateProperty { maskId }?.toSvgUrlReference(),
@@ -454,6 +455,7 @@ internal class SvgStreamWriter(
         private const val ATTR_STROKE = "stroke"
         private const val ATTR_STROKE_LINE_CAP = "stroke-linecap"
         private const val ATTR_STROKE_LINE_JOIN = "stroke-linejoin"
+        private const val ATTR_STROKE_MITER_LIMIT = "stroke-miterlimit"
         private const val ATTR_STROKE_OPACITY = "stroke-opacity"
         private const val ATTR_STROKE_WIDTH = "stroke-width"
         private const val ATTR_STYLE = "style"
@@ -482,8 +484,9 @@ internal class SvgStreamWriter(
             stroke = SvgFillNone,
             strokeOpacity = 1f,
             strokeWidth = 0f,
-            strokeLineJoin = SvgStrokeLineJoin.Miter,
+            strokeLineJoin = SvgStrokeLineJoin.MITER,
             strokeLineCap = SvgStrokeLineCap.BUTT,
+            strokeMiterLimit = 4f,
             clipPathId = null,
             clipPathRule = SvgFillRule.NON_ZERO,
             maskId = null,

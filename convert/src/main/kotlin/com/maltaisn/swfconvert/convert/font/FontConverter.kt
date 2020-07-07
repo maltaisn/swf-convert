@@ -44,7 +44,7 @@ internal class FontConverter @Inject constructor(
     private val config: ConvertConfiguration,
     private val progressCb: ProgressCallback,
     private val glyphPathParser: GlyphPathParser,
-    private val fontBuilder: FontBuilder
+    private val fontBuilder: TTFFontBuilder
 ) {
 
     private val logger = logger()
@@ -96,7 +96,7 @@ internal class FontConverter @Inject constructor(
      * Take a list of font groups and ungroup them to the original fonts,
      * so they have the original glyph indices but they share the same TTF font.
      */
-    fun ungroupFonts(groups: List<FontGroup>): Map<FontId, Font> {
+    fun ungroupFonts(groups: List<FontGroup>): FontsMap {
         val fonts = mutableMapOf<FontId, Font>()
         for (group in groups) {
             for (font in group.fonts) {
@@ -304,3 +304,9 @@ internal class FontConverter @Inject constructor(
     }
 
 }
+
+/**
+ * A map of font objects across a collection of SWF files.
+ * The same font may be mapped to multiple ID if merging was done.
+ */
+internal typealias FontsMap = Map<FontId, Font>

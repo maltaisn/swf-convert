@@ -22,7 +22,7 @@ import com.maltaisn.swfconvert.render.core.RenderConfiguration
 /**
  * Configuration used for converting a SWF file collection to the output format.
  */
-data class Configuration(
+internal data class Configuration(
     val convert: ConvertConfiguration,
     val render: RenderConfiguration
 )

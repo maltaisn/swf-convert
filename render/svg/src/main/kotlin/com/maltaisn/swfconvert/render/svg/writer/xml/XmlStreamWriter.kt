@@ -87,7 +87,7 @@ internal class XmlStreamWriter(
         // At this point we know that the tag won't be self-closing since it has this child tag.
         closeStartTagIfNeeded()
 
-        writeStartTag(name, *attrs)
+        writeStartTag(name, attrs)
 
         if (isRoot) {
             // Currently on root, mark root tag as written.
@@ -125,7 +125,7 @@ internal class XmlStreamWriter(
 
         write("<")
         write(XML_PROLOG)
-        writeAttributes(XML_PROLOG, *attrs)
+        writeAttributes(XML_PROLOG, attrs)
         attrIndentLevel = 0
         write("?>")
         writeLine()
@@ -186,7 +186,7 @@ internal class XmlStreamWriter(
         }
     }
 
-    private fun writeStartTag(name: String, vararg attrs: Pair<String, *>) {
+    private fun writeStartTag(name: String, attrs: Array<out Pair<String, *>>) {
         writeIndent()
         write("<")
         write(name)
@@ -196,7 +196,7 @@ internal class XmlStreamWriter(
             // Root tag, write namespace attributes.
             writeNamespaceAttributes(name)
         }
-        writeAttributes(name, *attrs)
+        writeAttributes(name, attrs)
         attrIndentLevel = 0
     }
 
@@ -210,7 +210,7 @@ internal class XmlStreamWriter(
         }
     }
 
-    private fun writeAttributes(tagName: String, vararg attrs: Pair<String, *>) {
+    private fun writeAttributes(tagName: String, attrs: Array<out Pair<String, *>>) {
         for ((name, value) in attrs) {
             if (value != null) {
                 name.checkXmlName()

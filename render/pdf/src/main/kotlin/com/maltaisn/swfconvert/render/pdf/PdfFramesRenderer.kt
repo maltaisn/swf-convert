@@ -50,7 +50,7 @@ import javax.inject.Provider
 /**
  * Convert all frames from the intermediate representation to output format.
  */
-class PdfFramesRenderer @Inject internal constructor(
+internal class PdfFramesRenderer @Inject internal constructor(
     private val config: PdfConfiguration,
     private val progressCb: ProgressCallback,
     private val pdfFrameRendererProvider: Provider<PdfFrameRenderer>,

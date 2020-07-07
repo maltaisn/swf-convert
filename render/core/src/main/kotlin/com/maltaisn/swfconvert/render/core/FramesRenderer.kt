@@ -24,5 +24,4 @@ interface FramesRenderer {
      * Render a list of [frameGroups] to the output files specified by the configuration.
      */
     suspend fun renderFrames(frameGroups: List<List<FrameGroup>>)
-
 }

@@ -24,21 +24,21 @@ import java.io.File
  * Unknown options are not getting caught, so this must be checked for
  * each parameter of variable arity.
  */
-fun checkNoOptionsInArgs(args: List<String>) {
+internal fun checkNoOptionsInArgs(args: List<String>) {
     val unknown = args.find { it.startsWith("-") } ?: return
     configError("Unknown option '$unknown'.")
 }
 
-fun File.isSwfFile() = this.extension.toLowerCase() == "swf"
+internal fun File.isSwfFile() = this.extension.toLowerCase() == "swf"
 
-fun String.toBooleanOrNull() = when (this.toLowerCase()) {
+internal fun String.toBooleanOrNull() = when (this.toLowerCase()) {
     "true" -> true
     "false" -> false
     else -> null
 }
 
 @Suppress("MagicNumber")
-fun String.toColorOrNull(): Color? = when (this.length) {
+internal fun String.toColorOrNull(): Color? = when (this.length) {
     7 -> this.substring(1).toIntOrNull(16)?.let { Color(it).opaque }
     9 -> this.substring(1).toIntOrNull(16)?.let { Color(it) }
     else -> null
@@ -49,7 +49,7 @@ fun String.toColorOrNull(): Color? = when (this.length) {
  * return null if element can't be parsed. List must be delimited with square brackets
  * and elements must be separated with commas.
  */
-inline fun <T> String.toListOrNull(crossinline parseElement: (String) -> T?): List<T>? {
+internal inline fun <T> String.toListOrNull(crossinline parseElement: (String) -> T?): List<T>? {
     if (this.first() != '[' || this.last() != ']') {
         return null
     }

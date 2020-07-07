@@ -35,7 +35,7 @@ import java.text.DecimalFormat
 
 @Suppress("MagicNumber")
 @Parameters(commandDescription = "PDF output format")
-class RenderPdfParams : RenderParams<PdfConfiguration> {
+internal class RenderPdfParams : RenderParams<PdfConfiguration> {
 
     @ParametersDelegate
     override var params = CoreParams(true) { "pdf" }

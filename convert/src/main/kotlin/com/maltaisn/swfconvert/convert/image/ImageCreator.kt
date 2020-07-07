@@ -128,11 +128,7 @@ internal class ImageCreator @Inject constructor(
     private fun <C : MutableCollection<PathFillStyle.Image>> GroupObject.findAllImagesTo(destination: C): C {
         for (obj in this.objects) {
             if (obj is ShapeObject) {
-                for (path in obj.paths) {
-                    if (path.fillStyle is PathFillStyle.Image) {
-                        destination += path.fillStyle as PathFillStyle.Image
-                    }
-                }
+                obj.paths.mapNotNullTo(destination) { it.fillStyle as? PathFillStyle.Image }
             } else if (obj is GroupObject) {
                 obj.findAllImagesTo(destination)
             }

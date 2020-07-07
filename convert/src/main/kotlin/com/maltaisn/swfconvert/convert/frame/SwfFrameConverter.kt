@@ -20,7 +20,9 @@ import com.flagstone.transform.datatype.Blend
 import com.flagstone.transform.filter.ColorMatrixFilter
 import com.flagstone.transform.text.StaticTextTag
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
+import com.maltaisn.swfconvert.convert.context.ConvertContext
 import com.maltaisn.swfconvert.convert.conversionError
+import com.maltaisn.swfconvert.convert.font.FontsMap
 import com.maltaisn.swfconvert.convert.frame.data.SwfFrame
 import com.maltaisn.swfconvert.convert.frame.data.SwfFrameObject
 import com.maltaisn.swfconvert.convert.frame.data.SwfObjectGroup
@@ -39,8 +41,6 @@ import com.maltaisn.swfconvert.core.Units
 import com.maltaisn.swfconvert.core.shape.Path
 import com.maltaisn.swfconvert.core.shape.PathElement
 import com.maltaisn.swfconvert.core.shape.ShapeObject
-import com.maltaisn.swfconvert.core.text.Font
-import com.maltaisn.swfconvert.core.text.FontId
 import org.apache.logging.log4j.kotlin.logger
 import java.awt.Rectangle
 import java.awt.geom.AffineTransform
@@ -58,7 +58,7 @@ internal class SwfFrameConverter @Inject constructor(
     private val logger = logger()
 
     private lateinit var frame: SwfFrame
-    private lateinit var fontsMap: Map<FontId, Font>
+    private lateinit var fontsMap: FontsMap
 
     private val groupStack = ArrayDeque<GroupObject>()
     private val transformStack = ArrayDeque<AffineTransform>()
@@ -72,7 +72,7 @@ internal class SwfFrameConverter @Inject constructor(
     /**
      * Create a [FrameGroup] from a [SwfFrame].
      */
-    fun createFrameGroup(frame: SwfFrame, fontsMap: Map<FontId, Font>): FrameGroup {
+    fun createFrameGroup(frame: SwfFrame, fontsMap: FontsMap): FrameGroup {
         this.frame = frame
         this.fontsMap = fontsMap
 
@@ -135,11 +135,7 @@ internal class SwfFrameConverter @Inject constructor(
      * Create an object (a character), applying the attributes of the place tag used to display it.
      */
     private fun createObject(obj: SwfFrameObject) {
-        val context = obj.context
-        val place = obj.place
-        val tag = obj.tag
-
-        var groupsBefore = groupStack.size
+        var groupsCountBefore = groupStack.size
 
         // Update state according to place tag attributes
         checkPlaceFilters(obj)
@@ -148,14 +144,15 @@ internal class SwfFrameConverter @Inject constructor(
         val transformChanged = applyPlaceTransfrom(obj)
 
         // Create object
+        val tag = obj.tag
         val wshape = tag.toShapeWrapperOrNull()
         when {
-            wshape != null -> if (place.hasClip) {
+            wshape != null -> if (obj.place.hasClip) {
                 val createdClipGroup = createClipGroup(obj, wshape)
                 if (createdClipGroup) {
                     // Increment the number of groups to avoid removing clip group when restoring group stack afterwards.
                     // Clip group should be removed when its clip depth is exceeded.
-                    groupsBefore++
+                    groupsCountBefore++
                 }
             } else {
                 createShape(obj, wshape)
@@ -164,7 +161,7 @@ internal class SwfFrameConverter @Inject constructor(
             obj is SwfSprite -> createGroup(obj)
             else -> {
                 // Unsupported types are ignored.
-                logger.error { "Unsupported object type ${tag.javaClass.simpleName} at $context" }
+                logger.error { "Unsupported object type ${tag.javaClass.simpleName} at ${obj.context}" }
             }
         }
 
@@ -173,25 +170,8 @@ internal class SwfFrameConverter @Inject constructor(
         if (colorTransformChanged) this.colorTransform.pop()
         if (blendModeChanged) blendStack.removeLast()
 
-        // Restore the group stack
-        while (groupStack.size > groupsBefore) {
-            val group = groupStack.removeLast()
-            if (group.objects.isEmpty()) {
-                // If group has no objects, remove it from parent.
-                currentGroup.objects.removeAt(currentGroup.objects.lastIndex)
-            }
-        }
-
-        // Unclip all shapes with clip depth lower or equal than current depth.
-        while (clipStack.isNotEmpty() && place.depth >= clipStack.last()) {
-            clipStack.removeLast()
-            val group = groupStack.removeLast()
-            conversionError(group is GroupObject.Clip, obj.context) { "Expected clip group" }
-            if (group.objects.isEmpty()) {
-                // If clip group has no objects, remove it from parent.
-                currentGroup.objects.removeAt(currentGroup.objects.lastIndex)
-            }
-        }
+        restoreGroupStack(groupsCountBefore)
+        restoreClipStack(obj.place.depth, obj.context)
     }
 
     private fun checkPlaceFilters(obj: SwfFrameObject) {
@@ -352,6 +332,28 @@ internal class SwfFrameConverter @Inject constructor(
     private fun addGroup(group: GroupObject) {
         currentGroup.objects += group
         groupStack += group
+    }
+
+    private fun restoreGroupStack(groupsCountBefore: Int) {
+        while (groupStack.size > groupsCountBefore) {
+            val group = groupStack.removeLast()
+            if (group.objects.isEmpty()) {
+                // If group has no objects, remove it from parent.
+                currentGroup.objects.removeAt(currentGroup.objects.lastIndex)
+            }
+        }
+    }
+
+    private fun restoreClipStack(currentDepth: Int, context: ConvertContext) {
+        while (clipStack.isNotEmpty() && currentDepth >= clipStack.last()) {
+            clipStack.removeLast()
+            val group = groupStack.removeLast()
+            conversionError(group is GroupObject.Clip, context) { "Expected clip group" }
+            if (group.objects.isEmpty()) {
+                // If clip group has no objects, remove it from parent.
+                currentGroup.objects.removeAt(currentGroup.objects.lastIndex)
+            }
+        }
     }
 
     override fun dispose() {

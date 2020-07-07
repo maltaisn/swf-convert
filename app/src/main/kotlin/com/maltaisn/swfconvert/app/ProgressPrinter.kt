@@ -20,7 +20,7 @@ import com.maltaisn.swfconvert.core.ProgressCallback
 import org.apache.logging.log4j.kotlin.logger
 import java.util.concurrent.atomic.AtomicInteger
 
-class ProgressPrinter : ProgressCallback {
+internal class ProgressPrinter : ProgressCallback {
 
     private val logger = logger()
 

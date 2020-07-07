@@ -25,7 +25,7 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.LoggerContext
 import kotlin.system.exitProcess
 
-class ParamsParser {
+internal class ParamsParser {
 
     private val mainParams = MainParams()
 

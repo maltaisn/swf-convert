@@ -21,7 +21,7 @@ import com.maltaisn.swfconvert.convert.context.ConvertContext
 /**
  * Context for a SWF collection being converted.
  */
-class SwfCollectionContext(private val collectionIndex: Int) : ConvertContext(null) {
+internal class SwfCollectionContext(private val collectionIndex: Int) : ConvertContext(null) {
 
     override val description: String
         get() = "collection #$collectionIndex"

@@ -31,6 +31,7 @@ internal data class SvgGraphicsState(
     val strokeWidth: Float? = null,
     val strokeLineJoin: SvgStrokeLineJoin? = null,
     val strokeLineCap: SvgStrokeLineCap? = null,
+    val strokeMiterLimit: Float? = null,
     val clipPathId: String? = null,
     val clipPathRule: SvgFillRule? = null,
     val maskId: String? = null,

@@ -42,7 +42,7 @@ import kotlin.reflect.KProperty
 /**
  * Params for the 'convert' module and common params for the render modules.
  */
-class CoreParams(
+internal class CoreParams(
     private val singleFileOutput: Boolean,
     private val outputExtensionProvider: () -> String
 ) {

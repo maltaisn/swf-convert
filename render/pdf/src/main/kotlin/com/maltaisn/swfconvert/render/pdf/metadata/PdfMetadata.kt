@@ -51,5 +51,3 @@ data class PdfMetadata(
     @SerialName("outline_open_level")
     val outlineOpenLevel: Int = 1
 )
-
-

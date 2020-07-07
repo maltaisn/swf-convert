@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Level
 /**
  * Params for the app itself.
  */
-class MainParams {
+internal class MainParams {
 
     @Parameter(
         names = ["-h", "--help"],

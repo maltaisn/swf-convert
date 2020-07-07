@@ -31,11 +31,12 @@ import javax.inject.Inject
 import kotlin.math.roundToInt
 
 /**
+ * Used to create TTF font files from [BaseFont] objects.
  * Based on ffdec, doubletype code was taken there too.
  * [https://github.com/jindrapetrik/jpexs-decompiler/blob/bf2a413725c09eecded4e8f42af4487ecd1842a5/libsrc/ttf/src/fontastic/Fontastic.java]
  * Modifications made to this code include custom whitespace validation.
  */
-internal class FontBuilder @Inject constructor(
+internal class TTFFontBuilder @Inject constructor(
     private val doubletypeEngine: Engine
 ) {
 

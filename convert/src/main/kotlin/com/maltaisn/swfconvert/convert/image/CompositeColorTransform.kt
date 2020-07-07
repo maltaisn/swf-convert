@@ -21,7 +21,7 @@ import com.maltaisn.swfconvert.core.image.Color
 import java.awt.image.BufferedImage
 import kotlin.math.roundToInt
 
-data class CompositeColorTransform(
+internal data class CompositeColorTransform(
     private val transforms: ArrayDeque<ColorTransform> = ArrayDeque()
 ) {
 

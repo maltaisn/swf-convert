@@ -20,7 +20,7 @@ import com.maltaisn.swfconvert.app.ConfigException
 import com.maltaisn.swfconvert.core.YAxisDirection
 import java.io.File
 
-interface RenderParams<T> {
+internal interface RenderParams<T> {
 
     val params: CoreParams
 

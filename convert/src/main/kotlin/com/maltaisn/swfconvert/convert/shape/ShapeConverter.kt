@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+// The code was mostly copied from some other place and it works relatively well,
+// I have no intention of refactoring it to make it less complex. So let's ignore those.
+@file:Suppress("NestedBlockDepth", "ComplexMethod", "LongMethod")
+
 package com.maltaisn.swfconvert.convert.shape
 
 import com.flagstone.transform.fillstyle.FillStyle

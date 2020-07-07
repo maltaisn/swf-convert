@@ -20,7 +20,6 @@ import com.maltaisn.swfconvert.render.core.RenderConfiguration
 import dagger.MapKey
 import kotlin.reflect.KClass
 
-
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY_GETTER)
 @MapKey
