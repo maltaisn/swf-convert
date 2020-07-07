@@ -77,6 +77,7 @@ internal class SvgStreamWriter(
         get() = if (xmlWriter == xml) grStateStack else defGrStateStack
 
     private var defId: String? = null
+    private var defWasWritten = false
 
     init {
         requireSvgPrecision(precision)
@@ -145,15 +146,17 @@ internal class SvgStreamWriter(
         val xmlWriterBefore = xmlWriter
         xmlWriter = defXml
         defId = id
+        defWasWritten = false
         this.block()
-        check(defId == null) { "No def was written" }
+        check(defWasWritten) { "No def was written" }
         xmlWriter = xmlWriterBefore
     }
 
     private fun consumeDefId(): String? {
-        check(xmlWriter != defXml || defId != null) { "Def was already written" }
+        check(xmlWriter != defXml || !defWasWritten) { "Def was already written" }
         val id = defId
         defId = null
+        defWasWritten = true
         return id
     }
 
@@ -319,6 +322,7 @@ internal class SvgStreamWriter(
 
     fun font(name: String, path: String) {
         val xmlWriter = checkIfStarted()
+        consumeDefId() // Consume def ID so def is marked as written. Font doesn't actually use the ID attribute though.
         xmlWriter {
             TAG_STYLE(arrayOf(ATTR_TYPE to "text/css")) {
                 text("@$CSS_FONT_FACE{$CSS_FONT_FAMILY:$name;" +
@@ -351,6 +355,15 @@ internal class SvgStreamWriter(
                 )) {
                     text(text)
                 }
+            }
+        }
+    }
+
+    fun use(id: String, grState: SvgGraphicsState = NULL_GRAPHICS_STATE) {
+        val xmlWriter = checkIfStarted()
+        withGraphicsState(grState) {
+            xmlWriter {
+                TAG_USE(arrayOf(ATTR_XLINK_HREF to "#$id", *getNewGraphicsStateAttrs()))
             }
         }
     }
@@ -459,6 +472,7 @@ internal class SvgStreamWriter(
         private const val TAG_STYLE = "style"
         private const val TAG_SVG = "svg"
         private const val TAG_TEXT = "text"
+        private const val TAG_USE = "use"
 
         private const val ATTR_CLIP_PATH = "clip-path"
         private const val ATTR_CLIP_RULE = "clip-rule"

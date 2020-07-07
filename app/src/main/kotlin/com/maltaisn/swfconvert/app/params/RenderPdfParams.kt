@@ -42,7 +42,11 @@ internal class RenderPdfParams : RenderParams<PdfConfiguration> {
 
     // General
 
-    @Parameter(names = ["--compress"], arity = 1, description = "Whether to compress output PDF or not.", order = 1000)
+    @Parameter(
+        names = ["--compress"],
+        arity = 1,
+        description = "Whether to compress output PDF or not.",
+        order = 1000)
     var compress: Boolean = true
 
     // Metadata

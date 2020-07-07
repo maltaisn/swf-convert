@@ -50,9 +50,10 @@ internal class SvgFramesRenderer @Inject internal constructor(
         val outputImagesDir = File(outputDir, "images")
         val outputFontsDir = File(outputDir, "fonts")
         progressCb.showStep("Copying images and fonts to output", false) {
-
-            val tempImagesDir = File(config.tempDir, "images")
-            tempImagesDir.copyRecursively(outputImagesDir, true)
+            if (!config.imagesMode.embedded) {
+                val tempImagesDir = File(config.tempDir, "images")
+                tempImagesDir.copyRecursively(outputImagesDir, true)
+            }
 
             val tempFontsDir = File(config.tempDir, "fonts")
             tempFontsDir.copyRecursively(outputFontsDir, true)

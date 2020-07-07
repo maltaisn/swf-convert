@@ -20,6 +20,8 @@ import com.maltaisn.swfconvert.core.BlendMode
 import com.maltaisn.swfconvert.core.FrameGroup
 import com.maltaisn.swfconvert.core.FrameObject
 import com.maltaisn.swfconvert.core.GroupObject
+import com.maltaisn.swfconvert.core.image.ImageData
+import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.maltaisn.swfconvert.core.shape.Path
 import com.maltaisn.swfconvert.core.shape.PathElement.ClosePath
 import com.maltaisn.swfconvert.core.shape.PathElement.CubicTo
@@ -55,6 +57,7 @@ import java.awt.geom.Rectangle2D
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
+import java.util.Base64
 import java.util.zip.GZIPOutputStream
 import javax.inject.Inject
 
@@ -75,6 +78,8 @@ internal class SvgFrameRenderer @Inject constructor(
         }
 
     private val definedFonts = mutableMapOf<File, String>()
+    private val definedImages = mutableMapOf<File, String>()
+    private val definedImageMasks = mutableMapOf<File, String>()
 
     private lateinit var imagesDir: File
     private lateinit var fontsDir: File
@@ -83,6 +88,9 @@ internal class SvgFrameRenderer @Inject constructor(
         val outputDir = outputFile.parentFile
         this.imagesDir = imagesDir.relativeToOrSelf(outputDir)
         this.fontsDir = fontsDir.relativeToOrSelf(outputDir)
+
+        definedFonts.clear()
+        definedImages.clear()
 
         var outputStream: OutputStream = FileOutputStream(outputFile)
         if (config.compress) {
@@ -233,35 +241,74 @@ internal class SvgFrameRenderer @Inject constructor(
     }
 
     private fun drawImage(path: Path, imageFill: PathFillStyle.Image) {
+        val imageData = imageFill.imageData
+        val dataFile = checkNotNull(imageData.dataFile) { "Missing image" }
+
         if (imageFill.clip) {
+            // Start clipping the image path.
             svg.startGroup(createClipSvgGraphicsState(listOf(path)))
         }
 
-        val imageData = imageFill.imageData
-        val imageHref = getImagesFile(imageData.dataFile!!.name)
-        val maskId = if (imageData.alphaDataFile != null) {
-            val id = nextDefId
-            val alphaImageHref = getImagesFile(imageData.alphaDataFile!!.name)
-            svg.writeDef(id) {
-                mask {
-                    svg.image(alphaImageHref)
-                }
-            }
-            id
-        } else {
-            null
-        }
-
+        // Transform in IR scales from image space (1x1 square) to user space.
+        // In SVG, we can avoid specifying the image dimensions at user space if they are the same as the file's.
+        // So scale the image transform down.
         val transform = AffineTransform(imageFill.transform)
         transform.scale(1.0 / imageData.width, 1.0 / imageData.height)
 
-        svg.image(imageHref, grState = SvgGraphicsState(
+        // Create the image mask def if needed.
+        val maskId = createImageMaskDef(imageData)
+
+        // Draw image
+        val grState = SvgGraphicsState(
             transforms = transform.toSvgTransformList(),
-            maskId = maskId))
+            maskId = maskId)
+        when (config.imagesMode) {
+            SvgImagesMode.EXTERNAL -> {
+                // Define image directly using image path URL.
+                val href = createImageHref(imageData.format, imageData.data, dataFile)
+                svg.image(href, grState = grState)
+            }
+            SvgImagesMode.BASE64 -> {
+                // Create image def to avoid duplicating image data if image is used more than once.
+                val imageId = definedImages.getOrPut(dataFile) {
+                    val id = nextDefId
+                    svg.writeDef(id) {
+                        val href = createImageHref(imageData.format, imageData.data, dataFile)
+                        svg.image(href)
+                    }
+                    id
+                }
+                svg.use(imageId, grState = grState)
+            }
+        }
 
         if (imageFill.clip) {
+            // End image clip path.
             svg.endGroup()
         }
+    }
+
+    private fun createImageMaskDef(imageData: ImageData): String? {
+        val alphaDataFile = imageData.alphaDataFile
+        return if (alphaDataFile != null) {
+            definedImageMasks.getOrPut(alphaDataFile) {
+                val id = nextDefId
+                val alphaImageHref = createImageHref(imageData.format, imageData.alphaData, alphaDataFile)
+                svg.writeDef(id) {
+                    mask {
+                        svg.image(alphaImageHref)
+                    }
+                }
+                id
+            }
+        } else {
+            null
+        }
+    }
+
+    private fun createImageHref(format: ImageFormat, data: ByteArray, file: File) = when (config.imagesMode) {
+        SvgImagesMode.EXTERNAL -> File(imagesDir, file.name).invariantSeparatorsPath
+        SvgImagesMode.BASE64 -> data.toBase64DataUrl("image/${format.extension}")
     }
 
     private fun drawGradient(path: Path, gradient: PathFillStyle.Gradient) {
@@ -387,8 +434,14 @@ internal class SvgFrameRenderer @Inject constructor(
         }
     )
 
-    private fun getImagesFile(name: String) = File(imagesDir, name).invariantSeparatorsPath
     private fun getFontsFile(name: String) = File(fontsDir, name).invariantSeparatorsPath
+
+    private fun ByteArray.toBase64DataUrl(mimeType: String) = buildString {
+        append("data:")
+        append(mimeType)
+        append(";base64,")
+        append(String(Base64.getEncoder().encode(this@toBase64DataUrl)))
+    }
 
     companion object {
         private const val XML_NAME_START_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_:"

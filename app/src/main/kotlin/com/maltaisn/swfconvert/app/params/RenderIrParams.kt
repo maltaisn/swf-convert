@@ -34,10 +34,16 @@ internal class RenderIrParams : RenderParams<IrConfiguration> {
         this.params[CoreParams.PARAM_KEEP_IMAGES] = true.toString()
     }
 
-    @Parameter(names = ["-y-direction"], description = "Y axis direction: up | down.", order = 1000)
+    @Parameter(
+        names = ["-y-direction"],
+        description = "Y axis direction: up | down.",
+        order = 1000)
     var yAxisDirectionName = "up"
 
-    @Parameter(names = ["--pretty"], description = "Whether to pretty print JSON or not.", order = 1010)
+    @Parameter(
+        names = ["--pretty"],
+        description = "Whether to pretty print JSON or not.",
+        order = 1010)
     var prettyPrint: Boolean = false
 
     override val yAxisDirection by lazy {

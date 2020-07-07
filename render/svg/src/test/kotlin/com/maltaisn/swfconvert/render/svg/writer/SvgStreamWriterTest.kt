@@ -87,6 +87,16 @@ class SvgStreamWriterTest {
         }
     }
 
+    @Test
+    fun `should write def without id`() {
+        assertEquals("""<defs><g/></defs>""",
+            createSvg(start = true) {
+                writeDef {
+                    group()
+                }
+            }.onlySvgContent())
+    }
+
     @Test(expected = IllegalStateException::class)
     fun `should throw error if multiple defs written`() {
         createSvg(start = true) {

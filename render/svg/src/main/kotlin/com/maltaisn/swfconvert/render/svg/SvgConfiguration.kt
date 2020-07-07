@@ -48,6 +48,9 @@ data class SvgConfiguration(
     /** Whether to write XML prolog in SVG documents or not. */
     val writeProlog: Boolean,
 
+    /** Controls how images are included in SVG. */
+    val imagesMode: SvgImagesMode,
+
     // DEBUG OPTIONS
 
     override val parallelFrameRendering: Boolean
