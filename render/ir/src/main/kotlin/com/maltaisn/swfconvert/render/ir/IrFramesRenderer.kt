@@ -79,7 +79,7 @@ internal class IrFramesRenderer @Inject internal constructor(
                     try {
                         renderer.renderFrame(outputFile, frameGroup)
                     } catch (e: IOException) {
-                        logger.warn { "Failed to save file $outputFile" }
+                        logger.info(e) { "Failed to save file $outputFile" }
                         failed[key] = frameGroup
                     }
 

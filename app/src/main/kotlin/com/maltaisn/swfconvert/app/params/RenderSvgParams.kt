@@ -22,6 +22,7 @@ import com.beust.jcommander.ParametersDelegate
 import com.maltaisn.swfconvert.app.configError
 import com.maltaisn.swfconvert.core.YAxisDirection
 import com.maltaisn.swfconvert.render.svg.SvgConfiguration
+import com.maltaisn.swfconvert.render.svg.SvgFontsMode
 import com.maltaisn.swfconvert.render.svg.SvgImagesMode
 import com.maltaisn.swfconvert.render.svg.writer.format.requireSvgPrecision
 import org.apache.logging.log4j.kotlin.logger
@@ -77,16 +78,29 @@ internal class RenderSvgParams : RenderParams<SvgConfiguration> {
         names = ["--images-mode"],
         description = "Controls how images are included in SVG: external | base64",
         order = 1300)
-    var imagesModeStr: String = "external"
+    var imagesModeStr: String = MODE_EXTERNAL
+
+    @Parameter(
+        names = ["--fonts-mode"],
+        description = "Controls how fonts are included in SVG: external | base64",
+        order = 1310)
+    var fontsModeStr: String = MODE_EXTERNAL
 
     override val yAxisDirection: YAxisDirection
         get() = YAxisDirection.DOWN
 
     private val imagesMode: SvgImagesMode
         get() = when (imagesModeStr.toLowerCase()) {
-            "external" -> SvgImagesMode.EXTERNAL
-            "base64" -> SvgImagesMode.BASE64
+            MODE_EXTERNAL -> SvgImagesMode.EXTERNAL
+            MODE_BASE64 -> SvgImagesMode.BASE64
             else -> configError("Unknown images mode '$imagesModeStr'.")
+        }
+
+    private val fontsMode: SvgFontsMode
+        get() = when (fontsModeStr.toLowerCase()) {
+            MODE_EXTERNAL -> SvgFontsMode.EXTERNAL
+            MODE_BASE64 -> SvgFontsMode.BASE64
+            else -> configError("Unknown fonts mode '$fontsModeStr'.")
         }
 
     override fun createConfigurations(inputs: List<List<File>>): List<SvgConfiguration> {
@@ -114,6 +128,7 @@ internal class RenderSvgParams : RenderParams<SvgConfiguration> {
                 percentPrecision,
                 !noProlog,
                 imagesMode,
+                fontsMode,
                 params.parallelFrameRendering)
         }
     }
@@ -122,5 +137,10 @@ internal class RenderSvgParams : RenderParams<SvgConfiguration> {
         println("""
             |Pretty print SVG: $prettyPrint
         """.trimMargin())
+    }
+
+    companion object {
+        private const val MODE_EXTERNAL = "external"
+        private const val MODE_BASE64 = "base64"
     }
 }

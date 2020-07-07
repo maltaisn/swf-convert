@@ -253,7 +253,7 @@ internal class PdfFramesRenderer @Inject internal constructor(
                 save()
                 return
             } catch (e: IOException) {
-                logger.warn { "Failed to save file to $file" }
+                logger.info(e) { "Failed to save file to $file" }
                 if (readAffirmativeAnswer("Could not save file '${file.path}'.")) {
                     continue
                 } else {

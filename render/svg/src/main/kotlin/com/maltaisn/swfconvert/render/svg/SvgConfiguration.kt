@@ -51,6 +51,9 @@ data class SvgConfiguration(
     /** Controls how images are included in SVG. */
     val imagesMode: SvgImagesMode,
 
+    /** Controls how fonts are included in SVG. */
+    val fontsMode: SvgFontsMode,
+
     // DEBUG OPTIONS
 
     override val parallelFrameRendering: Boolean

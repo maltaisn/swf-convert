@@ -32,6 +32,7 @@ import com.maltaisn.swfconvert.core.shape.PathElement.Rectangle
 import com.maltaisn.swfconvert.core.shape.PathFillStyle
 import com.maltaisn.swfconvert.core.shape.PathLineStyle
 import com.maltaisn.swfconvert.core.shape.ShapeObject
+import com.maltaisn.swfconvert.core.text.Font
 import com.maltaisn.swfconvert.core.text.GlyphData
 import com.maltaisn.swfconvert.core.text.TextObject
 import com.maltaisn.swfconvert.render.svg.writer.SvgPathWriter
@@ -193,15 +194,7 @@ internal class SvgFrameRenderer @Inject constructor(
     }
 
     private fun drawText(text: TextObject) {
-        // Create font definition if not already created.
-        val fontFile = File(getFontsFile(text.font.fontFile!!.name))
-        val fontId = definedFonts.getOrPut(fontFile) {
-            val id = nextDefId
-            svg.writeDef {
-                svg.font(id, fontFile.invariantSeparatorsPath)
-            }
-            id
-        }
+        val fontId = createFontDef(text.font)
 
         val dx = FloatArray(text.glyphOffsets.size + 1) {
             // SVG dx first value is the offset before the first char, whereas in IR the first
@@ -214,6 +207,21 @@ internal class SvgFrameRenderer @Inject constructor(
 
         svg.text(SvgNumber(text.x), SvgNumber(text.y), dx, fontId, text.fontSize, text.text,
             SvgGraphicsState(fill = SvgFillColor(text.color.opaque), fillOpacity = text.color.floatA))
+    }
+
+    private fun createFontDef(font: Font): String {
+        val fontFile = checkNotNull(font.fontFile) { "Missing font" }
+        val svgFontFile = File(fontsDir, fontFile.name)
+        return definedFonts.getOrPut(svgFontFile) {
+            val id = nextDefId
+            svg.writeDef {
+                svg.font(id, when (config.fontsMode) {
+                    SvgFontsMode.EXTERNAL -> svgFontFile.invariantSeparatorsPath
+                    SvgFontsMode.BASE64 -> fontFile.readBytes().toBase64DataUrl("font/ttf")
+                })
+            }
+            id
+        }
     }
 
     private fun drawPath(path: Path) {
@@ -433,8 +441,6 @@ internal class SvgFrameRenderer @Inject constructor(
             this.join == BasicStroke.JOIN_MITER && it != 0f
         }
     )
-
-    private fun getFontsFile(name: String) = File(fontsDir, name).invariantSeparatorsPath
 
     private fun ByteArray.toBase64DataUrl(mimeType: String) = buildString {
         append("data:")

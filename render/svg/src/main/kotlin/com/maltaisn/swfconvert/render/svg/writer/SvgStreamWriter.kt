@@ -320,13 +320,13 @@ internal class SvgStreamWriter(
         }
     }
 
-    fun font(name: String, path: String) {
+    fun font(name: String, src: String) {
         val xmlWriter = checkIfStarted()
         consumeDefId() // Consume def ID so def is marked as written. Font doesn't actually use the ID attribute though.
         xmlWriter {
             TAG_STYLE(arrayOf(ATTR_TYPE to "text/css")) {
                 text("@$CSS_FONT_FACE{$CSS_FONT_FAMILY:$name;" +
-                        "$CSS_SRC:url('$path');}")
+                        "$CSS_SRC:url($src);}")
             }
         }
     }

@@ -47,16 +47,21 @@ internal class SvgFramesRenderer @Inject internal constructor(
     override suspend fun renderFrames(frameGroups: List<List<FrameGroup>>) {
         // Move images and fonts from temp dir to output dir
         val outputDir = config.output.first().parentFile
+
         val outputImagesDir = File(outputDir, "images")
-        val outputFontsDir = File(outputDir, "fonts")
-        progressCb.showStep("Copying images and fonts to output", false) {
-            if (!config.imagesMode.embedded) {
+        if (!config.imagesMode.embedded) {
+            progressCb.showStep("Copying images to output", false) {
                 val tempImagesDir = File(config.tempDir, "images")
                 tempImagesDir.copyRecursively(outputImagesDir, true)
             }
+        }
 
-            val tempFontsDir = File(config.tempDir, "fonts")
-            tempFontsDir.copyRecursively(outputFontsDir, true)
+        val outputFontsDir = File(outputDir, "fonts")
+        if (!config.fontsMode.embedded) {
+            progressCb.showStep("Copying fonts to output", false) {
+                val tempFontsDir = File(config.tempDir, "fonts")
+                tempFontsDir.copyRecursively(outputFontsDir, true)
+            }
         }
 
         // Write frames
@@ -98,7 +103,7 @@ internal class SvgFramesRenderer @Inject internal constructor(
                     try {
                         renderer.renderFrame(frameGroup, outputFile, imagesDir, fontsDir)
                     } catch (e: IOException) {
-                        logger.warn { "Failed to save file $outputFile" }
+                        logger.info(e) { "Failed to save file $outputFile" }
                         failed[key] = frameGroup
                     }
 
