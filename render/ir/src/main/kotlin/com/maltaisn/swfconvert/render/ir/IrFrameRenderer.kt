@@ -37,13 +37,14 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import java.awt.geom.AffineTransform
 import java.awt.geom.Rectangle2D
+import java.io.File
 import javax.inject.Inject
 
 internal class IrFrameRenderer @Inject constructor(
     private val config: IrConfiguration
 ) {
 
-    suspend fun renderFrame(index: Int, frame: FrameGroup) {
+    suspend fun renderFrame(outputFile: File, frame: FrameGroup) {
         // Serialize the frame group to JSON.
         val json = Json(JsonConfiguration.Stable.copy(
             prettyPrint = config.prettyPrint,
@@ -53,8 +54,7 @@ internal class IrFrameRenderer @Inject constructor(
 
         // Save output to file.
         withContext(Dispatchers.IO) {
-            val output = config.output[index]
-            output.writeText(frameJson)
+            outputFile.writeText(frameJson)
         }
     }
 

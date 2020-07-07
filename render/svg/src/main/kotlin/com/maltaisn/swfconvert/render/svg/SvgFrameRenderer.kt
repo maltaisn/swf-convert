@@ -48,6 +48,7 @@ import com.maltaisn.swfconvert.render.svg.writer.data.SvgStrokeLineCap
 import com.maltaisn.swfconvert.render.svg.writer.data.SvgStrokeLineJoin
 import com.maltaisn.swfconvert.render.svg.writer.data.SvgTransform
 import com.maltaisn.swfconvert.render.svg.writer.data.SvgUnit
+import org.apache.logging.log4j.kotlin.logger
 import java.awt.BasicStroke
 import java.awt.geom.AffineTransform
 import java.awt.geom.Rectangle2D
@@ -60,6 +61,8 @@ import javax.inject.Inject
 internal class SvgFrameRenderer @Inject constructor(
     private val config: SvgConfiguration
 ) {
+
+    private val logger = logger()
 
     private lateinit var svg: SvgStreamWriter
 
@@ -76,11 +79,7 @@ internal class SvgFrameRenderer @Inject constructor(
     private lateinit var imagesDir: File
     private lateinit var fontsDir: File
 
-    fun renderFrame(
-        index: Int, frame: FrameGroup,
-        imagesDir: File, fontsDir: File
-    ) {
-        val outputFile = config.output[index]
+    fun renderFrame(frame: FrameGroup, outputFile: File, imagesDir: File, fontsDir: File) {
         val outputDir = outputFile.parentFile
         this.imagesDir = imagesDir.relativeToOrSelf(outputDir)
         this.fontsDir = fontsDir.relativeToOrSelf(outputDir)
@@ -348,13 +347,20 @@ internal class SvgFrameRenderer @Inject constructor(
     }
 
     private fun BlendMode.toSvgMixBlendMode() = when (this) {
-        BlendMode.NORMAL -> SvgMixBlendMode.NORMAL
+        // See: https://drafts.fxtf.org/compositing-1/#blendingseparable
+        BlendMode.NULL, BlendMode.NORMAL, BlendMode.LAYER -> SvgMixBlendMode.NORMAL
         BlendMode.MULTIPLY -> SvgMixBlendMode.MULTIPLY
+        BlendMode.SCREEN -> SvgMixBlendMode.SCREEN
         BlendMode.LIGHTEN -> SvgMixBlendMode.LIGHTEN
         BlendMode.DARKEN -> SvgMixBlendMode.DARKEN
-        BlendMode.HARD_LIGHT -> SvgMixBlendMode.HARD_LIGHT
-        BlendMode.SCREEN -> SvgMixBlendMode.SCREEN
+        BlendMode.DIFFERENCE -> SvgMixBlendMode.DIFFERENCE
         BlendMode.OVERLAY -> SvgMixBlendMode.OVERLAY
+        BlendMode.HARDLIGHT -> SvgMixBlendMode.HARD_LIGHT
+        else -> {
+            // Unsupported blend mode.
+            logger.error { "Unsupported blend mode in SVG: $this" }
+            null
+        }
     }
 
     private fun PathLineStyle.toSvgGraphicsState() = SvgGraphicsState(

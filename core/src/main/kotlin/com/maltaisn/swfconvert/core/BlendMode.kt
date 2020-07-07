@@ -17,14 +17,28 @@
 package com.maltaisn.swfconvert.core
 
 /**
- * Blend modes in the intermediate representation.
+ * Blend modes in the intermediate representation, mostly similar to the ones defined by SWF.
+ *
+ * These blend modes should be easily applied for most output formats, with the exception of:
+ * - `ALPHA`: this blend mode acts like a mask which is supported with [GroupObject.Masked].
+ * - `LAYER`: sets the opacity of the layer to 100% before blending, limited support.
+ * - `INVERT`: inverts color, not really a blend mode. If further support is intended, this shouldn't be a blend mode.
+ *
+ * An output format should log an error if unsupported blend modes are used.
  */
 enum class BlendMode {
+    NULL,
     NORMAL,
+    LAYER,
     MULTIPLY,
+    SCREEN,
     LIGHTEN,
     DARKEN,
-    HARD_LIGHT,
-    SCREEN,
-    OVERLAY
+    ADD,
+    SUBTRACT,
+    DIFFERENCE,
+    INVERT,
+    ERASE,
+    OVERLAY,
+    HARDLIGHT
 }

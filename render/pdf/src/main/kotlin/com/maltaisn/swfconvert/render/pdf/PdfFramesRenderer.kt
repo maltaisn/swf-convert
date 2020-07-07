@@ -61,8 +61,9 @@ class PdfFramesRenderer @Inject internal constructor(
 
     private val logger = logger()
 
-    override suspend fun renderFrames(frameGroups: List<FrameGroup>) {
-        var currFrameGroups = frameGroups
+    override suspend fun renderFrames(frameGroups: List<List<FrameGroup>>) {
+        // Frames are just flattened to a single list, each will become a page.
+        var currFrameGroups = frameGroups.flatten()
 
         // Create PDF document using only temp files as memory buffer.
         // Using any amount of RAM instead almost always results in OutOfMemory errors.

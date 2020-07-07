@@ -21,8 +21,11 @@ import com.maltaisn.swfconvert.core.ProgressCallback
 import com.maltaisn.swfconvert.core.mapInParallel
 import com.maltaisn.swfconvert.core.showProgress
 import com.maltaisn.swfconvert.core.showStep
+import com.maltaisn.swfconvert.render.core.FrameKey
+import com.maltaisn.swfconvert.render.core.FramesMap
 import com.maltaisn.swfconvert.render.core.FramesRenderer
 import com.maltaisn.swfconvert.render.core.readAffirmativeAnswer
+import com.maltaisn.swfconvert.render.core.toFramesMap
 import org.apache.logging.log4j.kotlin.logger
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
@@ -40,15 +43,14 @@ class IrFramesRenderer @Inject internal constructor(
 
     private val logger = logger()
 
-    override suspend fun renderFrames(frameGroups: List<FrameGroup>) {
-        var frames = frameGroups.withIndex().associate { (k, v) -> k to v }
+    override suspend fun renderFrames(frameGroups: List<List<FrameGroup>>) {
+        var frames = frameGroups.toFramesMap()
 
         while (true) {
             frames = renderFrames(frames)
 
             if (frames.isNotEmpty()) {
                 // Some files couldn't be saved. Ask to retry.
-                logger.warn { "Failed to save files ${frames.keys.joinToString { config.output[it].path }}" }
                 if (readAffirmativeAnswer("Could not save ${frames.size} files.")) {
                     continue
                 } else {
@@ -61,22 +63,24 @@ class IrFramesRenderer @Inject internal constructor(
     }
 
     /**
-     * Render [frameGroups], a map of frame by file index.
-     * Returns a similar map for frames that couldn't be saved.
+     * Render frames in [framesMap].
+     * Returns another frames map for frames that couldn't be saved.
      */
-    private suspend fun renderFrames(frameGroups: Map<Int, FrameGroup>): Map<Int, FrameGroup> {
+    private suspend fun renderFrames(framesMap: FramesMap): FramesMap {
         return progressCb.showStep("Writing JSON frames", true) {
-            progressCb.showProgress(frameGroups.size) {
-                val failed = ConcurrentHashMap<Int, FrameGroup>()
+            progressCb.showProgress(framesMap.size) {
+                val failed = ConcurrentHashMap<FrameKey, FrameGroup>()
 
-                frameGroups.entries.mapInParallel(config.parallelFrameRendering) { (i, frameGroup) ->
+                framesMap.entries.mapInParallel(config.parallelFrameRendering) { (key, frameGroup) ->
                     val renderer = irFrameRendererProvider.get()
 
+                    val singleFrame = FrameKey(key.fileIndex, 1) !in framesMap
+                    val outputFile = config.getOutputFileForFrame(key, singleFrame)
                     try {
-                        renderer.renderFrame(i, frameGroup)
+                        renderer.renderFrame(outputFile, frameGroup)
                     } catch (e: IOException) {
-                        logger.warn { "Failed to save file ${config.output[i]}" }
-                        failed[i] = frameGroup
+                        logger.warn { "Failed to save file $outputFile" }
+                        failed[key] = frameGroup
                     }
 
                     progressCb.incrementProgress()

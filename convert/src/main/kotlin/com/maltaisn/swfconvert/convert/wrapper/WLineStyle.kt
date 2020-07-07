@@ -20,8 +20,11 @@ import com.flagstone.transform.datatype.Color
 import com.flagstone.transform.fillstyle.FillStyle
 import com.flagstone.transform.linestyle.CapStyle
 import com.flagstone.transform.linestyle.JoinStyle
+import com.flagstone.transform.linestyle.LineStyle
 import com.flagstone.transform.linestyle.LineStyle1
 import com.flagstone.transform.linestyle.LineStyle2
+import com.maltaisn.swfconvert.convert.context.ConvertContext
+import com.maltaisn.swfconvert.convert.conversionError
 
 internal data class WLineStyle(
     val color: Color,
@@ -38,4 +41,18 @@ internal data class WLineStyle(
     constructor(style: LineStyle2) : this(style.color, style.width, style.startCap,
         style.joinStyle, style.miterLimit, style.fillStyle)
 
+}
+
+internal fun LineStyle.toLineStyleWrapperOrNull(context: ConvertContext) = when (this) {
+    is LineStyle1 -> WLineStyle(this)
+    is LineStyle2 -> {
+        conversionError(this.fillStyle == null, context) {
+            "Unsupported line fill style"
+        }
+        conversionError(this.startCap == this.endCap, context) {
+            "Unsupported different start and end caps on line style"
+        }
+        WLineStyle(this)
+    }
+    else -> null
 }

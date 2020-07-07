@@ -16,7 +16,6 @@
 
 package com.maltaisn.swfconvert.convert.shape
 
-import com.flagstone.transform.MovieTag
 import com.flagstone.transform.fillstyle.BitmapFill
 import com.flagstone.transform.fillstyle.FillStyle
 import com.flagstone.transform.fillstyle.GradientFill
@@ -27,15 +26,14 @@ import com.flagstone.transform.image.ImageTag
 import com.flagstone.transform.linestyle.CapStyle
 import com.flagstone.transform.linestyle.JoinStyle
 import com.flagstone.transform.linestyle.LineStyle
-import com.flagstone.transform.linestyle.LineStyle1
-import com.flagstone.transform.linestyle.LineStyle2
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
 import com.maltaisn.swfconvert.convert.conversionError
+import com.maltaisn.swfconvert.convert.frame.data.SwfDictionary
 import com.maltaisn.swfconvert.convert.image.CompositeColorTransform
 import com.maltaisn.swfconvert.convert.image.ImageDecoder
 import com.maltaisn.swfconvert.convert.toAffineTransform
 import com.maltaisn.swfconvert.convert.toColor
-import com.maltaisn.swfconvert.convert.wrapper.WLineStyle
+import com.maltaisn.swfconvert.convert.wrapper.toLineStyleWrapperOrNull
 import com.maltaisn.swfconvert.core.Disposable
 import com.maltaisn.swfconvert.core.Units
 import com.maltaisn.swfconvert.core.shape.GradientColor
@@ -55,19 +53,16 @@ internal class StyledShapeConverter @Inject constructor(
     private val imageDecoder: ImageDecoder
 ) : ShapeConverter(), Disposable {
 
-    private lateinit var objectsMap: Map<Int, MovieTag>
+    private lateinit var swfDictionary: SwfDictionary
     private lateinit var colorTransform: CompositeColorTransform
 
     /**
      * Initialize this shape converter with resources.
-     * @param objectsMap Used to get image tags from SWF.
+     * @param swfDictionary Used to get image tags from SWF.
      * @param colorTransform Color transform applied on fill and line styles.
      */
-    fun initialize(
-        objectsMap: Map<Int, MovieTag>,
-        colorTransform: CompositeColorTransform
-    ) {
-        this.objectsMap = objectsMap
+    fun initialize(swfDictionary: SwfDictionary, colorTransform: CompositeColorTransform) {
+        this.swfDictionary = swfDictionary
         this.colorTransform = colorTransform
     }
 
@@ -81,7 +76,7 @@ internal class StyledShapeConverter @Inject constructor(
                 "Unsupported bitmap fill type"
             }
 
-            val image = objectsMap[fillStyle.identifier] as? ImageTag
+            val image = swfDictionary[fillStyle.identifier] as? ImageTag
                 ?: conversionError(context, "Invalid image ID ${fillStyle.identifier}")
 
             val tr = fillStyle.transform.toAffineTransform()
@@ -135,19 +130,7 @@ internal class StyledShapeConverter @Inject constructor(
     }
 
     override fun convertLineStyle(lineStyle: LineStyle): PathLineStyle {
-        val wstyle = when (lineStyle) {
-            is LineStyle1 -> WLineStyle(lineStyle)
-            is LineStyle2 -> {
-                conversionError(lineStyle.fillStyle == null, context) {
-                    "Unsupported line fill style"
-                }
-                conversionError(lineStyle.startCap == lineStyle.endCap, context) {
-                    "Unsupported different start and end caps on line style"
-                }
-                WLineStyle(lineStyle)
-            }
-            else -> conversionError(context, "Unknown line style ${lineStyle.javaClass.simpleName}")
-        }
+        val wstyle = lineStyle.toLineStyleWrapperOrNull(context)!!
         return PathLineStyle(wstyle.color.toColor(), wstyle.width.toFloat(),
             wstyle.capStyle?.toBasicStrokeConstant() ?: BasicStroke.CAP_BUTT,
             wstyle.joinStyle?.toBasicStrokeConstant() ?: BasicStroke.JOIN_BEVEL,

@@ -16,10 +16,15 @@
 
 package com.maltaisn.swfconvert.convert.wrapper
 
+import com.flagstone.transform.DefineTag
+import com.flagstone.transform.font.DefineFont
 import com.flagstone.transform.font.DefineFont2
 import com.flagstone.transform.font.DefineFont3
+import com.flagstone.transform.font.DefineFont4
 import com.flagstone.transform.font.Kerning
 import com.flagstone.transform.shape.Shape
+import com.maltaisn.swfconvert.convert.context.ConvertContext
+import com.maltaisn.swfconvert.convert.conversionError
 import com.maltaisn.swfconvert.core.text.FontScale
 
 internal data class WDefineFont(
@@ -40,4 +45,16 @@ internal data class WDefineFont(
     constructor(font: DefineFont3, scale: FontScale) : this(font.identifier, font.name, font.ascent, font.descent,
         font.codes, font.shapes, font.advances, font.kernings, scale)
 
+}
+
+internal fun DefineTag.toFontWrapperOrNull(
+    context: ConvertContext,
+    fontScale2: FontScale,
+    fontScale3: FontScale
+) = when (this) {
+    is DefineFont -> conversionError(context, "Unsupported DefineFont tag")
+    is DefineFont2 -> WDefineFont(this, fontScale2)
+    is DefineFont3 -> WDefineFont(this, fontScale3)
+    is DefineFont4 -> conversionError(context, "Unsupported DefineFont4 tag")
+    else -> null
 }

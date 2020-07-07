@@ -16,6 +16,7 @@
 
 package com.maltaisn.swfconvert.convert.wrapper
 
+import com.flagstone.transform.MovieTag
 import com.flagstone.transform.Place
 import com.flagstone.transform.Place2
 import com.flagstone.transform.Place3
@@ -52,5 +53,11 @@ internal data class WPlace(
     companion object {
         const val NO_CLIP_DEPTH = 0
     }
+}
 
+internal fun MovieTag.toPlaceWrapperOrNull() = when (this) {
+    is Place -> WPlace(this)
+    is Place2 -> WPlace(this)
+    is Place3 -> WPlace(this)
+    else -> null
 }

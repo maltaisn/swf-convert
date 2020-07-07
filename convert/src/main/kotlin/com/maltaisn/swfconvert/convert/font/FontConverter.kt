@@ -18,16 +18,12 @@ package com.maltaisn.swfconvert.convert.font
 
 import com.flagstone.transform.DefineTag
 import com.flagstone.transform.Movie
-import com.flagstone.transform.font.DefineFont
-import com.flagstone.transform.font.DefineFont2
-import com.flagstone.transform.font.DefineFont3
-import com.flagstone.transform.font.DefineFont4
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
 import com.maltaisn.swfconvert.convert.context.ConvertContext
 import com.maltaisn.swfconvert.convert.context.SwfFileContext
 import com.maltaisn.swfconvert.convert.context.SwfObjectContext
 import com.maltaisn.swfconvert.convert.conversionError
-import com.maltaisn.swfconvert.convert.wrapper.WDefineFont
+import com.maltaisn.swfconvert.convert.wrapper.toFontWrapperOrNull
 import com.maltaisn.swfconvert.core.ProgressCallback
 import com.maltaisn.swfconvert.core.showProgress
 import com.maltaisn.swfconvert.core.showStep
@@ -141,7 +137,7 @@ internal class FontConverter @Inject constructor(
             val objContext = SwfObjectContext(context, listOf(obj.identifier))
 
             // Check if object is a font
-            val wfont = obj.toFontWrapperOrNull(context) ?: continue
+            val wfont = obj.toFontWrapperOrNull(context, config.fontScale2, config.fontScale3) ?: continue
             if (wfont.kernings.isNotEmpty()) {
                 conversionError(objContext, "Unsupported font kerning")
             }
@@ -164,14 +160,6 @@ internal class FontConverter @Inject constructor(
             fonts += Font(fontId, wfont.name, metrics, glyphs)
         }
         return fonts
-    }
-
-    private fun DefineTag.toFontWrapperOrNull(context: SwfFileContext) = when (this) {
-        is DefineFont -> conversionError(context, "Unsupported DefineFont tag")
-        is DefineFont2 -> WDefineFont(this, config.fontScale2)
-        is DefineFont3 -> WDefineFont(this, config.fontScale3)
-        is DefineFont4 -> conversionError(context, "Unsupported DefineFont4 tag")
-        else -> null
     }
 
     private fun createFontGlyph(data: GlyphData, code: Int, assignedCodes: Set<Char>): FontGlyph {

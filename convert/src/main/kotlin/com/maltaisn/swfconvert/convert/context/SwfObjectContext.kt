@@ -27,11 +27,14 @@ internal class SwfObjectContext(
 
     override val description: String
         get() = buildString {
-            append("object ID ")
-            append(ids.last())
-            if (ids.size > 1) {
-                append(" (${ids.joinToString(" > ")})")
+            if (ids.isEmpty()) {
+                append("root")
+            } else {
+                append("object ID ")
+                append(ids.last())
+                if (ids.size > 1) {
+                    append(" (${ids.joinToString(" > ")})")
+                }
             }
         }
-
 }

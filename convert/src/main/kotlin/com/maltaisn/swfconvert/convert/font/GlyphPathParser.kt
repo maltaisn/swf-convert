@@ -80,10 +80,12 @@ internal class GlyphPathParser @Inject constructor(
         transform: AffineTransform
     ): List<Path> {
         // Create the glyph shape from SWF shape records
-        val paths = converter.parseShape(context, shape,
-            emptyList(), emptyList(),
-            transform, IDENTITY_TRANSFORM,
-            ignoreStyles = true)
+        val paths = converter.parseShape(
+            context = context,
+            shape = shape,
+            transform = transform,
+            ignoreStyles = true
+        )
 
         // Separate glyph shape into contours, each having a single move to element.
         val contours = mutableListOf<Path>()
@@ -103,8 +105,6 @@ internal class GlyphPathParser @Inject constructor(
     }
 
     companion object {
-        private val IDENTITY_TRANSFORM = AffineTransform()
-
         /** Size of the SWF EM square. See Chapter 10: Fonts and Text, The EM square. */
         private const val SWF_EM_SQUARE_SIZE = 1024f
 

@@ -18,6 +18,7 @@ package com.maltaisn.swfconvert.render.pdf
 
 import com.maltaisn.swfconvert.core.BlendMode
 import com.maltaisn.swfconvert.core.image.Color
+import org.apache.logging.log4j.kotlin.logger
 import org.apache.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState
 import org.apache.pdfbox.util.Matrix
 import java.awt.BasicStroke
@@ -32,6 +33,8 @@ import org.apache.pdfbox.pdmodel.graphics.blend.BlendMode as PdfBlendMode
  */
 internal class PdfStreamWrapper(val stream: PdfContentStream) {
 
+    private val logger = logger()
+
     private val stateStack = ArrayDeque<State>()
     var restoringState = false
 
@@ -39,12 +42,17 @@ internal class PdfStreamWrapper(val stream: PdfContentStream) {
         setExtendedState {
             blendMode = when (new) {
                 BlendMode.NORMAL -> PdfBlendMode.NORMAL
+                BlendMode.LAYER -> PdfBlendMode.NORMAL
                 BlendMode.MULTIPLY -> PdfBlendMode.MULTIPLY
                 BlendMode.LIGHTEN -> PdfBlendMode.LIGHTEN
                 BlendMode.DARKEN -> PdfBlendMode.DARKEN
-                BlendMode.HARD_LIGHT -> PdfBlendMode.HARD_LIGHT
+                BlendMode.HARDLIGHT -> PdfBlendMode.HARD_LIGHT
                 BlendMode.SCREEN -> PdfBlendMode.SCREEN
                 BlendMode.OVERLAY -> PdfBlendMode.OVERLAY
+                else -> {
+                    logger.error { "Unsupported blend mode in PDF: $new" }
+                    return@stateProperty
+                }
             }
         }
     }

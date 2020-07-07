@@ -45,6 +45,11 @@ data class ConvertConfiguration(
      */
     val yAxisDirection: YAxisDirection,
 
+    /**
+     * Whether to ignore empty frames, not creating intermediate frames for them.
+     */
+    val ignoreEmptyFrames: Boolean,
+
     // TEXT & FONT CONFIGURATION
 
     /** Whether to group fonts that can be merged into a single one. */

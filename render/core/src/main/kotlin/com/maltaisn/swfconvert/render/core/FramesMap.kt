@@ -18,11 +18,16 @@ package com.maltaisn.swfconvert.render.core
 
 import com.maltaisn.swfconvert.core.FrameGroup
 
-interface FramesRenderer {
+data class FrameKey(val fileIndex: Int, val frameIndex: Int)
 
-    /**
-     * Render a list of [frameGroups] to the output files specified by the configuration.
-     */
-    suspend fun renderFrames(frameGroups: List<List<FrameGroup>>)
+typealias FramesMap = Map<FrameKey, FrameGroup>
 
+fun List<List<FrameGroup>>.toFramesMap(): FramesMap {
+    val framesMap = mutableMapOf<FrameKey, FrameGroup>()
+    for ((fileIndex, swfFrames) in this.withIndex()) {
+        for ((frameIndex, frame) in swfFrames.withIndex()) {
+            framesMap[FrameKey(fileIndex, frameIndex)] = frame
+        }
+    }
+    return framesMap
 }

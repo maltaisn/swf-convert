@@ -18,7 +18,6 @@ package com.maltaisn.swfconvert.render.core
 
 import java.io.File
 
-
 /**
  * Configuration used to convert from the intermediate representation to an output format.
  */
@@ -33,4 +32,21 @@ interface RenderConfiguration {
     /** Whether to convert input files from intermediate format to output format in parallel. */
     val parallelFrameRendering: Boolean
 
+    /**
+     * Get the output file for a frame with a [key].
+     * @param singleFrame Whether the source file for that frame has a single frame or not.
+     */
+    fun getOutputFileForFrame(key: FrameKey, singleFrame: Boolean): File {
+        val file = output[key.fileIndex]
+        val filename = buildString {
+            append(file.nameWithoutExtension)
+            if (!singleFrame) {
+                append('-')
+                append(key.frameIndex)
+            }
+            append('.')
+            append(file.extension)
+        }
+        return file.resolveSibling(filename)
+    }
 }

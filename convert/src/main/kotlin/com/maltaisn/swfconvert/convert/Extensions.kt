@@ -16,14 +16,40 @@
 
 package com.maltaisn.swfconvert.convert
 
+import com.flagstone.transform.datatype.Blend
 import com.flagstone.transform.datatype.CoordTransform
+import com.maltaisn.swfconvert.core.BlendMode
 import com.maltaisn.swfconvert.core.image.Color
 import java.awt.geom.AffineTransform
 import java.io.ByteArrayInputStream
 import java.util.zip.InflaterInputStream
 import com.flagstone.transform.datatype.Color as FColor
 
+/**
+ * Convert a SWF color to a [Color].
+ */
 internal fun FColor.toColor() = Color(this.red, this.green, this.blue, this.alpha)
+
+/**
+ * Convert a SWF blend mode to a [BlendMode].
+ */
+internal fun Blend.toBlendMode() = BLEND_MODE_MAP[this]
+
+private val BLEND_MODE_MAP = mapOf(
+    Blend.NULL to BlendMode.NULL,
+    Blend.NORMAL to BlendMode.NORMAL,
+    Blend.LAYER to BlendMode.LAYER,
+    Blend.MULTIPLY to BlendMode.MULTIPLY,
+    Blend.SCREEN to BlendMode.SCREEN,
+    Blend.LIGHTEN to BlendMode.LIGHTEN,
+    Blend.DARKEN to BlendMode.DARKEN,
+    Blend.ADD to BlendMode.ADD,
+    Blend.SUBTRACT to BlendMode.SUBTRACT,
+    Blend.DIFFERENCE to BlendMode.DIFFERENCE,
+    Blend.INVERT to BlendMode.INVERT,
+    Blend.ERASE to BlendMode.ERASE,
+    Blend.OVERLAY to BlendMode.OVERLAY,
+    Blend.HARDLIGHT to BlendMode.HARDLIGHT)
 
 /**
  * Convert [this] transform to an [AffineTransform].
@@ -51,6 +77,9 @@ internal fun CoordTransform.toAffineTransform() = AffineTransform(
 internal fun CoordTransform?.toAffineTransformOrIdentity() =
     this?.toAffineTransform() ?: AffineTransform()
 
+/**
+ * Decompress [this] byte array using ZLIB decompression.
+ */
 internal fun ByteArray.zlibDecompress(): ByteArray {
     val inflaterStream = InflaterInputStream(ByteArrayInputStream(this))
     val decompressed = inflaterStream.readBytes()

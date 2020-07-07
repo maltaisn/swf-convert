@@ -18,6 +18,7 @@ package com.maltaisn.swfconvert.convert.wrapper
 
 import com.flagstone.transform.fillstyle.FillStyle
 import com.flagstone.transform.linestyle.LineStyle
+import com.flagstone.transform.shape.ShapeRecord
 import com.flagstone.transform.shape.ShapeStyle
 import com.flagstone.transform.shape.ShapeStyle2
 
@@ -37,4 +38,10 @@ internal data class WShapeStyle(
     constructor(style: ShapeStyle2) : this(style.moveX, style.moveY, style.fillStyle,
         style.altFillStyle, style.lineStyle, style.fillStyles, style.lineStyles)
 
+}
+
+internal fun ShapeRecord.toShapeStyleWrapperOrNull() = when (this) {
+    is ShapeStyle -> WShapeStyle(this)
+    is ShapeStyle2 -> WShapeStyle(this)
+    else -> null
 }

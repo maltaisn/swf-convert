@@ -21,8 +21,11 @@ import com.maltaisn.swfconvert.core.ProgressCallback
 import com.maltaisn.swfconvert.core.mapInParallel
 import com.maltaisn.swfconvert.core.showProgress
 import com.maltaisn.swfconvert.core.showStep
+import com.maltaisn.swfconvert.render.core.FrameKey
+import com.maltaisn.swfconvert.render.core.FramesMap
 import com.maltaisn.swfconvert.render.core.FramesRenderer
 import com.maltaisn.swfconvert.render.core.readAffirmativeAnswer
+import com.maltaisn.swfconvert.render.core.toFramesMap
 import org.apache.logging.log4j.kotlin.logger
 import java.io.File
 import java.io.IOException
@@ -41,7 +44,7 @@ class SvgFramesRenderer @Inject internal constructor(
 
     private val logger = logger()
 
-    override suspend fun renderFrames(frameGroups: List<FrameGroup>) {
+    override suspend fun renderFrames(frameGroups: List<List<FrameGroup>>) {
         // Move images and fonts from temp dir to output dir
         val outputDir = config.output.first().parentFile
         val outputImagesDir = File(outputDir, "images")
@@ -56,14 +59,13 @@ class SvgFramesRenderer @Inject internal constructor(
         }
 
         // Write frames
-        var frames = frameGroups.withIndex().associate { (k, v) -> k to v }
+        var framesMap = frameGroups.toFramesMap()
         while (true) {
-            frames = renderFrames(frames, outputImagesDir, outputFontsDir)
+            framesMap = renderFrames(framesMap, outputImagesDir, outputFontsDir)
 
-            if (frames.isNotEmpty()) {
+            if (framesMap.isNotEmpty()) {
                 // Some files couldn't be saved. Ask to retry.
-                logger.warn { "Failed to save files ${frames.keys.joinToString { config.output[it].path }}" }
-                if (readAffirmativeAnswer("Could not save ${frames.size} files.")) {
+                if (readAffirmativeAnswer("Could not save ${framesMap.size} files.")) {
                     continue
                 } else {
                     return
@@ -75,26 +77,28 @@ class SvgFramesRenderer @Inject internal constructor(
     }
 
     /**
-     * Render [frameGroups], a map of frame by file index.
+     * Render [framesMap], a map of frame by file index.
      * Returns a similar map for frames that couldn't be saved.
      */
     private suspend fun renderFrames(
-        frameGroups: Map<Int, FrameGroup>,
+        framesMap: FramesMap,
         imagesDir: File,
         fontsDir: File
-    ): Map<Int, FrameGroup> {
+    ): FramesMap {
         return progressCb.showStep("Writing SVG frames", true) {
-            progressCb.showProgress(frameGroups.size) {
-                val failed = ConcurrentHashMap<Int, FrameGroup>()
+            progressCb.showProgress(framesMap.size) {
+                val failed = ConcurrentHashMap<FrameKey, FrameGroup>()
 
-                frameGroups.entries.mapInParallel(config.parallelFrameRendering) { (i, frameGroup) ->
+                framesMap.entries.mapInParallel(config.parallelFrameRendering) { (key, frameGroup) ->
                     val renderer = svgFrameRendererProvider.get()
 
+                    val singleFrame = FrameKey(key.fileIndex, 1) !in framesMap
+                    val outputFile = config.getOutputFileForFrame(key, singleFrame)
                     try {
-                        renderer.renderFrame(i, frameGroup, imagesDir, fontsDir)
+                        renderer.renderFrame(frameGroup, outputFile, imagesDir, fontsDir)
                     } catch (e: IOException) {
-                        logger.warn { "Failed to save file ${config.output[i]}" }
-                        failed[i] = frameGroup
+                        logger.warn { "Failed to save file $outputFile" }
+                        failed[key] = frameGroup
                     }
 
                     progressCb.incrementProgress()

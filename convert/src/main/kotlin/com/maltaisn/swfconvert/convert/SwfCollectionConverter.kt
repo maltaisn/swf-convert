@@ -41,7 +41,7 @@ class SwfCollectionConverter @Inject internal constructor(
 
     private val logger = logger()
 
-    suspend fun convert(context: ConvertContext): List<FrameGroup> {
+    suspend fun convert(context: ConvertContext): List<List<FrameGroup>> {
         config.imagesDir.deleteRecursively()
         config.fontsDir.deleteRecursively()
         config.imagesDir.mkdirs()
@@ -65,7 +65,7 @@ class SwfCollectionConverter @Inject internal constructor(
         val frameGroups = swfsConverter.createFrameGroups(context, swfs, fontsMap)
 
         // Create images and remove duplicates if needed.
-        imageCreator.createAndOptimizeImages(frameGroups)
+        imageCreator.createAndOptimizeImages(frameGroups.flatten())
 
         return frameGroups
     }
@@ -87,4 +87,3 @@ class SwfCollectionConverter @Inject internal constructor(
     }
 
 }
-

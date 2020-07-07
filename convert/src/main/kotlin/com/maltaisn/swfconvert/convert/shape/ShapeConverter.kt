@@ -21,12 +21,10 @@ import com.flagstone.transform.linestyle.LineStyle
 import com.flagstone.transform.shape.Curve
 import com.flagstone.transform.shape.Line
 import com.flagstone.transform.shape.Shape
-import com.flagstone.transform.shape.ShapeStyle
-import com.flagstone.transform.shape.ShapeStyle2
 import com.maltaisn.swfconvert.convert.context.ConvertContext
 import com.maltaisn.swfconvert.convert.shape.ShapeConverter.Edge.CurveEdge
 import com.maltaisn.swfconvert.convert.shape.ShapeConverter.Edge.LineEdge
-import com.maltaisn.swfconvert.convert.wrapper.WShapeStyle
+import com.maltaisn.swfconvert.convert.wrapper.toShapeStyleWrapperOrNull
 import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.core.shape.Path
 import com.maltaisn.swfconvert.core.shape.PathElement
@@ -56,6 +54,7 @@ internal open class ShapeConverter @Inject constructor() {
     private lateinit var transform: AffineTransform
     private var ignoreStyles = false
 
+    // Used to find image density in subclass.
     protected lateinit var currentTransform: AffineTransform
 
     private val fillStyles = mutableListOf<PathFillStyle>()
@@ -72,11 +71,11 @@ internal open class ShapeConverter @Inject constructor() {
     fun parseShape(
         context: ConvertContext,
         shape: Shape,
-        fillStyles: List<FillStyle>,
-        lineStyles: List<LineStyle>,
-        transform: AffineTransform,
-        currentTransform: AffineTransform,
-        ignoreStyles: Boolean
+        fillStyles: List<FillStyle> = emptyList(),
+        lineStyles: List<LineStyle> = emptyList(),
+        transform: AffineTransform = IDENTITY_TRANSFORM,
+        currentTransform: AffineTransform = IDENTITY_TRANSFORM,
+        ignoreStyles: Boolean = false
     ): List<Path> {
         this.context = context
         this.shape = shape
@@ -99,14 +98,10 @@ internal open class ShapeConverter @Inject constructor() {
         createEdgeMaps()
 
         paths.clear()
-        if (ignoreStyles) {
-            for (groupIndex in 0 until numGroups) {
-                createFillPaths(groupIndex)
-            }
 
-        } else {
-            for (groupIndex in 0 until numGroups) {
-                createFillPaths(groupIndex)
+        for (groupIndex in 0 until numGroups) {
+            createFillPaths(groupIndex)
+            if (!ignoreStyles) {
                 createLinePaths(groupIndex)
             }
         }
@@ -207,11 +202,7 @@ internal open class ShapeConverter @Inject constructor() {
         val subPath = mutableListOf<Edge>()
 
         for (shapeRecord in shape.objects) {
-            val shapeStyle = when (shapeRecord) {
-                is ShapeStyle -> WShapeStyle(shapeRecord)
-                is ShapeStyle2 -> WShapeStyle(shapeRecord)
-                else -> null
-            }
+            val shapeStyle = shapeRecord.toShapeStyleWrapperOrNull()
             when {
                 shapeStyle != null -> {
                     if (shapeStyle.lineStyle != null ||
@@ -432,6 +423,8 @@ internal open class ShapeConverter @Inject constructor() {
     }
 
     companion object {
+        private val IDENTITY_TRANSFORM = AffineTransform()
+
         private const val NO_STYLE_INDEX = Int.MAX_VALUE
         private val NO_POINT = Point(Int.MAX_VALUE, Int.MAX_VALUE)
         private val SOLID_BLACK_FILL = PathFillStyle.Solid(Color.BLACK)

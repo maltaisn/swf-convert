@@ -16,6 +16,7 @@
 
 package com.maltaisn.swfconvert.convert.wrapper
 
+import com.flagstone.transform.MovieTag
 import com.flagstone.transform.datatype.Bounds
 import com.flagstone.transform.fillstyle.FillStyle
 import com.flagstone.transform.linestyle.LineStyle
@@ -38,4 +39,12 @@ internal data class WDefineShape(
     constructor(s: DefineShape3) : this(s.identifier, s.shape, s.bounds, s.fillStyles, s.lineStyles)
     constructor(s: DefineShape4) : this(s.identifier, s.shape, s.bounds, s.fillStyles, s.lineStyles)
 
+}
+
+internal fun MovieTag.toShapeWrapperOrNull() = when (this) {
+    is DefineShape -> WDefineShape(this)
+    is DefineShape2 -> WDefineShape(this)
+    is DefineShape3 -> WDefineShape(this)
+    is DefineShape4 -> WDefineShape(this)
+    else -> null
 }

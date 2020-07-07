@@ -66,6 +66,13 @@ class CoreParams(
         order = 10)
     private var tempDir: String? = null
 
+    /** Whether to group fonts that can be merged into a single one. */
+    @Parameter(
+        names = ["--ignore-empty"],
+        description = "Whether to ignore empty frames, not generating output for them.",
+        order = 30)
+    private var ignoreEmptyFrames: Boolean = false
+
     // Text & font configuration
 
     /** Whether to group fonts that can be merged into a single one. */
@@ -291,6 +298,7 @@ class CoreParams(
                 input,
                 tempDir,
                 yAxisDirection,
+                ignoreEmptyFrames,
                 groupFonts,
                 removeDuplicateImages,
                 downsampleImages,
