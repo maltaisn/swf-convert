@@ -27,6 +27,7 @@ import com.maltaisn.swfconvert.core.image.Color
  * @property color Color of the text to draw.
  * @property font Font to use.
  * @property text Text to draw.
+ * @property glyphIndices Indices of each char in the glyphs list of the [font].
  * @property glyphOffsets Custom spacing between glyphs, without including glyph advance width.
  * The first value represents the extra space between the first and the second character of [text].
  * The list has a size between 0 and `text.length - 1`. Trailing zero offsets are omitted.
@@ -41,6 +42,7 @@ data class TextObject(
     val color: Color,
     val font: Font,
     val text: String,
+    val glyphIndices: List<Int>,
     val glyphOffsets: List<Float>
 ) : FrameObject {
 

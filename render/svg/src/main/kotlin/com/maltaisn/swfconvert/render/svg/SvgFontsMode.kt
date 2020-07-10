@@ -22,5 +22,8 @@ enum class SvgFontsMode(val embedded: Boolean) {
     EXTERNAL(false),
 
     /** Fonts are stored as base64 encoded data URLs (TTF format). */
-    BASE64(true)
+    BASE64(true),
+
+    /** Fonts are not used, text is drawn using paths. */
+    NONE(true),
 }

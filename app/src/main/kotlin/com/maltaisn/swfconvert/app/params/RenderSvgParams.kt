@@ -100,6 +100,7 @@ internal class RenderSvgParams : RenderParams<SvgConfiguration> {
         get() = when (fontsModeStr.toLowerCase()) {
             MODE_EXTERNAL -> SvgFontsMode.EXTERNAL
             MODE_BASE64 -> SvgFontsMode.BASE64
+            MODE_NONE -> SvgFontsMode.NONE
             else -> configError("Unknown fonts mode '$fontsModeStr'.")
         }
 
@@ -142,5 +143,6 @@ internal class RenderSvgParams : RenderParams<SvgConfiguration> {
     companion object {
         private const val MODE_EXTERNAL = "external"
         private const val MODE_BASE64 = "base64"
+        private const val MODE_NONE = "none"
     }
 }

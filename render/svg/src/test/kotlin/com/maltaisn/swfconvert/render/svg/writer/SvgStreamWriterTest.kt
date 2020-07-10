@@ -91,7 +91,7 @@ class SvgStreamWriterTest {
     fun `should write def without id`() {
         assertEquals("""<defs><g/></defs>""",
             createSvg(start = true) {
-                writeDef {
+                writeDef(null) {
                     group()
                 }
             }.onlySvgContent())

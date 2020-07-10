@@ -204,6 +204,15 @@ class SvgPathWriterTest {
     }
 
     @Test
+    fun `should write move to next to close path`() {
+        assertPathEquals("M10 10ZM0 0") {
+            moveTo(10f, 10f)
+            closePath()
+            moveTo(0f, 0f)
+        }
+    }
+
+    @Test
     fun `should not accumulate rounding error with relative commands (precision 0)`() {
         assertPathEquals("M10 10h1", precision = 0) {
             moveTo(10f, 10f)

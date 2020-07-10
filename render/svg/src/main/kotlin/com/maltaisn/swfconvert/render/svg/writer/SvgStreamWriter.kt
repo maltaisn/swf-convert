@@ -142,7 +142,7 @@ internal class SvgStreamWriter(
 
     private fun checkIfStarted() = checkNotNull(xmlWriter) { "SVG has not started" }
 
-    fun writeDef(id: String? = null, block: SvgStreamWriter.() -> Unit) {
+    fun <T : String?> writeDef(id: T, block: SvgStreamWriter.() -> Unit): T {
         val xmlWriterBefore = xmlWriter
         xmlWriter = defXml
         defId = id
@@ -150,6 +150,7 @@ internal class SvgStreamWriter(
         this.block()
         check(defWasWritten) { "No def was written" }
         xmlWriter = xmlWriterBefore
+        return id
     }
 
     private fun consumeDefId(): String? {

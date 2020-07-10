@@ -185,7 +185,7 @@ internal class TextConverter @Inject constructor(
         val text = String(CharArray(glyphIndices.size) { font.getGlyph(glyphIndices[it]).char })
 
         return TextObject(textTag.identifier, xPos, yPos, fontSize,
-            color!!, font, text, glyphOffsets)
+            color!!, font, text, glyphIndices.map { it.glyphIndex }, glyphOffsets)
     }
 
     /**

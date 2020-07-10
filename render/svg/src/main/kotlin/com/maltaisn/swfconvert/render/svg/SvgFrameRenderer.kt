@@ -33,6 +33,7 @@ import com.maltaisn.swfconvert.core.shape.PathFillStyle
 import com.maltaisn.swfconvert.core.shape.PathLineStyle
 import com.maltaisn.swfconvert.core.shape.ShapeObject
 import com.maltaisn.swfconvert.core.text.Font
+import com.maltaisn.swfconvert.core.text.FontGlyph
 import com.maltaisn.swfconvert.core.text.GlyphData
 import com.maltaisn.swfconvert.core.text.TextObject
 import com.maltaisn.swfconvert.render.svg.writer.SvgPathWriter
@@ -79,6 +80,7 @@ internal class SvgFrameRenderer @Inject constructor(
         }
 
     private val definedFonts = mutableMapOf<File, String>()
+    private val definedGlyphs = mutableMapOf<Font, Array<String>>()
     private val definedImages = mutableMapOf<File, String>()
     private val definedImageMasks = mutableMapOf<File, String>()
 
@@ -92,6 +94,8 @@ internal class SvgFrameRenderer @Inject constructor(
 
         definedFonts.clear()
         definedImages.clear()
+        definedImageMasks.clear()
+        definedGlyphs.clear()
 
         var outputStream: OutputStream = FileOutputStream(outputFile)
         if (config.compress) {
@@ -113,7 +117,15 @@ internal class SvgFrameRenderer @Inject constructor(
                     preserveAspectRatio = SvgPreserveAspectRatio.NONE))
             // FrameGroup transform is ignored because the transform is already created by the
             // viewBox having a different size than the one set by 'width' and 'height'.
+
+            if (config.fontsMode == SvgFontsMode.NONE) {
+                // If using paths for glyphs instead of fonts, start by creating glyph defs.
+                // They will be the most used defs so we might as well give them the shortest IDs.
+                createGlyphDefs(frame)
+            }
+
             drawSimpleGroup(frame)
+
             svg.end()
         }
     }
@@ -194,6 +206,11 @@ internal class SvgFrameRenderer @Inject constructor(
     }
 
     private fun drawText(text: TextObject) {
+        if (config.fontsMode == SvgFontsMode.NONE) {
+            drawTextWithPaths(text)
+            return
+        }
+
         val fontId = createFontDef(text.font)
 
         val dx = FloatArray(text.glyphOffsets.size + 1) {
@@ -212,15 +229,61 @@ internal class SvgFrameRenderer @Inject constructor(
     private fun createFontDef(font: Font): String {
         val fontFile = checkNotNull(font.fontFile) { "Missing font" }
         val svgFontFile = File(fontsDir, fontFile.name)
-        return definedFonts.getOrPut(svgFontFile) {
+        return definedFonts.getOrPut(fontFile) {
             val id = nextDefId
-            svg.writeDef {
+            svg.writeDef(null) {
                 svg.font(id, when (config.fontsMode) {
                     SvgFontsMode.EXTERNAL -> svgFontFile.invariantSeparatorsPath
                     SvgFontsMode.BASE64 -> fontFile.readBytes().toBase64DataUrl("font/ttf")
+                    else -> error("")
                 })
             }
             id
+        }
+    }
+
+    private fun drawTextWithPaths(text: TextObject) {
+        val font = text.font
+
+        // Create graphics state for text object.
+        // Glyph are defined in glyph space units (EM square), so scale to get desired font size.
+        // Also invert Y axis because glyph data is defined in Y positive up coordinate system, SVG is Y positive down.
+        val scale = text.fontSize / GlyphData.EM_SQUARE_SIZE
+        val transform = SvgTransform.Matrix(scale, 0f, 0f, -scale, text.x, text.y)
+        val grState = SvgGraphicsState(
+            fill = SvgFillColor(text.color),
+            fillOpacity = text.color.floatA,
+            transforms = listOf(transform))
+
+        // Use defined glyphs
+        if (text.text.length == 1) {
+            drawGlyphOrUseGlyphDef(font, text.glyphIndices.first(), grState)
+        } else {
+            svg.group(grState) {
+                var advance = 0f
+                for ((i, glyphIndex) in text.glyphIndices.withIndex()) {
+                    drawGlyphOrUseGlyphDef(font, glyphIndex,
+                        // TODO this should be using x="" not transform
+                        SvgGraphicsState(transforms = listOf(SvgTransform.Translate(advance))))
+                    advance += font.glyphs[glyphIndex].data.advanceWidth + text.glyphOffsets.getOrElse(i) { 0f }
+                }
+            }
+        }
+    }
+
+    private fun drawGlyphOrUseGlyphDef(font: Font, glyphIndex: Int, grState: SvgGraphicsState) {
+        when (val glyphId = definedGlyphs[font]?.get(glyphIndex) ?: error("Missing glyph ID")) {
+            GLYPH_ID_UNUSED -> Unit // Whitespace
+            GLYPH_ID_SINGLE_USE -> drawGlyph(font.glyphs[glyphIndex], grState)
+            else -> svg.use(glyphId, grState)
+        }
+    }
+
+    private fun drawGlyph(glyph: FontGlyph, grState: SvgGraphicsState) {
+        svg.path(grState) {
+            for (contour in glyph.data.contours) {
+                writePath(contour, this)
+            }
         }
     }
 
@@ -279,12 +342,10 @@ internal class SvgFrameRenderer @Inject constructor(
             SvgImagesMode.BASE64 -> {
                 // Create image def to avoid duplicating image data if image is used more than once.
                 val imageId = definedImages.getOrPut(dataFile) {
-                    val id = nextDefId
-                    svg.writeDef(id) {
+                    svg.writeDef(nextDefId) {
                         val href = createImageHref(imageData.format, imageData.data, dataFile)
                         svg.image(href)
                     }
-                    id
                 }
                 svg.use(imageId, grState = grState)
             }
@@ -300,14 +361,12 @@ internal class SvgFrameRenderer @Inject constructor(
         val alphaDataFile = imageData.alphaDataFile
         return if (alphaDataFile != null) {
             definedImageMasks.getOrPut(alphaDataFile) {
-                val id = nextDefId
                 val alphaImageHref = createImageHref(imageData.format, imageData.alphaData, alphaDataFile)
-                svg.writeDef(id) {
+                svg.writeDef(nextDefId) {
                     mask {
                         svg.image(alphaImageHref)
                     }
                 }
-                id
             }
         } else {
             null
@@ -325,8 +384,7 @@ internal class SvgFrameRenderer @Inject constructor(
             SvgGradientStop(it.ratio, it.color.opaque, it.color.floatA)
         }
 
-        val id = nextDefId
-        svg.writeDef(id) {
+        val id = svg.writeDef(nextDefId) {
             linearGradient(stops, SvgGradientUnits.USER_SPACE_ON_USE,
                 gradient.transform.toSvgTransformList(), x1 = -16384f, x2 = 16384f)
         }
@@ -339,8 +397,7 @@ internal class SvgFrameRenderer @Inject constructor(
         if (paths.isEmpty()) {
             return SvgStreamWriter.NULL_GRAPHICS_STATE
         }
-        val id = nextDefId
-        svg.writeDef(id) {
+        val id = svg.writeDef(nextDefId) {
             clipPathData {
                 for (path in paths) {
                     writePath(path, this)
@@ -348,6 +405,48 @@ internal class SvgFrameRenderer @Inject constructor(
             }
         }
         return SvgGraphicsState(clipPathId = id)
+    }
+
+    /**
+     * Populate the [definedGlyphs] map for each glyph used in [frame]. SVG ID will be created for glyphs
+     * used at least twice, otherwise the special ID [GLYPH_ID_SINGLE_USE] is used for glyph used once,
+     * and [GLYPH_ID_UNUSED] is used for glyph that aren't used.
+     */
+    private fun createGlyphDefs(frame: FrameGroup) {
+        val allTexts = frame.findAllTextObjectsTo(mutableListOf())
+        for (text in allTexts) {
+            val font = text.font
+            val definedFontGlyphs = definedGlyphs.getOrPut(font) {
+                Array(font.glyphs.size) { GLYPH_ID_UNUSED }
+            }
+            for (glyphIndex in text.glyphIndices) {
+                val glyph = font.glyphs[glyphIndex]
+                if (glyph.isWhitespace) {
+                    // No need to make empty path defs for whitespaces.
+                    continue
+                }
+                if (definedFontGlyphs[glyphIndex] == GLYPH_ID_UNUSED) {
+                    // Glyph is used for the first time.
+                    definedFontGlyphs[glyphIndex] = GLYPH_ID_SINGLE_USE
+                } else if (definedFontGlyphs[glyphIndex] == GLYPH_ID_SINGLE_USE) {
+                    // Glyph is used for the second time, create def.
+                    definedFontGlyphs[glyphIndex] = svg.writeDef(nextDefId) {
+                        drawGlyph(glyph, SvgStreamWriter.NULL_GRAPHICS_STATE)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun <C : MutableCollection<TextObject>> GroupObject.findAllTextObjectsTo(destination: C): C {
+        for (obj in this.objects) {
+            if (obj is TextObject) {
+                destination += obj
+            } else if (obj is GroupObject) {
+                obj.findAllTextObjectsTo(destination)
+            }
+        }
+        return destination
     }
 
     private fun writePath(path: Path, pathWriter: SvgPathWriter) = pathWriter.apply {
@@ -452,6 +551,9 @@ internal class SvgFrameRenderer @Inject constructor(
     companion object {
         private const val XML_NAME_START_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_:"
         private const val XML_NAME_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_:-."
+
+        private const val GLYPH_ID_UNUSED = "{0}"
+        private const val GLYPH_ID_SINGLE_USE = "{1}"
     }
 
 }

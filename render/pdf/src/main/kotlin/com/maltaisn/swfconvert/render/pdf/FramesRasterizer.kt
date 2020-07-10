@@ -175,7 +175,7 @@ internal class FramesRasterizer @Inject constructor(
                         0, config.rasterizationDpi, ImageType.RGB)
                     break
                 } catch (e: IOException) {
-                    // Retry again, this happens for seemingly no reason.
+                    // Try again, this happens for seemingly no reason.
                     if (i == RASTERIZATION_MAX_TRIES - 1) {
                         logger.error(e) { "Failed to rasterize PDF frame after $RASTERIZATION_MAX_TRIES tries." }
                     }
