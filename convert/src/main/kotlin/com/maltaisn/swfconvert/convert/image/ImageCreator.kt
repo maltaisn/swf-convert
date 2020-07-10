@@ -18,12 +18,11 @@ package com.maltaisn.swfconvert.convert.image
 
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
 import com.maltaisn.swfconvert.core.FrameGroup
-import com.maltaisn.swfconvert.core.GroupObject
 import com.maltaisn.swfconvert.core.ProgressCallback
+import com.maltaisn.swfconvert.core.findAllImagesTo
 import com.maltaisn.swfconvert.core.image.ImageData
 import com.maltaisn.swfconvert.core.mapInParallel
 import com.maltaisn.swfconvert.core.shape.PathFillStyle
-import com.maltaisn.swfconvert.core.shape.ShapeObject
 import com.maltaisn.swfconvert.core.showProgress
 import com.maltaisn.swfconvert.core.showStep
 import kotlinx.coroutines.Dispatchers
@@ -122,18 +121,6 @@ internal class ImageCreator @Inject constructor(
             alphaDataFile.writeBytes(data.alphaData)
             data.alphaDataFile = alphaDataFile
         }
-    }
-
-    /** Find all images recursively in children of this group, adding them to the [destination] collection. */
-    private fun <C : MutableCollection<PathFillStyle.Image>> GroupObject.findAllImagesTo(destination: C): C {
-        for (obj in this.objects) {
-            if (obj is ShapeObject) {
-                obj.paths.mapNotNullTo(destination) { it.fillStyle as? PathFillStyle.Image }
-            } else if (obj is GroupObject) {
-                obj.findAllImagesTo(destination)
-            }
-        }
-        return destination
     }
 
     companion object {

@@ -20,6 +20,7 @@ import com.maltaisn.swfconvert.core.BlendMode
 import com.maltaisn.swfconvert.core.FrameGroup
 import com.maltaisn.swfconvert.core.FrameObject
 import com.maltaisn.swfconvert.core.GroupObject
+import com.maltaisn.swfconvert.core.findAllTextObjectsTo
 import com.maltaisn.swfconvert.core.image.ImageData
 import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.maltaisn.swfconvert.core.shape.Path
@@ -413,7 +414,8 @@ internal class SvgFrameRenderer @Inject constructor(
      * and [GLYPH_ID_UNUSED] is used for glyph that aren't used.
      */
     private fun createGlyphDefs(frame: FrameGroup) {
-        val allTexts = frame.findAllTextObjectsTo(mutableListOf())
+        val allTexts = mutableListOf<TextObject>()
+        frame.findAllTextObjectsTo(allTexts)
         for (text in allTexts) {
             val font = text.font
             val definedFontGlyphs = definedGlyphs.getOrPut(font) {
@@ -436,17 +438,6 @@ internal class SvgFrameRenderer @Inject constructor(
                 }
             }
         }
-    }
-
-    private fun <C : MutableCollection<TextObject>> GroupObject.findAllTextObjectsTo(destination: C): C {
-        for (obj in this.objects) {
-            if (obj is TextObject) {
-                destination += obj
-            } else if (obj is GroupObject) {
-                obj.findAllTextObjectsTo(destination)
-            }
-        }
-        return destination
     }
 
     private fun writePath(path: Path, pathWriter: SvgPathWriter) = pathWriter.apply {

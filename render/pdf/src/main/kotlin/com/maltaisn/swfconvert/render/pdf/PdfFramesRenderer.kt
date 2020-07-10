@@ -17,16 +17,13 @@
 package com.maltaisn.swfconvert.render.pdf
 
 import com.maltaisn.swfconvert.core.FrameGroup
-import com.maltaisn.swfconvert.core.FrameObject
-import com.maltaisn.swfconvert.core.GroupObject
 import com.maltaisn.swfconvert.core.ProgressCallback
+import com.maltaisn.swfconvert.core.findAllFontFilesTo
+import com.maltaisn.swfconvert.core.findAllImageDataTo
 import com.maltaisn.swfconvert.core.image.ImageData
 import com.maltaisn.swfconvert.core.mapInParallel
-import com.maltaisn.swfconvert.core.shape.PathFillStyle
-import com.maltaisn.swfconvert.core.shape.ShapeObject
 import com.maltaisn.swfconvert.core.showProgress
 import com.maltaisn.swfconvert.core.showStep
-import com.maltaisn.swfconvert.core.text.TextObject
 import com.maltaisn.swfconvert.render.core.FramesRenderer
 import com.maltaisn.swfconvert.render.core.readAffirmativeAnswer
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfMetadata
@@ -177,37 +174,6 @@ internal class PdfFramesRenderer @Inject internal constructor(
 
         progressCb.endStep()
         return pdfFontsMap
-    }
-
-    /** Find all image data recursively in children of this group, adding them to the [destination] collection. */
-    private fun <C : MutableCollection<ImageData>> FrameObject.findAllImageDataTo(destination: C): C {
-        when (this) {
-            is ShapeObject -> {
-                for (path in paths) {
-                    if (path.fillStyle is PathFillStyle.Image) {
-                        destination += (path.fillStyle as PathFillStyle.Image).imageData
-                    }
-                }
-            }
-            is GroupObject -> {
-                for (obj in this.objects) {
-                    obj.findAllImageDataTo(destination)
-                }
-            }
-        }
-        return destination
-    }
-
-    /** Find all fonts recursively in children of this group, adding them to the [destination] collection. */
-    private fun <C : MutableCollection<File>> GroupObject.findAllFontFilesTo(destination: C): C {
-        for (obj in this.objects) {
-            if (obj is TextObject) {
-                destination += obj.font.fontFile!!
-            } else if (obj is GroupObject) {
-                obj.findAllFontFilesTo(destination)
-            }
-        }
-        return destination
     }
 
     private suspend fun renderFramesToPdf(
