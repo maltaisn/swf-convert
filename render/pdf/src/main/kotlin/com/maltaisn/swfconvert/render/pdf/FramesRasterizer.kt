@@ -31,7 +31,6 @@ import com.maltaisn.swfconvert.core.shape.PathElement.CubicTo
 import com.maltaisn.swfconvert.core.shape.PathElement.LineTo
 import com.maltaisn.swfconvert.core.shape.PathElement.MoveTo
 import com.maltaisn.swfconvert.core.shape.PathElement.QuadTo
-import com.maltaisn.swfconvert.core.shape.PathElement.Rectangle
 import com.maltaisn.swfconvert.core.shape.PathFillStyle
 import com.maltaisn.swfconvert.core.shape.ShapeObject
 import com.maltaisn.swfconvert.core.showProgress
@@ -127,7 +126,6 @@ internal class FramesRasterizer @Inject constructor(
                         is LineTo -> LINE_TO_COMPLEXITY
                         is QuadTo -> QUAD_TO_COMPLEXITY
                         is CubicTo -> CUBIC_TO_COMPLEXITY
-                        is Rectangle -> RECTANGLE_COMPLEXITY
                         is ClosePath -> CLOSE_PATH_COMPLEXITY
                     }
                 }
@@ -239,7 +237,7 @@ internal class FramesRasterizer @Inject constructor(
         val w = frameGroup.width
         val h = frameGroup.height
         val imageTransform = AffineTransform(w, 0f, 0f, h, 0f, 0f)
-        return ShapeObject(0, listOf(Path(listOf(Rectangle(0f, 0f, w, h)),
+        return ShapeObject(0, listOf(Path.rectangle(0f, 0f, w, h,
             fillStyle = PathFillStyle.Image(0, imageTransform, imageData, false))))
     }
 
@@ -251,7 +249,6 @@ internal class FramesRasterizer @Inject constructor(
         private const val LINE_TO_COMPLEXITY = 2
         private const val QUAD_TO_COMPLEXITY = 4
         private const val CUBIC_TO_COMPLEXITY = 6
-        private const val RECTANGLE_COMPLEXITY = 4
         private const val CLOSE_PATH_COMPLEXITY = 0
     }
 

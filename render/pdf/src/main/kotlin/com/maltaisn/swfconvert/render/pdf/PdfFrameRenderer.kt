@@ -366,7 +366,6 @@ class PdfFrameRenderer @Inject internal constructor(
                     stream.curveTo(it.c1x, it.c1y, it.c2x, it.c2y, it.x, it.y)
                 }
                 is PathElement.ClosePath -> stream.closePath()
-                is PathElement.Rectangle -> stream.addRect(e.x, e.y, e.width, e.height)
             }
             currX = e.x
             currY = e.y

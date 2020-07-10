@@ -16,6 +16,10 @@
 
 package com.maltaisn.swfconvert.core.shape
 
+import com.maltaisn.swfconvert.core.shape.PathElement.ClosePath
+import com.maltaisn.swfconvert.core.shape.PathElement.LineTo
+import com.maltaisn.swfconvert.core.shape.PathElement.MoveTo
+
 data class Path(
     val elements: List<PathElement>,
     val fillStyle: PathFillStyle? = null,
@@ -47,6 +51,24 @@ data class Path(
             append(fillStyle)
         }
         append(")")
+    }
+
+    companion object {
+
+        fun rectangle(
+            x: Float,
+            y: Float,
+            w: Float,
+            h: Float,
+            fillStyle: PathFillStyle? = null,
+            lineStyle: PathLineStyle? = null
+        ) = Path(mutableListOf(
+            MoveTo(x, y),
+            LineTo(x + w, y),
+            LineTo(x + w, y + h),
+            LineTo(x, y + h),
+            ClosePath
+        ), fillStyle, lineStyle)
     }
 
 }

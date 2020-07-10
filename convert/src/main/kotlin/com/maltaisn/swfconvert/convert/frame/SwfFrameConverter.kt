@@ -39,7 +39,6 @@ import com.maltaisn.swfconvert.core.FrameGroup
 import com.maltaisn.swfconvert.core.GroupObject
 import com.maltaisn.swfconvert.core.Units
 import com.maltaisn.swfconvert.core.shape.Path
-import com.maltaisn.swfconvert.core.shape.PathElement
 import com.maltaisn.swfconvert.core.shape.ShapeObject
 import org.apache.logging.log4j.kotlin.logger
 import java.awt.Rectangle
@@ -283,9 +282,9 @@ internal class SwfFrameConverter @Inject constructor(
         if (config.drawShapeBounds) {
             val bounds = shape.bounds
             currentGroup.objects += ShapeObject(shape.identifier,
-                listOf(Path(listOf(PathElement.Rectangle(
+                listOf(Path.rectangle(
                     bounds.minX.toFloat(), bounds.minY.toFloat(),
-                    bounds.width.toFloat(), bounds.height.toFloat())),
+                    bounds.width.toFloat(), bounds.height.toFloat(),
                     lineStyle = config.debugLineStyle)))
         }
 

@@ -32,7 +32,6 @@ import com.maltaisn.swfconvert.core.GroupObject
 import com.maltaisn.swfconvert.core.YAxisDirection
 import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.core.shape.Path
-import com.maltaisn.swfconvert.core.shape.PathElement
 import com.maltaisn.swfconvert.core.shape.ShapeObject
 import com.maltaisn.swfconvert.core.text.Font
 import com.maltaisn.swfconvert.core.text.FontId
@@ -330,9 +329,9 @@ internal class TextConverter @Inject constructor(
      */
     private fun createTextBoundsObject(textTag: StaticTextTag): FrameObject {
         val bounds = textTag.bounds
-        val boundsRect = Path(listOf(PathElement.Rectangle(
+        val boundsRect = Path.rectangle(
             bounds.minX.toFloat(), bounds.minY.toFloat(),
-            bounds.width.toFloat(), bounds.height.toFloat())),
+            bounds.width.toFloat(), bounds.height.toFloat(),
             lineStyle = config.debugLineStyle)
         return ShapeObject(textTag.identifier, listOf(boundsRect))
     }

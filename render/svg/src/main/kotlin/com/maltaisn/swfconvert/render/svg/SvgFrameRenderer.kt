@@ -29,7 +29,6 @@ import com.maltaisn.swfconvert.core.shape.PathElement.CubicTo
 import com.maltaisn.swfconvert.core.shape.PathElement.LineTo
 import com.maltaisn.swfconvert.core.shape.PathElement.MoveTo
 import com.maltaisn.swfconvert.core.shape.PathElement.QuadTo
-import com.maltaisn.swfconvert.core.shape.PathElement.Rectangle
 import com.maltaisn.swfconvert.core.shape.PathFillStyle
 import com.maltaisn.swfconvert.core.shape.PathLineStyle
 import com.maltaisn.swfconvert.core.shape.ShapeObject
@@ -448,13 +447,6 @@ internal class SvgFrameRenderer @Inject constructor(
                 is QuadTo -> quadTo(e.cx, e.cy, e.x, e.y)
                 is CubicTo -> cubicTo(e.c1x, e.c1y, e.c2x, e.c2y, e.x, e.y)
                 is ClosePath -> closePath()
-                is Rectangle -> {
-                    moveTo(e.x, e.y)
-                    lineTo(e.x + e.width, e.y)
-                    lineTo(e.x + e.width, e.y + e.height)
-                    lineTo(e.x, e.y + e.height)
-                    closePath()
-                }
             }
         }
     }

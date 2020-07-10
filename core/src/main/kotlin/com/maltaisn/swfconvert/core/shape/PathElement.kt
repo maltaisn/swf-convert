@@ -84,30 +84,6 @@ sealed class PathElement(open val x: Float, open val y: Float) {
 
         override fun toString() = "Close path"
     }
-
-    /**
-     * A rectangle path element. Note that [x] and [y] always refer to the position of the
-     * upper left corner, no matter the Y axis direction.
-     */
-    data class Rectangle(
-        override val x: Float,
-        override val y: Float,
-        val width: Float,
-        val height: Float
-    ) : PathElement(x, y) {
-
-        override fun toSvg(svg: StringBuilder) {
-            svg.append("M ")
-            svg.appendValues(x, y)
-            svg.append(" h ")
-            svg.appendValues(width)
-            svg.append(" v ")
-            svg.appendValues(height)
-            svg.append(" h ")
-            svg.appendValues(-width)
-            svg.append(" Z")
-        }
-    }
 }
 
 private fun StringBuilder.appendValues(vararg values: Float) {
