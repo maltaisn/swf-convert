@@ -47,11 +47,6 @@ internal fun getNumberFormat(precision: Int): NumberFormat {
     return nbFmt
 }
 
-/**
- * Maximum precision that can be used for SVG values.
- * Float has a maximum of 7 decimal digits precision, but floating point errors
- * happens all the time so this was reduced to 5.
- */
 internal const val SVG_MAX_PRECISION = 5
 
 internal const val DEBUG_SVG_PRECISION = 3

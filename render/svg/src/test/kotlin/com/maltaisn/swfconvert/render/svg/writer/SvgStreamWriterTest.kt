@@ -129,8 +129,8 @@ class SvgStreamWriterTest {
     fun `should write same transforms twice`() {
         assertEquals("""<g transform="translate(10 10)"><g transform="translate(10 10)"/></g>""",
             createSvg(start = true) {
-                group(SvgGraphicsState(transforms = listOf(SvgTransform.Translate(10f, 10f)))) {
-                    group(SvgGraphicsState(transforms = listOf(SvgTransform.Translate(10f, 10f))))
+                group(SvgGraphicsState(transform = listOf(SvgTransform.Translate(10f, 10f)))) {
+                    group(SvgGraphicsState(transform = listOf(SvgTransform.Translate(10f, 10f))))
                 }
             }.onlySvgContent())
     }
@@ -168,7 +168,7 @@ class SvgStreamWriterTest {
                     }
                 }
                 path("M0 0h20v20h-20Z", SvgGraphicsState(clipPathId = "clip1",
-                    clipPathRule = SvgFillRule.EVEN_ODD))
+                    clipRule = SvgFillRule.EVEN_ODD))
             }.onlySvgContent())
     }
 
@@ -190,10 +190,13 @@ class SvgStreamWriterTest {
 
     @Test
     fun `should write text`() {
-        assertEquals("""<text x="100" y="100" dx="1 2 3 4" font-family="foo" font-size="32">Text</text>""",
+        assertEquals("""<text font-family="foo" font-size="32" x="100" y="100" dx="1 2 3 4">Text</text>""",
             createSvg(start = true) {
-                text(SvgNumber(100f), SvgNumber(100f),
-                    floatArrayOf(1f, 2f, 3f, 4f), "foo", 32f, "Text")
+                text("Text", floatArrayOf(1f, 2f, 3f, 4f), SvgGraphicsState(
+                    x = SvgNumber(100f),
+                    y = SvgNumber(100f),
+                    fontFamily = "foo",
+                    fontSize = 32f))
             }.onlySvgContent())
     }
 

@@ -112,6 +112,8 @@ internal sealed class SvgTransform {
 }
 
 internal fun List<SvgTransform>.toSvgTransformList(precision: Int, optimized: Boolean): String {
+    // Note: arguably, precision should affect the number of significant digits kept for transformations that use the
+    // scale and shear components. However that complicates things so just use higher precision if that's problematic.
     val numberFmt = getNumberFormat(precision)
     return this.joinToString(if (optimized) "" else " ") { it.toSvg(numberFmt, optimized) }
 }

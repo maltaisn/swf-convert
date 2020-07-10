@@ -18,18 +18,11 @@
 
 package com.maltaisn.swfconvert.render.svg.writer
 
-import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.render.svg.writer.data.SvgFillColor
-import com.maltaisn.swfconvert.render.svg.writer.data.SvgFillNone
-import com.maltaisn.swfconvert.render.svg.writer.data.SvgFillRule
 import com.maltaisn.swfconvert.render.svg.writer.data.SvgGradientStop
 import com.maltaisn.swfconvert.render.svg.writer.data.SvgGradientUnits
 import com.maltaisn.swfconvert.render.svg.writer.data.SvgGraphicsState
-import com.maltaisn.swfconvert.render.svg.writer.data.SvgMixBlendMode
 import com.maltaisn.swfconvert.render.svg.writer.data.SvgNumber
-import com.maltaisn.swfconvert.render.svg.writer.data.SvgPreserveAspectRatio
-import com.maltaisn.swfconvert.render.svg.writer.data.SvgStrokeLineCap
-import com.maltaisn.swfconvert.render.svg.writer.data.SvgStrokeLineJoin
 import com.maltaisn.swfconvert.render.svg.writer.data.SvgTransform
 import com.maltaisn.swfconvert.render.svg.writer.data.toSvgTransformList
 import com.maltaisn.swfconvert.render.svg.writer.data.validateGradientStops
@@ -37,6 +30,7 @@ import com.maltaisn.swfconvert.render.svg.writer.format.appendValuesList
 import com.maltaisn.swfconvert.render.svg.writer.format.format
 import com.maltaisn.swfconvert.render.svg.writer.format.formatOptimized
 import com.maltaisn.swfconvert.render.svg.writer.format.requireSvgPrecision
+import com.maltaisn.swfconvert.render.svg.writer.xml.AttributesArray
 import com.maltaisn.swfconvert.render.svg.writer.xml.XmlStreamWriter
 import com.maltaisn.swfconvert.render.svg.writer.xml.XmlTag
 import com.maltaisn.swfconvert.render.svg.writer.xml.XmlWriter
@@ -85,8 +79,8 @@ internal class SvgStreamWriter(
         requireSvgPrecision(percentPrecision)
 
         // Push default graphics state correspond to the default values for attributes.
-        grStateStack += DEFAULT_GRAPHICS_STATE
-        defGrStateStack += DEFAULT_GRAPHICS_STATE
+        grStateStack += SvgGraphicsState.DEFAULT
+        defGrStateStack += SvgGraphicsState.DEFAULT
     }
 
     override fun flush() {
@@ -103,7 +97,7 @@ internal class SvgStreamWriter(
         height: SvgNumber,
         viewBox: Rectangle2D? = null,
         writeProlog: Boolean = true,
-        grState: SvgGraphicsState = NULL_GRAPHICS_STATE
+        grState: SvgGraphicsState = SvgGraphicsState.NULL
     ) {
         check(!hasEnded) { "SVG has ended" }
         check(xmlWriter == null) { "SVG has already started" }
@@ -165,7 +159,7 @@ internal class SvgStreamWriter(
      * Start a new group element with a [grState]. Returns `true` if the group was started.
      * @param discardIfEmpty Whether to discard the group if it has no attributes (therefore being useless).
      */
-    fun startGroup(grState: SvgGraphicsState = NULL_GRAPHICS_STATE, discardIfEmpty: Boolean = false): Boolean {
+    fun startGroup(grState: SvgGraphicsState = SvgGraphicsState.NULL, discardIfEmpty: Boolean = false): Boolean {
         val xmlWriter = checkIfStarted()
         currentGrStateStack += grState
         val attrs = arrayOf(ATTR_ID to consumeDefId(), *getNewGraphicsStateAttrs())
@@ -183,7 +177,7 @@ internal class SvgStreamWriter(
     }
 
     inline fun group(
-        grState: SvgGraphicsState = NULL_GRAPHICS_STATE,
+        grState: SvgGraphicsState = SvgGraphicsState.NULL,
         discardIfEmpty: Boolean = false,
         build: () -> Unit = {}
     ) {
@@ -209,12 +203,12 @@ internal class SvgStreamWriter(
         endClipPath()
     }
 
-    fun clipPathData(data: String, grState: SvgGraphicsState = NULL_GRAPHICS_STATE) = clipPath {
+    fun clipPathData(data: String, grState: SvgGraphicsState = SvgGraphicsState.NULL) = clipPath {
         path(data, grState)
     }
 
     inline fun clipPathData(
-        grState: SvgGraphicsState = NULL_GRAPHICS_STATE,
+        grState: SvgGraphicsState = SvgGraphicsState.NULL,
         write: SvgPathWriter.() -> Unit
     ) = clipPath {
         path(grState, write)
@@ -235,7 +229,7 @@ internal class SvgStreamWriter(
         endMask()
     }
 
-    fun path(data: String, grState: SvgGraphicsState = NULL_GRAPHICS_STATE) {
+    fun path(data: String, grState: SvgGraphicsState = SvgGraphicsState.NULL) {
         val xmlWriter = checkIfStarted()
         withGraphicsState(grState) {
             xmlWriter {
@@ -249,7 +243,7 @@ internal class SvgStreamWriter(
     }
 
     inline fun path(
-        grState: SvgGraphicsState = NULL_GRAPHICS_STATE,
+        grState: SvgGraphicsState = SvgGraphicsState.NULL,
         write: SvgPathWriter.() -> Unit
     ) {
         val data = SvgPathWriter(precision, !prettyPrint).apply(write).toString()
@@ -258,11 +252,9 @@ internal class SvgStreamWriter(
 
     fun image(
         href: String,
-        x: SvgNumber = SvgNumber.ZERO,
-        y: SvgNumber = SvgNumber.ZERO,
         width: SvgNumber? = null,
         height: SvgNumber? = null,
-        grState: SvgGraphicsState = NULL_GRAPHICS_STATE
+        grState: SvgGraphicsState = SvgGraphicsState.NULL
     ) {
         require((width == null || width > SvgNumber.ZERO) &&
                 (height == null || height > SvgNumber.ZERO)) {
@@ -273,8 +265,6 @@ internal class SvgStreamWriter(
             xmlWriter {
                 TAG_IMAGE(arrayOf(
                     ATTR_ID to consumeDefId(),
-                    ATTR_X to x.takeIf { it.value != 0f }?.toSvg(precision, !prettyPrint),
-                    ATTR_Y to y.takeIf { it.value != 0f }?.toSvg(precision, !prettyPrint),
                     ATTR_WIDTH to width,
                     ATTR_HEIGHT to height,
                     ATTR_XLINK_HREF to href,
@@ -292,7 +282,7 @@ internal class SvgStreamWriter(
         y1: Float = 0f,
         x2: Float = 1f,
         y2: Float = 0f,
-        grState: SvgGraphicsState = NULL_GRAPHICS_STATE
+        grState: SvgGraphicsState = SvgGraphicsState.NULL
     ) {
         stops.validateGradientStops()
         val xmlWriter = checkIfStarted()
@@ -333,13 +323,9 @@ internal class SvgStreamWriter(
     }
 
     fun text(
-        x: SvgNumber,
-        y: SvgNumber,
-        dx: FloatArray = floatArrayOf(),
-        fontId: String? = null,
-        fontSize: Float? = null,
         text: String,
-        grState: SvgGraphicsState = NULL_GRAPHICS_STATE
+        dx: FloatArray = floatArrayOf(),
+        grState: SvgGraphicsState = SvgGraphicsState.NULL
     ) {
         val dxValue = if (dx.all { it == 0f }) null else createSvgValuesList(precision, dx)
         val xmlWriter = checkIfStarted()
@@ -347,12 +333,8 @@ internal class SvgStreamWriter(
             xmlWriter {
                 TAG_TEXT(arrayOf(
                     ATTR_ID to consumeDefId(),
-                    ATTR_X to x.takeIf { it.value != 0f }?.toSvg(precision, !prettyPrint),
-                    ATTR_Y to y.takeIf { it.value != 0f }?.toSvg(precision, !prettyPrint),
-                    ATTR_DX to dxValue,
-                    ATTR_FONT_FAMILY to fontId,
-                    ATTR_FONT_SIZE to fontSize?.formatOptimizedOrNot(precision),
-                    *getNewGraphicsStateAttrs()
+                    *getNewGraphicsStateAttrs(),
+                    ATTR_DX to dxValue
                 )) {
                     text(text)
                 }
@@ -360,7 +342,7 @@ internal class SvgStreamWriter(
         }
     }
 
-    fun use(id: String, grState: SvgGraphicsState = NULL_GRAPHICS_STATE) {
+    fun use(id: String, grState: SvgGraphicsState = SvgGraphicsState.NULL) {
         val xmlWriter = checkIfStarted()
         withGraphicsState(grState) {
             xmlWriter {
@@ -379,52 +361,45 @@ internal class SvgStreamWriter(
      * Get a list of SVG attributes corresponding to the properties changed in the last
      * pushed [SvgGraphicsState] compared to the previous graphics state.
      */
-    private fun getNewGraphicsStateAttrs() = arrayOf(
-        ATTR_FILL to getNewGraphicsStateProperty { fill }?.toSvg(),
-        ATTR_FILL_OPACITY to getNewGraphicsStateProperty { fillOpacity }?.formatOptimizedOrNot(percentPrecision),
-        ATTR_FILL_RULE to getNewGraphicsStateProperty { fillRule }?.svgName,
-        ATTR_STROKE to getNewGraphicsStateProperty { stroke }?.toSvg(),
-        ATTR_STROKE_OPACITY to getNewGraphicsStateProperty { strokeOpacity }?.formatOptimizedOrNot(percentPrecision),
-        ATTR_STROKE_WIDTH to getNewGraphicsStateProperty { strokeWidth },
-        ATTR_STROKE_LINE_JOIN to getNewGraphicsStateProperty { strokeLineJoin }?.svgName,
-        ATTR_STROKE_LINE_CAP to getNewGraphicsStateProperty { strokeLineCap }?.svgName,
-        ATTR_STROKE_MITER_LIMIT to getNewGraphicsStateProperty { strokeMiterLimit }?.formatOptimizedOrNot(precision),
-        ATTR_CLIP_PATH to getNewGraphicsStateProperty { clipPathId }?.toSvgUrlReference(),
-        ATTR_CLIP_RULE to getNewGraphicsStateProperty { clipPathRule }?.svgName,
-        ATTR_MASK to getNewGraphicsStateProperty { maskId }?.toSvgUrlReference(),
-        ATTR_TRANSFORM to currentGrStateStack.last().transforms?.toSvgTransformList(transformPrecision, !prettyPrint),
-        ATTR_PRESERVE_ASPECT_RATIO to getNewGraphicsStateProperty { preserveAspectRatio }?.toSvg(),
-        ATTR_STYLE to getGraphicsStateCssStyle()
-    )
-
-    /**
-     * Get the new value for a [property], or `null` if value hasn't changed since last state.
-     */
-    private inline fun <T> getNewGraphicsStateProperty(property: SvgGraphicsState.() -> T?): T? {
-        val stack = currentGrStateStack
-        val latest = stack.last()
-        val newValue = latest.property() ?: return null
-        for (grState in stack.asReversed().listIterator(1)) {
-            val oldValue = grState.property() ?: continue
-            // Found previously defined value for that property, check if different.
-            return newValue.takeIf { it != oldValue }
-        }
-        // No previously defined value for that property, return new value.
-        return newValue
+    private fun getNewGraphicsStateAttrs(): AttributesArray {
+        val grStateStack = currentGrStateStack
+        val newGrState = grStateStack.last().cleanedForAncestors(
+            grStateStack.subList(0, grStateStack.size - 1).asReversed())
+        return listOfNotNull(
+            ATTR_CLIP_PATH to newGrState.clipPathId?.toSvgUrlReference(),
+            ATTR_CLIP_RULE to newGrState.clipRule?.svgName,
+            ATTR_FILL to newGrState.fill?.toSvg(),
+            ATTR_FILL_OPACITY to newGrState.fillOpacity?.formatOptimizedOrNot(percentPrecision),
+            ATTR_FILL_RULE to newGrState.fillRule?.svgName,
+            ATTR_FONT_FAMILY to newGrState.fontFamily,
+            ATTR_FONT_SIZE to newGrState.fontSize?.formatOptimizedOrNot(precision),
+            ATTR_MASK to newGrState.maskId?.toSvgUrlReference(),
+            ATTR_PRESERVE_ASPECT_RATIO to newGrState.preserveAspectRatio?.toSvg(),
+            ATTR_STROKE to newGrState.stroke?.toSvg(),
+            ATTR_STROKE_OPACITY to newGrState.strokeOpacity?.formatOptimizedOrNot(percentPrecision),
+            ATTR_STROKE_WIDTH to newGrState.strokeWidth?.formatOptimizedOrNot(precision),
+            ATTR_STROKE_LINE_JOIN to newGrState.strokeLineJoin?.svgName,
+            ATTR_STROKE_LINE_CAP to newGrState.strokeLineCap?.svgName,
+            ATTR_STROKE_MITER_LIMIT to newGrState.strokeMiterLimit?.formatOptimizedOrNot(precision),
+            ATTR_STYLE to newGrState.getCssStyleValueOrNull(),
+            ATTR_TRANSFORM to newGrState.transform?.ifEmpty { null }
+                ?.toSvgTransformList(transformPrecision, !prettyPrint),
+            ATTR_X to newGrState.x?.takeIf { it.value != 0f }?.toSvg(precision, !prettyPrint),
+            ATTR_Y to newGrState.y?.takeIf { it.value != 0f }?.toSvg(precision, !prettyPrint)
+        ).toTypedArray()
     }
 
-    /**
-     * Get the new value of the CSS `style` attribute, or `null` if value hasn't changed since last state.
-     */
-    private fun getGraphicsStateCssStyle() = buildString {
-        val mixBlendMode = getNewGraphicsStateProperty { mixBlendMode }
+    /** Get the value of the CSS `style` attribute for a [SvgGraphicsState], or `null` if there's no value. */
+    private fun SvgGraphicsState.getCssStyleValueOrNull() = buildString {
+        val grState = this@getCssStyleValueOrNull
+        val mixBlendMode = grState.mixBlendMode
         if (mixBlendMode != null) {
             append("$CSS_MIX_BLEND_MODE:${mixBlendMode.svgName};")
         }
         if (isNotEmpty()) {
             deleteCharAt(length - 1)
         }
-    }.takeIf { it.isNotEmpty() }
+    }.ifEmpty { null }
 
     private fun expectEndTag(tag: String): XmlWriter? {
         val xmlWriter = checkIfStarted()
@@ -518,25 +493,6 @@ internal class SvgStreamWriter(
         private const val CSS_FONT_FAMILY = "font-family"
         private const val CSS_MIX_BLEND_MODE = "mix-blend-mode"
         private const val CSS_SRC = "src"
-
-        private val DEFAULT_GRAPHICS_STATE = SvgGraphicsState(
-            fill = SvgFillColor(Color.BLACK),
-            fillOpacity = 1f,
-            fillRule = SvgFillRule.NON_ZERO,
-            stroke = SvgFillNone,
-            strokeOpacity = 1f,
-            strokeWidth = 0f,
-            strokeLineJoin = SvgStrokeLineJoin.MITER,
-            strokeLineCap = SvgStrokeLineCap.BUTT,
-            strokeMiterLimit = 4f,
-            clipPathId = null,
-            clipPathRule = SvgFillRule.NON_ZERO,
-            maskId = null,
-            transforms = null,
-            preserveAspectRatio = SvgPreserveAspectRatio(SvgPreserveAspectRatio.Align.X_MID_Y_MID),
-            mixBlendMode = SvgMixBlendMode.NORMAL)
-
-        val NULL_GRAPHICS_STATE = SvgGraphicsState()
     }
 
 }
