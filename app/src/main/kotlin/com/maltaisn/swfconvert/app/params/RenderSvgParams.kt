@@ -78,30 +78,30 @@ internal class RenderSvgParams : RenderParams<SvgConfiguration> {
         names = ["--images-mode"],
         description = "Controls how images are included in SVG: external | base64",
         order = 1300)
-    var imagesModeStr: String = MODE_EXTERNAL
+    var imagesModeName: String = MODE_EXTERNAL
 
     @Parameter(
         names = ["--fonts-mode"],
         description = "Controls how fonts are included in SVG: external | base64",
         order = 1310)
-    var fontsModeStr: String = MODE_EXTERNAL
+    var fontsModeName: String = MODE_EXTERNAL
 
     override val yAxisDirection: YAxisDirection
         get() = YAxisDirection.DOWN
 
     private val imagesMode: SvgImagesMode
-        get() = when (imagesModeStr.toLowerCase()) {
+        get() = when (imagesModeName.toLowerCase()) {
             MODE_EXTERNAL -> SvgImagesMode.EXTERNAL
             MODE_BASE64 -> SvgImagesMode.BASE64
-            else -> configError("Unknown images mode '$imagesModeStr'.")
+            else -> configError("Unknown images mode '$imagesModeName'.")
         }
 
     private val fontsMode: SvgFontsMode
-        get() = when (fontsModeStr.toLowerCase()) {
+        get() = when (fontsModeName.toLowerCase()) {
             MODE_EXTERNAL -> SvgFontsMode.EXTERNAL
             MODE_BASE64 -> SvgFontsMode.BASE64
             MODE_NONE -> SvgFontsMode.NONE
-            else -> configError("Unknown fonts mode '$fontsModeStr'.")
+            else -> configError("Unknown fonts mode '$fontsModeName'.")
         }
 
     override fun createConfigurations(inputs: List<List<File>>): List<SvgConfiguration> {
@@ -137,6 +137,13 @@ internal class RenderSvgParams : RenderParams<SvgConfiguration> {
     override fun print() {
         println("""
             |Pretty print SVG: $prettyPrint
+            |Use SVGZ compression: $compress
+            |Precision: $precision
+            |  Transform precision: $transformPrecision
+            |  Percent precision: $percentPrecision
+            |Output prolog: ${!noProlog}
+            |Images mode: ${imagesModeName.toLowerCase()}
+            |Fonts mode: ${fontsModeName.toLowerCase()}
         """.trimMargin())
     }
 

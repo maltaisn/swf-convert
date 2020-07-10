@@ -329,6 +329,7 @@ internal class CoreParams(
 
     fun print() {
         println("""
+            |Ignore empty frames: $ignoreEmptyFrames
             |Group fonts: $groupFonts
             |Remove duplicate images: $removeDuplicateImages
             |Downsample images: $downsampleImages
