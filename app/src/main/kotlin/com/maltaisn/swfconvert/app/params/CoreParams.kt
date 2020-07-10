@@ -20,12 +20,7 @@ package com.maltaisn.swfconvert.app.params
 
 import com.beust.jcommander.DynamicParameter
 import com.beust.jcommander.Parameter
-import com.maltaisn.swfconvert.app.checkNoOptionsInArgs
 import com.maltaisn.swfconvert.app.configError
-import com.maltaisn.swfconvert.app.isSwfFile
-import com.maltaisn.swfconvert.app.toBooleanOrNull
-import com.maltaisn.swfconvert.app.toColorOrNull
-import com.maltaisn.swfconvert.app.toListOrNull
 import com.maltaisn.swfconvert.convert.ConvertConfiguration
 import com.maltaisn.swfconvert.core.YAxisDirection
 import com.maltaisn.swfconvert.core.image.Color
@@ -82,6 +77,12 @@ internal class CoreParams(
         description = "Whether to group fonts that can be merged into a single one.",
         order = 40)
     private var groupFonts: Boolean = true
+
+    @Parameter(
+        names = ["--dont-keep-font-names"],
+        description = "Whether to use generic names for font files instead of names used in input.",
+        order = 45)
+    private var dontKeepFontNames: Boolean = false
 
     // Images configuration
 
@@ -300,6 +301,7 @@ internal class CoreParams(
                 yAxisDirection,
                 ignoreEmptyFrames,
                 groupFonts,
+                !dontKeepFontNames,
                 removeDuplicateImages,
                 downsampleImages,
                 downsampleFilter,
@@ -331,6 +333,7 @@ internal class CoreParams(
         println("""
             |Ignore empty frames: $ignoreEmptyFrames
             |Group fonts: $groupFonts
+            |Keep font names: ${!dontKeepFontNames}
             |Remove duplicate images: $removeDuplicateImages
             |Downsample images: $downsampleImages
             """.trimMargin())

@@ -19,6 +19,7 @@ package com.maltaisn.swfconvert.core
 import com.maltaisn.swfconvert.core.image.ImageData
 import com.maltaisn.swfconvert.core.shape.PathFillStyle
 import com.maltaisn.swfconvert.core.shape.ShapeObject
+import com.maltaisn.swfconvert.core.text.Font
 import com.maltaisn.swfconvert.core.text.TextObject
 import java.io.File
 
@@ -35,6 +36,12 @@ fun GroupObject.findAllImageDataTo(dst: MutableSet<ImageData>) {
         shapeObject.paths.mapNotNullTo(dst) { path ->
             (path.fillStyle as? PathFillStyle.Image)?.imageData
         }
+    }
+}
+
+fun GroupObject.findAllFontsTo(dst: MutableSet<Font>) {
+    findAllObjectsOfType<TextObject> { textObject ->
+        dst += textObject.font
     }
 }
 

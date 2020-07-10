@@ -55,6 +55,9 @@ data class ConvertConfiguration(
     /** Whether to group fonts that can be merged into a single one. */
     val groupFonts: Boolean,
 
+    /** Whether to keep original font names for font files or reassign generic names. */
+    val keepFontNames: Boolean,
+
     // IMAGES CONFIGURATION
 
     /** Whether to use the same image for all images with the same binary data. */

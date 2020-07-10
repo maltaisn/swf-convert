@@ -37,7 +37,6 @@ import com.maltaisn.swfconvert.core.toHexString
 import org.apache.logging.log4j.kotlin.logger
 import java.io.File
 import java.text.NumberFormat
-import java.util.UUID
 import javax.inject.Inject
 
 internal class FontConverter @Inject constructor(
@@ -274,21 +273,30 @@ internal class FontConverter @Inject constructor(
 
     private fun assignUniqueFontNames(groups: List<FontGroup>) {
         val assignedNames = mutableSetOf<String>()
-        for (group in groups) {
-            var name = group.name.replace(' ', '-').toLowerCase()
-            if (name.isEmpty()) {
-                name = UUID.randomUUID().toString()
-            }
-            if (name in assignedNames) {
-                var i = 2
-                while ("$name-$i" in assignedNames) {
-                    i++
-                }
-                name = "$name-$i"
-            }
+        for ((i, group) in groups.withIndex()) {
+            val name = getUniqueFontName(group, i, assignedNames)
             group.name = name
             assignedNames += name
         }
+    }
+
+    private fun getUniqueFontName(font: BaseFont, index: Int, assigned: Set<String>) = if (config.keepFontNames) {
+        // Derive font name from name used in SWF.
+        var name = font.name.replace(' ', '-').toLowerCase().ifEmpty {
+            // No font name assigned, use index.
+            index.toString()
+        }
+        if (name in assigned) {
+            var j = 2
+            while ("$name-$j" in assigned) {
+                j++
+            }
+            name = "$name-$j"
+        }
+        name
+    } else {
+        // Use generic name.
+        index.toString()
     }
 
     private fun Int.toCharHex() = this.toHexString().padStart(UNICODE_LITERAL_MIN_LENGTH, '0')

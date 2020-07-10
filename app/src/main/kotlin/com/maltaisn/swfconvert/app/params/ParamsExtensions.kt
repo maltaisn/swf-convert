@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.app
+package com.maltaisn.swfconvert.app.params
 
+import com.maltaisn.swfconvert.app.configError
 import com.maltaisn.swfconvert.core.image.Color
 import java.io.File
 

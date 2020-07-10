@@ -19,9 +19,7 @@ package com.maltaisn.swfconvert.app.params
 import com.beust.jcommander.Parameter
 import com.beust.jcommander.Parameters
 import com.beust.jcommander.ParametersDelegate
-import com.maltaisn.swfconvert.app.checkNoOptionsInArgs
 import com.maltaisn.swfconvert.app.configError
-import com.maltaisn.swfconvert.app.toBooleanOrNull
 import com.maltaisn.swfconvert.core.YAxisDirection
 import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.maltaisn.swfconvert.render.pdf.PdfConfiguration
