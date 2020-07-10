@@ -41,11 +41,10 @@ internal class RenderPdfParams : RenderParams<PdfConfiguration> {
     // General
 
     @Parameter(
-        names = ["--compress"],
-        arity = 1,
-        description = "Whether to compress output PDF or not.",
+        names = ["--no-compress"],
+        description = "Disable output PDF compression.",
         order = 1000)
-    var compress: Boolean = true
+    var noCompress: Boolean = true
 
     // Metadata
 
@@ -55,16 +54,15 @@ internal class RenderPdfParams : RenderParams<PdfConfiguration> {
         order = 1100)
     var metadata: List<String> = emptyList()
 
-    @Parameter(names = ["--optimize-page-labels"],
-        arity = 1,
-        description = "Whether to optimize page labels or not.",
+    @Parameter(names = ["--dont-optimize-page-labels"],
+        description = "Disable page labels optimization",
         order = 1110)
-    var optimizePageLabels: Boolean = true
+    var dontOptimizePageLabels: Boolean = true
 
     // Rasterization
 
     @Parameter(names = ["--rasterization-enabled"],
-        description = "Whether to enable rasterization of complex input files or not.",
+        description = "Enable rasterization of complex input files or not.",
         order = 1200)
     var rasterizationEnabled: Boolean = false
 
@@ -144,9 +142,9 @@ internal class RenderPdfParams : RenderParams<PdfConfiguration> {
             PdfConfiguration(
                 params.outputFiles[i],
                 tempDir,
-                compress,
+                !noCompress,
                 pdfMetadata.getOrNull(i),
-                optimizePageLabels,
+                !dontOptimizePageLabels,
                 rasterizationEnabled,
                 rasterizationThreshold,
                 rasterizationDpi,
@@ -158,10 +156,10 @@ internal class RenderPdfParams : RenderParams<PdfConfiguration> {
     }
 
     override fun print() {
-        println("Compress PDF: $compress")
+        println("Compress PDF: ${!noCompress}")
         println("Add metadata: ${metadata.isNotEmpty()}")
         if (metadata.isNotEmpty()) {
-            println("  Optimize page labels: $optimizePageLabels")
+            println("  Optimize page labels: ${!dontOptimizePageLabels}")
         }
         println("Rasterization enabled: $rasterizationEnabled")
         if (rasterizationEnabled) {

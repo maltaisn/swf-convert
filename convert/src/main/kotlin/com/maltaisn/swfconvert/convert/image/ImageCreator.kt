@@ -39,7 +39,7 @@ internal class ImageCreator @Inject constructor(
 
     /**
      * Create all image files for a [frameGroups], written to images temp dir.
-     * If [ConvertConfiguration.removeDuplicateImages] is `true`, duplicate image
+     * If [ConvertConfiguration.keepDuplicateImages] is `false`, duplicate image
      * data is removed to optimize output size.
      */
     suspend fun createAndOptimizeImages(frameGroups: List<FrameGroup>) {
@@ -51,7 +51,11 @@ internal class ImageCreator @Inject constructor(
             frameGroup.findAllImagesTo(allImageFills)
         }
 
-        val allImages = if (config.removeDuplicateImages) {
+        val allImages = if (config.keepDuplicateImages) {
+            // Use all images as is, keep duplicates.
+            allImageFills.map { it.imageData }
+
+        } else {
             // Remove duplicate images in all frames.
             val total = allImageFills.size
             val allImageData = mutableMapOf<ImageData, ImageData>()
@@ -85,10 +89,6 @@ internal class ImageCreator @Inject constructor(
             progressCb.showStep(step, false) {}
 
             allImageData.keys
-
-        } else {
-            // Use all images as is, keep duplicates.
-            allImageFills.map { it.imageData }
         }
 
         // Create image files

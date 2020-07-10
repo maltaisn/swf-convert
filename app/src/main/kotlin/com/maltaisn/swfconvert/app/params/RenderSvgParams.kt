@@ -39,14 +39,14 @@ internal class RenderSvgParams : RenderParams<SvgConfiguration> {
     }
 
     @Parameter(
-        names = ["--pretty"],
-        description = "Whether to pretty print SVG or not.",
+        names = ["-p", "--pretty"],
+        description = "Pretty print output SVG.",
         order = 1000)
     var prettyPrint: Boolean = false
 
     @Parameter(
         names = ["--svgz"],
-        description = "Whether to use SVGZ format (gzip compression).",
+        description = "Use SVGZ format (gzip compression).",
         order = 1010)
     var compress: Boolean = false
 
@@ -70,7 +70,7 @@ internal class RenderSvgParams : RenderParams<SvgConfiguration> {
 
     @Parameter(
         names = ["--no-prolog"],
-        description = "Whether to omit the XML prolog or not.",
+        description = "Omit the XML prolog.",
         order = 1200)
     var noProlog: Boolean = false
 

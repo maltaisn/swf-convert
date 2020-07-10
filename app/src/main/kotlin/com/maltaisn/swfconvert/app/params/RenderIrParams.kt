@@ -41,8 +41,8 @@ internal class RenderIrParams : RenderParams<IrConfiguration> {
     var yAxisDirectionName = "up"
 
     @Parameter(
-        names = ["--pretty"],
-        description = "Whether to pretty print JSON or not.",
+        names = ["-p", "--pretty"],
+        description = "Pretty print output JSON.",
         order = 1010)
     var prettyPrint: Boolean = false
 

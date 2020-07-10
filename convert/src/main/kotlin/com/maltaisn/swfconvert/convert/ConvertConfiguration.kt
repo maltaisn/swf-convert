@@ -60,8 +60,8 @@ data class ConvertConfiguration(
 
     // IMAGES CONFIGURATION
 
-    /** Whether to use the same image for all images with the same binary data. */
-    val removeDuplicateImages: Boolean,
+    /** Whether to keep duplicate images with the same binary data. */
+    val keepDuplicateImages: Boolean,
 
     /** Whether to downsample big images to reduce output size. */
     val downsampleImages: Boolean,

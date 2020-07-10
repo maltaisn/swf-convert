@@ -63,8 +63,8 @@ internal class CoreParams(
 
     /** Whether to group fonts that can be merged into a single one. */
     @Parameter(
-        names = ["--ignore-empty"],
-        description = "Whether to ignore empty frames, not generating output for them.",
+        names = ["-e", "--ignore-empty"],
+        description = "Ignore empty frames, not generating output for them.",
         order = 30)
     private var ignoreEmptyFrames: Boolean = false
 
@@ -72,30 +72,28 @@ internal class CoreParams(
 
     /** Whether to group fonts that can be merged into a single one. */
     @Parameter(
-        names = ["--group-fonts"],
-        arity = 1,
-        description = "Whether to group fonts that can be merged into a single one.",
+        names = ["-g", "--dont-group-fonts"],
+        description = "Disable font grouping (merging similar fonts together)",
         order = 40)
-    private var groupFonts: Boolean = true
+    private var dontGroupFonts: Boolean = false
 
     @Parameter(
         names = ["--dont-keep-font-names"],
-        description = "Whether to use generic names for font files instead of names used in input.",
+        description = "Use generic names for font files instead of names used in input.",
         order = 45)
     private var dontKeepFontNames: Boolean = false
 
     // Images configuration
 
     @Parameter(
-        names = ["--remove-duplicate-images"],
-        arity = 1,
-        description = "Whether to use the same image for all images with the same binary data.",
+        names = ["--keep-duplicate-images"],
+        description = "Keep duplicate images with same binary data.",
         order = 50)
-    private var removeDuplicateImages: Boolean = true
+    private var keepDuplicateImages: Boolean = false
 
     @Parameter(
         names = ["--downsample-images"],
-        description = "Whether to downsample big images to reduce output size.",
+        description = "Downsample big images to reduce output size.",
         order = 60)
     private var downsampleImages: Boolean = false
 
@@ -300,9 +298,9 @@ internal class CoreParams(
                 tempDir,
                 yAxisDirection,
                 ignoreEmptyFrames,
-                groupFonts,
+                !dontGroupFonts,
                 !dontKeepFontNames,
-                removeDuplicateImages,
+                keepDuplicateImages,
                 downsampleImages,
                 downsampleFilter,
                 downsampleMinSize,
@@ -332,9 +330,9 @@ internal class CoreParams(
     fun print() {
         println("""
             |Ignore empty frames: $ignoreEmptyFrames
-            |Group fonts: $groupFonts
+            |Group fonts: ${!dontGroupFonts}
             |Keep font names: ${!dontKeepFontNames}
-            |Remove duplicate images: $removeDuplicateImages
+            |Keep duplicate images: $keepDuplicateImages
             |Downsample images: $downsampleImages
             """.trimMargin())
         if (downsampleImages) {
