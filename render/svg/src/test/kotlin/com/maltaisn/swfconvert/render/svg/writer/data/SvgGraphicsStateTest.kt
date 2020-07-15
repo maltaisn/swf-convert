@@ -47,6 +47,62 @@ class SvgGraphicsStateTest {
             x = SvgNumber(100f))
         assertEquals(SvgGraphicsState(
             x = SvgNumber(100f)
-        ), latest.cleanedForAncestors(listOf(ancestor2, ancestor1)))
+        ), latest.clean(listOf(ancestor2, ancestor1)))
     }
+
+    @Test
+    fun `should clean identity values`() {
+        val state = SvgGraphicsState(
+            transform = emptyList(),
+            x = SvgNumber.ZERO,
+            y = SvgNumber.ZERO)
+        assertEquals(SvgGraphicsState(), state.clean())
+    }
+
+    @Test
+    fun `should omit clip if no ancestor resets it`() {
+        val base = SvgGraphicsState(clipPathId = "clip")
+        val new = SvgGraphicsState(clipPathId = "clip")
+        assertEquals(SvgGraphicsState(), new.clean(listOf(base)))
+    }
+
+    @Test
+    fun `should omit clip if no ancestor resets it 2`() {
+        val base1 = SvgGraphicsState(x = SvgNumber(10f))
+        val base2 = SvgGraphicsState(clipPathId = "clip")
+        val new = SvgGraphicsState(clipPathId = "clip")
+        assertEquals(SvgGraphicsState(), new.clean(listOf(base2, base1)))
+    }
+
+    @Test
+    fun `should reset clip if non-identity x, y or transform is in ancestors`() {
+        val root = SvgGraphicsState(clipPathId = "clip")
+        val stateX = SvgGraphicsState(x = SvgNumber(10f))
+        val stateY = SvgGraphicsState(y = SvgNumber(10f))
+        val stateTransform = SvgGraphicsState(transform = listOf(SvgTransform.Translate(10f)))
+        val new = SvgGraphicsState(clipPathId = "clip")
+        assertEquals(SvgGraphicsState(clipPathId = "clip"), new.clean(listOf(stateX, root)))
+        assertEquals(SvgGraphicsState(clipPathId = "clip"), new.clean(listOf(stateY, root)))
+        assertEquals(SvgGraphicsState(clipPathId = "clip"), new.clean(listOf(stateTransform, root)))
+    }
+
+    @Test
+    fun `should not reset clip if identity x, y or transform is in ancestors`() {
+        val root = SvgGraphicsState(clipPathId = "clip")
+        val stateX = SvgGraphicsState(x = SvgNumber.ZERO)
+        val stateY = SvgGraphicsState(y = SvgNumber.ZERO)
+        val stateTransform = SvgGraphicsState(transform = emptyList())
+        val new = SvgGraphicsState(clipPathId = "clip")
+        assertEquals(SvgGraphicsState(), new.clean(listOf(stateX, root)))
+        assertEquals(SvgGraphicsState(), new.clean(listOf(stateY, root)))
+        assertEquals(SvgGraphicsState(), new.clean(listOf(stateTransform, root)))
+    }
+
+    @Test
+    fun `should reset clip if non-identity x and same clip is in direct ancestor`() {
+        val root = SvgGraphicsState(x = SvgNumber(10f), clipPathId = "clip")
+        val new = SvgGraphicsState(clipPathId = "clip")
+        assertEquals(SvgGraphicsState(clipPathId = "clip"), new.clean(listOf(root)))
+    }
+
 }

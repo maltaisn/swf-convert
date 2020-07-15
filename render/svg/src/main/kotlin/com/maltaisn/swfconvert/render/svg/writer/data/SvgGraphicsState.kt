@@ -46,49 +46,87 @@ internal data class SvgGraphicsState(val attrs: Map<Attribute, Any>) {
     val y get() = attrs[Attribute.Y] as SvgNumber?
 
     /**
-     * Return a "cleaned" copy of this graphics state, making attributes that use the same value
-     * as the one previously defined in [ancestors] inherit the value instead of duplicating it.
-     * Ancestors must be ordered from the newest to the oldest.
-     * Non-inheritable attribute values are always kept.
+     * Return a "cleaned" copy of this graphics state, removing attributes that:
+     * - Use the same value as the one previously defined in [ancestors] if attribute is inheritable.
+     * - Use the identity value if attribute has one.
+     * @param ancestors List of ancestor graphics states, must be ordered from the newest to the oldest.
      */
-    fun cleanedForAncestors(ancestors: List<SvgGraphicsState>): SvgGraphicsState {
+    fun clean(ancestors: List<SvgGraphicsState> = emptyList()): SvgGraphicsState {
         val newAttrs = attrs.toMutableMap()
         for ((attr, value) in attrs) {
-            if (!attr.inheritable) continue
-            for (ancestor in ancestors) {
-                val oldValue = ancestor.attrs[attr] ?: continue
-                // Found previously defined value for that attribute, check if different.
-                if (value == oldValue) {
-                    // Same as previous value, remove it.
-                    newAttrs -= attr
-                }
-                break
+            if (value == attr.identity || shouldRemoveStateAttribute(attr, value, ancestors)) {
+                // Attribute uses identity value, remove it.
+                newAttrs -= attr
             }
-            // No previously defined value for that property, keep new value.
         }
         return SvgGraphicsState(newAttrs)
     }
 
-    enum class Attribute(val inheritable: Boolean) {
-        CLIP_PATH(true),
-        CLIP_RULE(true),
-        FILL(true),
-        FILL_OPACITY(true),
-        FILL_RULE(true),
-        FONT_FAMILY(true),
-        FONT_SIZE(true),
-        MASK(true),
-        MIX_BLEND_MODE(true),
-        PRESERVE_ASPECT_RATIO(true),
-        STROKE(true),
-        STROKE_LINE_CAP(true),
-        STROKE_LINE_JOIN(true),
-        STROKE_MITER_LIMIT(true),
-        STROKE_OPACITY(true),
-        STROKE_WIDTH(true),
-        TRANSFORM(false),
-        X(false),
-        Y(false),
+    private fun shouldRemoveStateAttribute(attr: Attribute, value: Any, ancestors: List<SvgGraphicsState>): Boolean {
+        if (attr.inheritable) {
+            for (ancestor in ancestors) {
+                if (attr.isId && ancestor.attrs.any { (a, v) -> a.resetsIds && v != a.identity }) {
+                    // Attribute is an ID and ancestor has non-identity attribute that resets ID-based attributes.
+                    return false
+                }
+
+                val oldValue = ancestor.attrs[attr] ?: continue
+                // Found previously defined value for that attribute, check if different.
+                // If same as previous value, remove it.
+                return value == oldValue
+            }
+        }
+        // No previously defined value for that attribute, or attribute isn't inheritable, keep new value.
+        return false
+    }
+
+    /**
+     * An attribute in a graphics state map.
+     * The following properties are used for the [clean] function.
+     *
+     * @param inheritable Whether the attribute value is inherited by child graphics states.
+     * @param isId Whether this attribute references a `<def>` ID.
+     * @param resetsIds Whether a non-identity value of this attribute resets attributes with [isId],
+     * making them non-inheritable. For example, with `clip-path`:
+     * ```
+     * <g clip-path="clip1">
+     *     <g clip-path="clip1"/>     <-- Can be omitted, clip is inherited.
+     *     <g x="10">
+     *         <g clip-path="clip1"/> <-- Cannot be omitted, the 'x' attribute makes clip uninheritable.
+     *     </g>
+     * </g>
+     * ```
+     * @param identity Value that should be taken as identity (has no effect). `null` if there's no identity value.
+     */
+    enum class Attribute(
+        val inheritable: Boolean = true,
+        val isId: Boolean = false,
+        val resetsIds: Boolean = false,
+        val identity: Any? = null
+    ) {
+        CLIP_PATH(isId = true),
+        CLIP_RULE,
+        FILL,
+        FILL_OPACITY,
+        FILL_RULE,
+        FONT_FAMILY,
+        FONT_SIZE,
+        MASK(isId = true),
+        MIX_BLEND_MODE,
+        PRESERVE_ASPECT_RATIO,
+        STROKE,
+        STROKE_LINE_CAP,
+        STROKE_LINE_JOIN,
+        STROKE_MITER_LIMIT,
+        STROKE_OPACITY,
+        STROKE_WIDTH,
+        TRANSFORM(inheritable = false, resetsIds = true, identity = emptyList<SvgTransform>()),
+        X(inheritable = false, resetsIds = true, identity = SvgNumber.ZERO),
+        Y(inheritable = false, resetsIds = true, identity = SvgNumber.ZERO);
+
+        init {
+            require(identity == null || !inheritable) { "Inheritable attribute cannot have identity value." }
+        }
     }
 
     companion object {

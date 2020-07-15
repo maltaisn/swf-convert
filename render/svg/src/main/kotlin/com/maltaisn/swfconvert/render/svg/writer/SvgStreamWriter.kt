@@ -363,7 +363,7 @@ internal class SvgStreamWriter(
      * pushed [SvgGraphicsState] compared to the previous graphics state.
      */
     private fun getNewGraphicsStateAttrs(): AttributesArray {
-        val newGrState = grStateStack.last().cleanedForAncestors(
+        val newGrState = grStateStack.last().clean(
             grStateStack.subList(0, grStateStack.size - 1).asReversed())
         return listOfNotNull(
             ATTR_CLIP_PATH to newGrState.clipPathId?.toSvgUrlReference(),
@@ -382,10 +382,9 @@ internal class SvgStreamWriter(
             ATTR_STROKE_LINE_CAP to newGrState.strokeLineCap?.svgName,
             ATTR_STROKE_MITER_LIMIT to newGrState.strokeMiterLimit?.formatOptimizedOrNot(precision),
             ATTR_STYLE to newGrState.getCssStyleValueOrNull(),
-            ATTR_TRANSFORM to newGrState.transform?.ifEmpty { null }
-                ?.toSvgTransformList(transformPrecision, !prettyPrint),
-            ATTR_X to newGrState.x?.takeIf { it.value != 0f }?.toSvg(precision, !prettyPrint),
-            ATTR_Y to newGrState.y?.takeIf { it.value != 0f }?.toSvg(precision, !prettyPrint)
+            ATTR_TRANSFORM to newGrState.transform?.toSvgTransformList(transformPrecision, !prettyPrint),
+            ATTR_X to newGrState.x?.toSvg(precision, !prettyPrint),
+            ATTR_Y to newGrState.y?.toSvg(precision, !prettyPrint)
         ).toTypedArray()
     }
 
