@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.render.svg.writer.xml
+package com.maltaisn.swfconvert.render.svg.writer
 
 import com.maltaisn.swfconvert.render.svg.writer.format.createNumberFormat
 import java.io.Closeable
@@ -36,7 +36,7 @@ internal class XmlStreamWriter(
     private val prettyPrint: Boolean = false,
     private val maxLineWidth: Int = 128,
     private val indentSize: Int = 4
-) : XmlWriter(), Closeable, Flushable {
+) : Closeable, Flushable {
 
     private val writer = OutputStreamWriter(outputStream).buffered()
     private val numberFmt = createNumberFormat()
@@ -52,7 +52,7 @@ internal class XmlStreamWriter(
     /** Stack of tags leading to current position. */
     private val tagStack = ArrayDeque<Tag>()
 
-    override val currentTag: String?
+    val currentTag: String?
         get() = tagStack.lastOrNull()?.name
 
     /** Whether writer has written the root tag or not. */
@@ -76,7 +76,7 @@ internal class XmlStreamWriter(
         writer.close()
     }
 
-    override fun start(name: String, attrs: AttributesArray): XmlStreamWriter {
+    fun start(name: String, attrs: AttributesArray = emptyArray()) {
         check(!isRoot || !hasRootTag) { "There must be a single root tag" }
         name.checkXmlName()
 
@@ -92,11 +92,9 @@ internal class XmlStreamWriter(
         }
         tagStack += Tag(name, false)
         indentLevel += indentSize
-
-        return this
     }
 
-    override fun end(): XmlStreamWriter {
+    fun end() {
         check(!isRoot) { "No tag started." }
 
         indentLevel -= indentSize
@@ -113,11 +111,21 @@ internal class XmlStreamWriter(
         if (!isRoot) {
             writeLine()
         }
-
-        return this
     }
 
-    override fun prolog(attrs: AttributesArray) {
+    /**
+     * Builder factory function to write a new tag with [this] name and [attrs].
+     */
+    inline operator fun String.invoke(
+        attrs: AttributesArray = emptyArray(),
+        @XmlDsl build: XmlStreamWriter.() -> Unit = {}
+    ) {
+        start(this, attrs)
+        this@XmlStreamWriter.build()
+        end()
+    }
+
+    fun prolog(attrs: AttributesArray = emptyArray()) {
         check(!hasRootTag) { "Prolog must be the first XML element" }
 
         write("<")
@@ -128,7 +136,7 @@ internal class XmlStreamWriter(
         writeLine()
     }
 
-    override fun text(text: String) {
+    fun text(text: String) {
         if (text.isEmpty()) {
             return
         }
@@ -139,22 +147,6 @@ internal class XmlStreamWriter(
         write(text.replace("&", "&amp;")
             .replace("<", "&lt;"))
         writeLine()
-    }
-
-    /**
-     * Write a [XmlElement] to this writer. This allows for dynamic document
-     * creation with a DOM structure for subparts of the main XML document.
-     */
-    fun write(element: XmlElement) {
-        when (element) {
-            is XmlTag -> element.name(element.attrs.toTypedArray()) {
-                for (child in element.children) {
-                    write(child)
-                }
-            }
-            is XmlProlog -> prolog(element.attrs.toTypedArray())
-            is XmlText -> text(element.text)
-        }
     }
 
     private fun <K, V> Map<K, V>.toTypedArray(): Array<Pair<K, V>> {
@@ -289,3 +281,13 @@ internal class XmlStreamWriter(
     }
 
 }
+
+/**
+ * Builder factory function for this XML writer.
+ */
+internal inline operator fun XmlStreamWriter.invoke(@XmlDsl build: XmlStreamWriter.() -> Unit) = run(build)
+
+@DslMarker
+internal annotation class XmlDsl
+
+internal typealias AttributesArray = Array<out Pair<String, Any?>>

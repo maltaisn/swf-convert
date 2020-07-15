@@ -20,8 +20,6 @@ import com.maltaisn.swfconvert.core.BlendMode
 import com.maltaisn.swfconvert.core.FrameGroup
 import com.maltaisn.swfconvert.core.FrameObject
 import com.maltaisn.swfconvert.core.GroupObject
-import com.maltaisn.swfconvert.core.findAllTextObjectsTo
-import com.maltaisn.swfconvert.core.image.ImageData
 import com.maltaisn.swfconvert.core.image.ImageFormat
 import com.maltaisn.swfconvert.core.shape.Path
 import com.maltaisn.swfconvert.core.shape.PathElement.ClosePath
@@ -33,7 +31,6 @@ import com.maltaisn.swfconvert.core.shape.PathFillStyle
 import com.maltaisn.swfconvert.core.shape.PathLineStyle
 import com.maltaisn.swfconvert.core.shape.ShapeObject
 import com.maltaisn.swfconvert.core.text.Font
-import com.maltaisn.swfconvert.core.text.FontGlyph
 import com.maltaisn.swfconvert.core.text.GlyphData
 import com.maltaisn.swfconvert.core.text.TextObject
 import com.maltaisn.swfconvert.render.svg.writer.SvgPathWriter
@@ -64,38 +61,25 @@ import java.util.zip.GZIPOutputStream
 import javax.inject.Inject
 
 internal class SvgFrameRenderer @Inject constructor(
-    private val config: SvgConfiguration
+    private val config: SvgConfiguration,
+    private val frameDefsCreator: SvgFrameDefsCreator
 ) {
 
     private val logger = logger()
 
     private lateinit var svg: SvgStreamWriter
 
-    private var currentDefId = 0
-    private val nextDefId: String
-        get() {
-            val id = currentDefId.toDefId()
-            currentDefId++
-            return id
-        }
-
-    private val definedFonts = mutableMapOf<File, String>()
-    private val definedGlyphs = mutableMapOf<Font, Array<String?>>()
-    private val definedImages = mutableMapOf<File, String>()
-    private val definedImageMasks = mutableMapOf<File, String>()
-
     private lateinit var imagesDir: File
     private lateinit var fontsDir: File
+
+    private lateinit var defs: Map<FrameDef, String>
 
     fun renderFrame(frame: FrameGroup, outputFile: File, imagesDir: File, fontsDir: File) {
         val outputDir = outputFile.parentFile
         this.imagesDir = imagesDir.relativeToOrSelf(outputDir)
         this.fontsDir = fontsDir.relativeToOrSelf(outputDir)
 
-        definedFonts.clear()
-        definedImages.clear()
-        definedImageMasks.clear()
-        definedGlyphs.clear()
+        defs = frameDefsCreator.createFrameDefs(frame)
 
         var outputStream: OutputStream = FileOutputStream(outputFile)
         if (config.compress) {
@@ -118,17 +102,88 @@ internal class SvgFrameRenderer @Inject constructor(
             // FrameGroup transform is ignored because the transform is already created by the
             // viewBox having a different size than the one set by 'width' and 'height'.
 
-            if (config.fontsMode == SvgFontsMode.NONE) {
-                // If using paths for glyphs instead of fonts, start by creating glyph defs.
-                // They will be the most used defs so we might as well give them the shortest IDs.
-                createGlyphDefs(frame)
-            }
-
             drawSimpleGroup(frame)
+            writeAllDefs()
 
             svg.end()
         }
     }
+
+    private fun writeAllDefs() {
+        if (defs.isNotEmpty()) {
+            svg.writeDefs {
+                for ((def, id) in defs) {
+                    writeDef(def, id)
+                }
+            }
+        }
+    }
+
+    private fun writeDef(def: FrameDef, id: String) {
+        svg.writeDef(id.takeIf { def !is FrameDef.FontDef }) {
+            when (def) {
+                is FrameDef.FontDef -> writeFontDef(def, id)
+                is FrameDef.ImageDef -> writeImageDef(def)
+                is FrameDef.ImageMaskDef -> writeImageMaskDef(def)
+                is FrameDef.MaskDef -> writeMaskDef(def)
+                is FrameDef.ClipDef -> writeClipDef(def)
+                is FrameDef.GlyphDef -> writeGlyphDef(def)
+                is FrameDef.GradientDef -> writeGradientDef(def)
+            }
+        }
+    }
+
+    private fun writeFontDef(def: FrameDef.FontDef, id: String) {
+        svg.font(id, when (config.fontsMode) {
+            SvgFontsMode.EXTERNAL -> File(fontsDir, def.file.name).invariantSeparatorsPath
+            SvgFontsMode.BASE64 -> def.file.readBytes().toBase64DataUrl("font/ttf")
+            else -> error("")
+        })
+    }
+
+    private fun writeImageDef(def: FrameDef.ImageDef) {
+        val imageData = def.imageData
+        svg.image(createImageHref(imageData.format, imageData.data, def.file))
+    }
+
+    private fun writeImageMaskDef(def: FrameDef.ImageMaskDef) {
+        val imageData = def.imageData
+        svg.mask {
+            svg.image(createImageHref(imageData.format, imageData.alphaData, def.file))
+        }
+    }
+
+    private fun writeMaskDef(def: FrameDef.MaskDef) {
+        svg.mask {
+            drawObject(def.mask)
+        }
+    }
+
+    private fun writeClipDef(def: FrameDef.ClipDef) {
+        svg.clipPathData {
+            for (path in def.paths) {
+                writePath(path, this)
+            }
+        }
+    }
+
+    private fun writeGlyphDef(def: FrameDef.GlyphDef) {
+        svg.path {
+            for (contour in def.contours) {
+                writePath(contour, this)
+            }
+        }
+    }
+
+    private fun writeGradientDef(def: FrameDef.GradientDef) {
+        val stops = def.gradient.colors.map {
+            SvgGradientStop(it.ratio, it.color.opaque, it.color.floatA)
+        }
+        svg.linearGradient(stops, SvgGradientUnits.USER_SPACE_ON_USE,
+            def.gradient.transform.toSvgTransformList(), x1 = -16384f, x2 = 16384f)
+    }
+
+    private fun requireDef(def: FrameDef) = checkNotNull(defs[def]) { "Missing def for $def" }
 
     private fun drawObject(obj: FrameObject) {
         when (obj) {
@@ -168,7 +223,7 @@ internal class SvgFrameRenderer @Inject constructor(
     }
 
     private fun drawClipGroup(group: GroupObject.Clip) {
-        svg.group(createClipSvgGraphicsState(group.clips), discardIfEmpty = true) {
+        svg.group(SvgGraphicsState(clipPathId = requireDef(FrameDef.ClipDef(group.clips))), discardIfEmpty = true) {
             drawSimpleGroup(group)
         }
     }
@@ -186,13 +241,7 @@ internal class SvgFrameRenderer @Inject constructor(
             return
         }
 
-        val id = nextDefId
-        svg.writeDef(id) {
-            mask {
-                drawObject(group.objects.last())
-            }
-        }
-        svg.group(SvgGraphicsState(maskId = id)) {
+        svg.group(SvgGraphicsState(maskId = requireDef(FrameDef.MaskDef(group.objects.last())))) {
             for (i in 0 until group.objects.lastIndex) {
                 drawObject(group.objects[i])
             }
@@ -211,7 +260,8 @@ internal class SvgFrameRenderer @Inject constructor(
             return
         }
 
-        val fontId = createFontDef(text.font)
+        val fontFile = checkNotNull(text.font.fontFile) { "Missing font" }
+        val fontId = requireDef(FrameDef.FontDef(fontFile))
 
         val dx = FloatArray(text.glyphOffsets.size + 1) {
             // SVG dx first value is the offset before the first char, whereas in IR the first
@@ -230,22 +280,6 @@ internal class SvgFrameRenderer @Inject constructor(
                 fontSize = text.fontSize,
                 fill = SvgFillColor(text.color.opaque),
                 fillOpacity = text.color.floatA))
-    }
-
-    private fun createFontDef(font: Font): String {
-        val fontFile = checkNotNull(font.fontFile) { "Missing font" }
-        val svgFontFile = File(fontsDir, fontFile.name)
-        return definedFonts.getOrPut(fontFile) {
-            val id = nextDefId
-            svg.writeDef(null) {
-                svg.font(id, when (config.fontsMode) {
-                    SvgFontsMode.EXTERNAL -> svgFontFile.invariantSeparatorsPath
-                    SvgFontsMode.BASE64 -> fontFile.readBytes().toBase64DataUrl("font/ttf")
-                    else -> error("")
-                })
-            }
-            id
-        }
     }
 
     private fun drawTextWithPaths(text: TextObject) {
@@ -276,16 +310,11 @@ internal class SvgFrameRenderer @Inject constructor(
     }
 
     private fun drawGlyphOrUseGlyphDef(font: Font, glyphIndex: Int, grState: SvgGraphicsState) {
-        val glyphId = definedGlyphs[font]?.get(glyphIndex) ?: return
-        svg.use(glyphId, grState)
-    }
-
-    private fun drawGlyph(glyph: FontGlyph, grState: SvgGraphicsState = SvgGraphicsState.NULL) {
-        svg.path(grState) {
-            for (contour in glyph.data.contours) {
-                writePath(contour, this)
-            }
+        val glyph = font.glyphs[glyphIndex]
+        if (glyph.isWhitespace) {
+            return
         }
+        svg.use(requireDef(FrameDef.GlyphDef(glyph.data.contours)), grState)
     }
 
     private fun drawPath(path: Path) {
@@ -317,10 +346,10 @@ internal class SvgFrameRenderer @Inject constructor(
     private fun drawImage(path: Path, imageFill: PathFillStyle.Image) {
         val imageData = imageFill.imageData
         val dataFile = checkNotNull(imageData.dataFile) { "Missing image" }
+        val alphaDataFile = imageData.alphaDataFile
 
         if (imageFill.clip) {
-            // Start clipping the image path.
-            svg.startGroup(createClipSvgGraphicsState(listOf(path)))
+            svg.startGroup(SvgGraphicsState(clipPathId = requireDef(FrameDef.ClipDef(listOf(path)))))
         }
 
         // Transform in IR scales from image space (1x1 square) to user space.
@@ -330,7 +359,11 @@ internal class SvgFrameRenderer @Inject constructor(
         transform.scale(1.0 / imageData.width, 1.0 / imageData.height)
 
         // Create the image mask def if needed.
-        val maskId = createImageMaskDef(imageData)
+        val maskId = if (alphaDataFile != null) {
+            requireDef(FrameDef.ImageMaskDef(alphaDataFile, imageData))
+        } else {
+            null
+        }
 
         // Draw image
         val grState = SvgGraphicsState(
@@ -344,35 +377,13 @@ internal class SvgFrameRenderer @Inject constructor(
             }
             SvgImagesMode.BASE64 -> {
                 // Create image def to avoid duplicating image data if image is used more than once.
-                val imageId = definedImages.getOrPut(dataFile) {
-                    svg.writeDef(nextDefId) {
-                        val href = createImageHref(imageData.format, imageData.data, dataFile)
-                        svg.image(href)
-                    }
-                }
+                val imageId = requireDef(FrameDef.ImageDef(dataFile, imageData))
                 svg.use(imageId, grState = grState)
             }
         }
 
         if (imageFill.clip) {
-            // End image clip path.
             svg.endGroup()
-        }
-    }
-
-    private fun createImageMaskDef(imageData: ImageData): String? {
-        val alphaDataFile = imageData.alphaDataFile
-        return if (alphaDataFile != null) {
-            definedImageMasks.getOrPut(alphaDataFile) {
-                val alphaImageHref = createImageHref(imageData.format, imageData.alphaData, alphaDataFile)
-                svg.writeDef(nextDefId) {
-                    mask {
-                        svg.image(alphaImageHref)
-                    }
-                }
-            }
-        } else {
-            null
         }
     }
 
@@ -382,53 +393,9 @@ internal class SvgFrameRenderer @Inject constructor(
     }
 
     private fun drawGradient(path: Path, gradient: PathFillStyle.Gradient) {
-        // Create gradient stops
-        val stops = gradient.colors.map {
-            SvgGradientStop(it.ratio, it.color.opaque, it.color.floatA)
-        }
-
-        val id = svg.writeDef(nextDefId) {
-            linearGradient(stops, SvgGradientUnits.USER_SPACE_ON_USE,
-                gradient.transform.toSvgTransformList(), x1 = -16384f, x2 = 16384f)
-        }
-        svg.path(SvgGraphicsState(fill = SvgFillId(id))) {
+        val gradientId = requireDef(FrameDef.GradientDef(gradient))
+        svg.path(SvgGraphicsState(fill = SvgFillId(gradientId))) {
             writePath(path, this)
-        }
-    }
-
-    private fun createClipSvgGraphicsState(paths: List<Path>): SvgGraphicsState {
-        if (paths.isEmpty()) {
-            return SvgGraphicsState.NULL
-        }
-        val id = svg.writeDef(nextDefId) {
-            clipPathData {
-                for (path in paths) {
-                    writePath(path, this)
-                }
-            }
-        }
-        return SvgGraphicsState(clipPathId = id)
-    }
-
-    /**
-     * Populate the [definedGlyphs] map for each glyph used in [frame].
-     * SVG defs are created for every non-whitespace glyph used at least once.
-     */
-    private fun createGlyphDefs(frame: FrameGroup) {
-        val allTexts = mutableListOf<TextObject>()
-        frame.findAllTextObjectsTo(allTexts)
-        for (text in allTexts) {
-            val font = text.font
-            val definedFontGlyphs = definedGlyphs.getOrPut(font) { arrayOfNulls(font.glyphs.size) }
-            for (glyphIndex in text.glyphIndices) {
-                val glyph = font.glyphs[glyphIndex]
-                if (definedFontGlyphs[glyphIndex] != null || glyph.isWhitespace) {
-                    continue
-                }
-                definedFontGlyphs[glyphIndex] = svg.writeDef(nextDefId) {
-                    drawGlyph(glyph)
-                }
-            }
         }
     }
 
@@ -440,21 +407,6 @@ internal class SvgFrameRenderer @Inject constructor(
                 is QuadTo -> quadTo(e.cx, e.cy, e.x, e.y)
                 is CubicTo -> cubicTo(e.c1x, e.c1y, e.c2x, e.c2y, e.x, e.y)
                 is ClosePath -> closePath()
-            }
-        }
-    }
-
-    private fun Int.toDefId(): String {
-        var v = this
-        return buildString {
-            // See https://www.w3.org/TR/2008/REC-xml-20081126/#NT-Name. XML IDs have different chars
-            // valid for the first char and the rest of the ID.
-            append(XML_NAME_START_CHARS[v % XML_NAME_START_CHARS.length])
-            v /= XML_NAME_START_CHARS.length
-            while (v > 0) {
-                // Use base 64 for following chars.
-                append(XML_NAME_CHARS[v % XML_NAME_CHARS.length])
-                v /= XML_NAME_CHARS.length
             }
         }
     }
@@ -523,10 +475,4 @@ internal class SvgFrameRenderer @Inject constructor(
         append(";base64,")
         append(String(Base64.getEncoder().encode(this@toBase64DataUrl)))
     }
-
-    companion object {
-        private const val XML_NAME_START_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_:"
-        private const val XML_NAME_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_:-."
-    }
-
 }

@@ -56,8 +56,16 @@ class SvgStreamWriterTest {
     }
 
     @Test
+    fun `should write defs block`() {
+        assertEquals("""<defs/>""",
+            createSvg(start = true) {
+                writeDefs()
+            }.onlySvgContent())
+    }
+
+    @Test
     fun `should create group def`() {
-        assertEquals("""<defs><g id="foo"/></defs>""",
+        assertEquals("""<g id="foo"/>""",
             createSvg(start = true) {
                 writeDef("foo") {
                     group()
@@ -65,19 +73,17 @@ class SvgStreamWriterTest {
             }.onlySvgContent())
     }
 
-    @Test
-    fun `should create def while creating another def`() {
-        assertEquals("""<defs><g id="def1"><g/></g><g id="def2"/></defs>""",
-            createSvg(start = true) {
-                writeDef("def1") {
-                    group {
+    @Test(expected = IllegalStateException::class)
+    fun `should fail to create nested defs`() {
+        createSvg(start = true) {
+            writeDef("def1") {
+                group {
+                    writeDef("def2") {
                         group()
-                        writeDef("def2") {
-                            group()
-                        }
                     }
                 }
-            }.onlySvgContent())
+            }
+        }
     }
 
     @Test(expected = IllegalStateException::class)
@@ -89,7 +95,7 @@ class SvgStreamWriterTest {
 
     @Test
     fun `should write def without id`() {
-        assertEquals("""<defs><g/></defs>""",
+        assertEquals("""<g/>""",
             createSvg(start = true) {
                 writeDef(null) {
                     group()
@@ -158,8 +164,8 @@ class SvgStreamWriterTest {
     @Test
     fun `should create clip path and use it`() {
         assertEquals("""
-                |<path d="M0 0h20v20h-20Z" clip-path="url(#clip1)" clip-rule="evenodd"/><defs><clipPath id="clip1">
-                |<path d="M5 5h5v5h-5Z"/></clipPath></defs>
+                |<clipPath id="clip1"><path d="M5 5h5v5h-5Z"/></clipPath>
+                |<path d="M0 0h20v20h-20Z" clip-path="url(#clip1)" clip-rule="evenodd"/>
             """.trimMargin().asSingleLine(),
             createSvg(start = true) {
                 writeDef("clip1") {
@@ -175,8 +181,8 @@ class SvgStreamWriterTest {
     @Test
     fun `should write mask and use it`() {
         assertEquals("""
-                |<path d="M0 0h20v20h-20Z" mask="url(#mask1)"/><defs><mask id="mask1">
-                |<path d="M5 5h5v5h-5Z"/></mask></defs>
+                |<mask id="mask1"><path d="M5 5h5v5h-5Z"/></mask>
+                |<path d="M0 0h20v20h-20Z" mask="url(#mask1)"/>
             """.trimMargin().asSingleLine(),
             createSvg(start = true) {
                 writeDef("mask1") {

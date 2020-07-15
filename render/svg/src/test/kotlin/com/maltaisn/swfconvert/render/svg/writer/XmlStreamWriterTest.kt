@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package com.maltaisn.swfconvert.render.svg.writer.xml
+package com.maltaisn.swfconvert.render.svg.writer
 
 import org.junit.Test
 import java.io.ByteArrayOutputStream
 import kotlin.test.assertEquals
-import kotlin.test.assertNotSame
-import kotlin.test.assertSame
 
-class XmlWriterTest {
+class XmlStreamWriterTest {
 
     @Test
     fun `should create empty xml`() {
@@ -87,7 +85,7 @@ class XmlWriterTest {
         // - First attribute on first line, wrap others if first fits line width but not others.
         // - All attributes on separate lines if none fit line width.
 
-        lateinit var addTag: XmlWriter.(String, Int) -> Unit
+        lateinit var addTag: XmlStreamWriter.(String, Int) -> Unit
         addTag = { tag, n ->
             if (n > 0) {
                 tag(arrayOf("attr1" to "value1", "attr2" to "value2")) {
@@ -364,44 +362,6 @@ class XmlWriterTest {
         })
     }
 
-    @Test
-    fun `should return itself start and end (stream writer)`() {
-        createXml {
-            assertSame(this, start("test"))
-            assertSame(this, end())
-        }
-    }
-
-    @Test
-    fun `should return child and parent writers start and end (dom writer)`() {
-        XmlTag("tag")() {
-            val child = start("tag")
-            assertNotSame(this, child)
-            assertSame(this, child.end())
-        }
-    }
-
-    @Test
-    fun `should write dom XML to stream XML`() {
-        assertEquals("""<tag1><tag2><tag3 foo="bar"><tag4/></tag3>text</tag2></tag1>""", createXml {
-            "tag1" {
-                write(XmlTag("tag2")() {
-                    "tag3"(arrayOf("foo" to "bar")) {
-                        "tag4"()
-                    }
-                    text("text")
-                })
-            }
-        })
-    }
-
-    @Test
-    fun `should write dom prolog to stream XML`() {
-        assertEquals("""<?xml foo="bar"?>""", createXml {
-            write(XmlProlog(mapOf("foo" to "bar")))
-        })
-    }
-
     @Test(expected = IllegalStateException::class)
     fun `should fail to write multiple root tags`() {
         createXml {
@@ -519,8 +479,11 @@ class XmlWriterTest {
         build: XmlStreamWriter.() -> Unit
     ): String {
         return ByteArrayOutputStream().use { outputStream ->
-            XmlStreamWriter(outputStream, namespaces, pretty,
-                maxLineWidth, indentSize)
+            XmlStreamWriter(outputStream,
+                namespaces,
+                pretty,
+                maxLineWidth,
+                indentSize)
                 .apply(build)
                 .close()
             outputStream.toString()

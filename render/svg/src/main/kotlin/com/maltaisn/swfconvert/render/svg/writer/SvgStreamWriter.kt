@@ -30,11 +30,6 @@ import com.maltaisn.swfconvert.render.svg.writer.format.appendValuesList
 import com.maltaisn.swfconvert.render.svg.writer.format.format
 import com.maltaisn.swfconvert.render.svg.writer.format.formatOptimized
 import com.maltaisn.swfconvert.render.svg.writer.format.requireSvgPrecision
-import com.maltaisn.swfconvert.render.svg.writer.xml.AttributesArray
-import com.maltaisn.swfconvert.render.svg.writer.xml.XmlStreamWriter
-import com.maltaisn.swfconvert.render.svg.writer.xml.XmlTag
-import com.maltaisn.swfconvert.render.svg.writer.xml.XmlWriter
-import com.maltaisn.swfconvert.render.svg.writer.xml.invoke
 import java.awt.geom.Rectangle2D
 import java.io.Closeable
 import java.io.Flushable
@@ -59,17 +54,11 @@ internal class SvgStreamWriter(
         "xlink" to "http://www.w3.org/1999/xlink"
     ), prettyPrint)
 
-    private val defXml = XmlTag(TAG_DEFS)
-
-    private var xmlWriter: XmlWriter? = null
-    private var hasEnded = false
+    private var state = State.INITIAL
 
     private val grStateStack = ArrayDeque<SvgGraphicsState>()
-    private val defGrStateStack = ArrayDeque<SvgGraphicsState>()
 
-    private val currentGrStateStack: ArrayDeque<SvgGraphicsState>
-        get() = if (xmlWriter == xml) grStateStack else defGrStateStack
-
+    private var defStartLevel = NO_DEF_LEVEL
     private var defId: String? = null
     private var defWasWritten = false
 
@@ -80,7 +69,6 @@ internal class SvgStreamWriter(
 
         // Push default graphics state correspond to the default values for attributes.
         grStateStack += SvgGraphicsState.DEFAULT
-        defGrStateStack += SvgGraphicsState.DEFAULT
     }
 
     override fun flush() {
@@ -99,17 +87,16 @@ internal class SvgStreamWriter(
         writeProlog: Boolean = true,
         grState: SvgGraphicsState = SvgGraphicsState.NULL
     ) {
-        check(!hasEnded) { "SVG has ended" }
-        check(xmlWriter == null) { "SVG has already started" }
+        check(state == State.INITIAL) { "SVG has already started or has ended" }
+        state = State.STARTED
 
-        xmlWriter = xml
         grStateStack += grState
 
         if (writeProlog) {
             xml.prolog(arrayOf(ATTR_VERSION to "1.1", ATTR_ENCODING to "UTF-8"))
         }
 
-        xmlWriter = xml.start(TAG_SVG, arrayOf(
+        xml.start(TAG_SVG, arrayOf(
             ATTR_VERSION to "2.0",
             ATTR_WIDTH to width.toSvg(precision, !prettyPrint),
             ATTR_HEIGHT to height.toSvg(precision, !prettyPrint),
@@ -121,34 +108,48 @@ internal class SvgStreamWriter(
      * End SVG document and closes this writer. Nothing should be done after that.
      */
     fun end() {
-        check(!hasEnded) { "SVG has already ended" }
         checkIfStarted()
         check(xml.currentLevel == 1) { "Cannot end SVG with unclosed tags" }
-
-        // Write defs to output stream if there are any.
-        if (defXml.children.isNotEmpty()) {
-            xml.write(defXml)
-        }
+        state = State.ENDED
 
         xml.end()
         xml.close()
     }
 
-    private fun checkIfStarted() = checkNotNull(xmlWriter) { "SVG has not started" }
+    private fun checkIfStarted() {
+        check(state == State.STARTED) { "SVG has not started or has ended." }
+    }
+
+    fun startDefs() {
+        xml.start(TAG_DEFS)
+    }
+
+    fun endDefs() {
+        expectEndTag(TAG_DEFS)
+    }
+
+    inline fun writeDefs(build: () -> Unit = {}) {
+        startDefs()
+        build()
+        endDefs()
+    }
 
     fun <T : String?> writeDef(id: T, block: SvgStreamWriter.() -> Unit): T {
-        val xmlWriterBefore = xmlWriter
-        xmlWriter = defXml
+        check(defStartLevel == NO_DEF_LEVEL) { "Cannot write nested defs" }
+
+        defStartLevel = xml.currentLevel
         defId = id
         defWasWritten = false
+
         this.block()
+
         check(defWasWritten) { "No def was written" }
-        xmlWriter = xmlWriterBefore
+        defStartLevel = NO_DEF_LEVEL
         return id
     }
 
     private fun consumeDefId(): String? {
-        check(xmlWriter != defXml || !defWasWritten) { "Def was already written" }
+        check(xml.currentLevel != defStartLevel || !defWasWritten) { "Def was already written" }
         val id = defId
         defId = null
         defWasWritten = true
@@ -160,11 +161,11 @@ internal class SvgStreamWriter(
      * @param discardIfEmpty Whether to discard the group if it has no attributes (therefore being useless).
      */
     fun startGroup(grState: SvgGraphicsState = SvgGraphicsState.NULL, discardIfEmpty: Boolean = false): Boolean {
-        val xmlWriter = checkIfStarted()
-        currentGrStateStack += grState
+        checkIfStarted()
+        grStateStack += grState
         val attrs = arrayOf(ATTR_ID to consumeDefId(), *getNewGraphicsStateAttrs())
         return if (attrs.any { it.second != null } || !discardIfEmpty) {
-            this.xmlWriter = xmlWriter.start(TAG_GROUP, attrs)
+            xml.start(TAG_GROUP, attrs)
             true
         } else {
             false
@@ -172,8 +173,8 @@ internal class SvgStreamWriter(
     }
 
     fun endGroup() {
-        xmlWriter = expectEndTag(TAG_GROUP)
-        currentGrStateStack.removeLast()
+        expectEndTag(TAG_GROUP)
+        grStateStack.removeLast()
     }
 
     inline fun group(
@@ -189,12 +190,12 @@ internal class SvgStreamWriter(
     }
 
     fun startClipPath() {
-        val xmlWriter = checkIfStarted()
-        this.xmlWriter = xmlWriter.start(TAG_CLIP_PATH, arrayOf(ATTR_ID to consumeDefId()))
+        checkIfStarted()
+        xml.start(TAG_CLIP_PATH, arrayOf(ATTR_ID to consumeDefId()))
     }
 
     fun endClipPath() {
-        xmlWriter = expectEndTag(TAG_CLIP_PATH)
+        expectEndTag(TAG_CLIP_PATH)
     }
 
     inline fun clipPath(build: () -> Unit) {
@@ -215,12 +216,12 @@ internal class SvgStreamWriter(
     }
 
     fun startMask() {
-        val xmlWriter = checkIfStarted()
-        this.xmlWriter = xmlWriter.start(TAG_MASK, arrayOf(ATTR_ID to consumeDefId()))
+        checkIfStarted()
+        xml.start(TAG_MASK, arrayOf(ATTR_ID to consumeDefId()))
     }
 
     fun endMask() {
-        xmlWriter = expectEndTag(TAG_MASK)
+        expectEndTag(TAG_MASK)
     }
 
     inline fun mask(build: () -> Unit) {
@@ -230,9 +231,9 @@ internal class SvgStreamWriter(
     }
 
     fun path(data: String, grState: SvgGraphicsState = SvgGraphicsState.NULL) {
-        val xmlWriter = checkIfStarted()
+        checkIfStarted()
         withGraphicsState(grState) {
-            xmlWriter {
+            xml {
                 TAG_PATH(arrayOf(
                     ATTR_ID to consumeDefId(),
                     ATTR_DATA to data,
@@ -260,9 +261,9 @@ internal class SvgStreamWriter(
                 (height == null || height > SvgNumber.ZERO)) {
             "Image dimensions must be greater than zero"
         }
-        val xmlWriter = checkIfStarted()
+        checkIfStarted()
         withGraphicsState(grState) {
-            xmlWriter {
+            xml {
                 TAG_IMAGE(arrayOf(
                     ATTR_ID to consumeDefId(),
                     ATTR_WIDTH to width,
@@ -285,9 +286,9 @@ internal class SvgStreamWriter(
         grState: SvgGraphicsState = SvgGraphicsState.NULL
     ) {
         stops.validateGradientStops()
-        val xmlWriter = checkIfStarted()
+        checkIfStarted()
         withGraphicsState(grState) {
-            xmlWriter {
+            xml {
                 TAG_LINEAR_GRADIENT(arrayOf(
                     ATTR_ID to consumeDefId(),
                     ATTR_X1 to x1.takeIf { x1 != 0f }?.formatOptimizedOrNot(precision),
@@ -312,9 +313,9 @@ internal class SvgStreamWriter(
     }
 
     fun font(name: String, src: String) {
-        val xmlWriter = checkIfStarted()
+        checkIfStarted()
         consumeDefId() // Consume def ID so def is marked as written. Font doesn't actually use the ID attribute though.
-        xmlWriter {
+        xml {
             TAG_STYLE(arrayOf(ATTR_TYPE to "text/css")) {
                 text("@$CSS_FONT_FACE{$CSS_FONT_FAMILY:$name;" +
                         "$CSS_SRC:url($src);}")
@@ -327,10 +328,10 @@ internal class SvgStreamWriter(
         dx: FloatArray = floatArrayOf(),
         grState: SvgGraphicsState = SvgGraphicsState.NULL
     ) {
+        checkIfStarted()
         val dxValue = if (dx.all { it == 0f }) null else createSvgValuesList(precision, dx)
-        val xmlWriter = checkIfStarted()
         withGraphicsState(grState) {
-            xmlWriter {
+            xml {
                 TAG_TEXT(arrayOf(
                     ATTR_ID to consumeDefId(),
                     *getNewGraphicsStateAttrs(),
@@ -343,18 +344,18 @@ internal class SvgStreamWriter(
     }
 
     fun use(id: String, grState: SvgGraphicsState = SvgGraphicsState.NULL) {
-        val xmlWriter = checkIfStarted()
+        checkIfStarted()
         withGraphicsState(grState) {
-            xmlWriter {
+            xml {
                 TAG_USE(arrayOf(ATTR_XLINK_HREF to "#$id", *getNewGraphicsStateAttrs()))
             }
         }
     }
 
     private inline fun withGraphicsState(grState: SvgGraphicsState, block: () -> Unit) {
-        currentGrStateStack += grState
+        grStateStack += grState
         block()
-        currentGrStateStack.removeLast()
+        grStateStack.removeLast()
     }
 
     /**
@@ -362,7 +363,6 @@ internal class SvgStreamWriter(
      * pushed [SvgGraphicsState] compared to the previous graphics state.
      */
     private fun getNewGraphicsStateAttrs(): AttributesArray {
-        val grStateStack = currentGrStateStack
         val newGrState = grStateStack.last().cleanedForAncestors(
             grStateStack.subList(0, grStateStack.size - 1).asReversed())
         return listOfNotNull(
@@ -401,12 +401,12 @@ internal class SvgStreamWriter(
         }
     }.ifEmpty { null }
 
-    private fun expectEndTag(tag: String): XmlWriter? {
-        val xmlWriter = checkIfStarted()
-        check(xmlWriter.currentTag == tag) {
-            "Cannot end tag <$tag>, current tag is <${xmlWriter.currentTag}>"
+    private fun expectEndTag(tag: String) {
+        checkIfStarted()
+        check(xml.currentTag == tag) {
+            "Cannot end tag <$tag>, current tag is <${xml.currentTag}>"
         }
-        return xmlWriter.end()
+        xml.end()
     }
 
     private fun Rectangle2D.toSvgValuesList() =
@@ -434,6 +434,12 @@ internal class SvgStreamWriter(
         this.format(precision)
     } else {
         this.formatOptimized(precision)
+    }
+
+    enum class State {
+        INITIAL,
+        STARTED,
+        ENDED
     }
 
     companion object {
@@ -493,6 +499,8 @@ internal class SvgStreamWriter(
         private const val CSS_FONT_FAMILY = "font-family"
         private const val CSS_MIX_BLEND_MODE = "mix-blend-mode"
         private const val CSS_SRC = "src"
+
+        private const val NO_DEF_LEVEL = 0
     }
 
 }
