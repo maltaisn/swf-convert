@@ -27,6 +27,7 @@ import com.maltaisn.swfconvert.render.core.FramesRenderer
 import com.maltaisn.swfconvert.render.core.readAffirmativeAnswer
 import com.maltaisn.swfconvert.render.core.toFramesMap
 import org.apache.logging.log4j.kotlin.logger
+import java.io.File
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -44,8 +45,23 @@ internal class IrFramesRenderer @Inject internal constructor(
     private val logger = logger()
 
     override suspend fun renderFrames(frameGroups: List<List<FrameGroup>>) {
-        var frames = frameGroups.toFramesMap()
+        // Move images and fonts from temp dir to output dir
+        val outputDir = config.output.first().parentFile
 
+        val outputImagesDir = File(outputDir, "images")
+        progressCb.showStep("Copying images to output", false) {
+            val tempImagesDir = File(config.tempDir, "images")
+            tempImagesDir.copyRecursively(outputImagesDir, true)
+        }
+
+        val outputFontsDir = File(outputDir, "fonts")
+        progressCb.showStep("Copying fonts to output", false) {
+            val tempFontsDir = File(config.tempDir, "fonts")
+            tempFontsDir.copyRecursively(outputFontsDir, true)
+        }
+
+        // Write frames
+        var frames = frameGroups.toFramesMap()
         while (true) {
             frames = renderFrames(frames)
 

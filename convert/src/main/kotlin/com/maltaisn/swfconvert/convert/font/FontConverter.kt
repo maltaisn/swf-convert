@@ -67,8 +67,10 @@ internal class FontConverter @Inject constructor(
         }
         if (config.groupFonts) {
             val ratio = (allFonts.size - groups.size) / allFonts.size.toFloat()
-            progressCb.showStep("${groups.size} font groups created from " +
-                    "${allFonts.size} fonts (-${PERCENT_FMT.format(ratio)})", false) {}
+            if (ratio.isFinite()) {
+                progressCb.showStep("${groups.size} font groups created from " +
+                        "${allFonts.size} fonts (-${PERCENT_FMT.format(ratio)})", false) {}
+            }
         }
 
         // Assign unique name to each group

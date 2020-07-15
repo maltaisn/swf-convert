@@ -28,11 +28,7 @@ import java.io.File
 internal class RenderIrParams : RenderParams<IrConfiguration> {
 
     @ParametersDelegate
-    override var params = CoreParams(false) { "json" }.apply {
-        // Keep fonts and images by default for IR output.
-        this.params[CoreParams.PARAM_KEEP_FONTS] = true.toString()
-        this.params[CoreParams.PARAM_KEEP_IMAGES] = true.toString()
-    }
+    override var params = CoreParams(false) { "json" }
 
     @Parameter(
         names = ["-y-direction"],
@@ -46,6 +42,12 @@ internal class RenderIrParams : RenderParams<IrConfiguration> {
         order = 1010)
     var prettyPrint: Boolean = false
 
+    @Parameter(
+        names = ["--indent-size"],
+        description = "Indent size if pretty printing",
+        order = 1020)
+    var indentSize: Int = 2
+
     override val yAxisDirection by lazy {
         when (yAxisDirectionName.toLowerCase()) {
             "up" -> YAxisDirection.UP
@@ -54,13 +56,17 @@ internal class RenderIrParams : RenderParams<IrConfiguration> {
         }
     }
 
-    override fun createConfigurations(inputs: List<List<File>>) = inputs.mapIndexed { i, input ->
-        val tempDir = params.getTempDirForInput(input)
-        IrConfiguration(
-            params.outputFiles[i],
-            tempDir,
-            prettyPrint,
-            params.parallelFrameRendering)
+    override fun createConfigurations(inputs: List<List<File>>): List<IrConfiguration> {
+        configError(indentSize >= 0) { "Indent size must be positive." }
+        return inputs.mapIndexed { i, input ->
+            val tempDir = params.getTempDirForInput(input)
+            IrConfiguration(
+                params.outputFiles[i],
+                tempDir,
+                prettyPrint,
+                indentSize,
+                params.parallelFrameRendering)
+        }
     }
 
     override fun print() {

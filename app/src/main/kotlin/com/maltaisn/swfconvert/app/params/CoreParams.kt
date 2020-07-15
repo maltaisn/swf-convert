@@ -78,10 +78,10 @@ internal class CoreParams(
     private var dontGroupFonts: Boolean = false
 
     @Parameter(
-        names = ["--dont-keep-font-names"],
-        description = "Use generic names for font files instead of names used in input.",
+        names = ["--keep-font-names"],
+        description = "Whether to use original font names instead of renaming them.",
         order = 45)
-    private var dontKeepFontNames: Boolean = false
+    private var keepFontNames: Boolean = false
 
     // Images configuration
 
@@ -259,8 +259,8 @@ internal class CoreParams(
     private val parallelSwfConversion by dynamicParam("parallelSwfConversion", false, String::toBooleanOrNull)
     private val parallelImageCreation by dynamicParam("parallelImageCreation", false, String::toBooleanOrNull)
     val parallelFrameRendering by dynamicParam("parallelFrameRendering", true, String::toBooleanOrNull)
-    private val keepFonts by dynamicParam(PARAM_KEEP_FONTS, false, String::toBooleanOrNull)
-    private val keepImages by dynamicParam(PARAM_KEEP_IMAGES, false, String::toBooleanOrNull)
+    private val keepFonts by dynamicParam("keepFonts", false, String::toBooleanOrNull)
+    private val keepImages by dynamicParam("keepImages", false, String::toBooleanOrNull)
     private val drawShapeBounds by dynamicParam("drawShapeBounds", false, String::toBooleanOrNull)
     private val drawTextBounds by dynamicParam("drawTextBounds", false, String::toBooleanOrNull)
     private val drawClipBounds by dynamicParam("drawClipBounds", false, String::toBooleanOrNull)
@@ -299,7 +299,7 @@ internal class CoreParams(
                 yAxisDirection,
                 ignoreEmptyFrames,
                 !dontGroupFonts,
-                !dontKeepFontNames,
+                keepFontNames,
                 keepDuplicateImages,
                 downsampleImages,
                 downsampleFilter,
@@ -331,7 +331,7 @@ internal class CoreParams(
         println("""
             |Ignore empty frames: $ignoreEmptyFrames
             |Group fonts: ${!dontGroupFonts}
-            |Keep font names: ${!dontKeepFontNames}
+            |Keep font names: $keepFontNames
             |Keep duplicate images: $keepDuplicateImages
             |Downsample images: $downsampleImages
             """.trimMargin())
@@ -363,9 +363,6 @@ internal class CoreParams(
 
     companion object {
         private val NUMBER_FMT = DecimalFormat()
-
-        const val PARAM_KEEP_FONTS = "keepFonts"
-        const val PARAM_KEEP_IMAGES = "keepImages"
 
         private val DEFAULT_FONTSCALE_2 = FontScale(1f, -1f, 1f, 1f)
         private val DEFAULT_FONTSCALE_3 = FontScale(0.05f, -0.05f, 1f, 1f)

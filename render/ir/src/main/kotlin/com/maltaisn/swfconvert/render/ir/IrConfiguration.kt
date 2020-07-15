@@ -30,6 +30,9 @@ data class IrConfiguration(
     /** Whether to pretty print JSON or not. */
     val prettyPrint: Boolean,
 
+    /** Indent size (number of spaces) if [prettyPrint] is `true`. */
+    val indentSize: Int,
+
     // DEBUG OPTIONS
 
     override val parallelFrameRendering: Boolean

@@ -72,7 +72,8 @@ internal sealed class IrObject {
     data class MaskedGroup(
         val id: Int,
         val bounds: IrRectangle,
-        val objects: List<IrObject>
+        val objects: List<IrObject>,
+        val mask: IrObject
     ) : IrObject()
 
     @Serializable
@@ -92,6 +93,7 @@ internal sealed class IrObject {
         val color: String,
         val font: String?,
         val text: String,
+        val glyphIndices: List<Int>,
         val glyphOffsets: List<Float>
     ) : IrObject()
 

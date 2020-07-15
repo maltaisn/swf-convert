@@ -48,6 +48,7 @@ internal class IrFrameRenderer @Inject constructor(
         // Serialize the frame group to JSON.
         val json = Json(JsonConfiguration.Stable.copy(
             prettyPrint = config.prettyPrint,
+            indent = if (config.prettyPrint) " ".repeat(config.indentSize) else "    ",
             encodeDefaults = false))
         val serializableFrame = frame.toSerializable()
         val frameJson = json.stringify(IrObject.serializer(), serializableFrame)
@@ -74,7 +75,7 @@ internal class IrFrameRenderer @Inject constructor(
             is GroupObject.Transform -> IrObject.TransformGroup(id, transform.toMatrixString(), objects)
             is GroupObject.Blend -> IrObject.BlendGroup(id, blendMode, objects)
             is GroupObject.Clip -> IrObject.ClipGroup(id, clips.map { it.toSerializable() }, objects)
-            is GroupObject.Masked -> IrObject.MaskedGroup(id, bounds.toSerializable(), objects)
+            is GroupObject.Masked -> IrObject.MaskedGroup(id, bounds.toSerializable(), objects.dropLast(1), objects.last())
         }
     }
 
@@ -97,7 +98,7 @@ internal class IrFrameRenderer @Inject constructor(
 
     private fun TextObject.toSerializable() =
         IrObject.Text(id, x, y, fontSize, color.toString(),
-            font.fontFile?.nameWithoutExtension, text, glyphOffsets)
+            font.fontFile?.nameWithoutExtension, text, glyphIndices, glyphOffsets)
 
     private fun Rectangle2D.toSerializable() = IrRectangle(x, y, width, height)
 
