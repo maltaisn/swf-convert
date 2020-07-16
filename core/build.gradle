@@ -1,34 +1,5 @@
 plugins {
-    id "kotlin"
-    id "kotlin-kapt"
-    id "org.jetbrains.kotlin.plugin.serialization"
-}
-
-dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
-
-    implementation "org.apache.logging.log4j:log4j-api:$log4jVersion"
-    implementation "org.apache.logging.log4j:log4j-core:$log4jVersion"
-    implementation "org.apache.logging.log4j:log4j-api-kotlin:$log4jKotlinVersion"
-
-    compileOnly "com.google.dagger:dagger:$daggerVersion"
-    kapt "com.google.dagger:dagger-compiler:$daggerVersion"
-
-    testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
-    testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
-}
-
-sourceSets {
-    main {
-        java.srcDirs += "src/main/kotlin"
-    }
-    test {
-        java.srcDirs += "src/test/kotlin"
-    }
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    id("kotlin")
+    id("kotlin-kapt")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }

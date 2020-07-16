@@ -75,7 +75,8 @@ internal class IrFrameRenderer @Inject constructor(
             is GroupObject.Transform -> IrObject.TransformGroup(id, transform.toMatrixString(), objects)
             is GroupObject.Blend -> IrObject.BlendGroup(id, blendMode, objects)
             is GroupObject.Clip -> IrObject.ClipGroup(id, clips.map { it.toSerializable() }, objects)
-            is GroupObject.Masked -> IrObject.MaskedGroup(id, bounds.toSerializable(), objects.dropLast(1), objects.last())
+            is GroupObject.Masked -> IrObject.MaskedGroup(id, bounds.toSerializable(),
+                objects.dropLast(1), objects.last())
         }
     }
 

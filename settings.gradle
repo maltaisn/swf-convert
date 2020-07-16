@@ -1,5 +1,9 @@
 rootProject.name = "swf-convert"
 
-include ":app"
-include ":convert", ":core"
-include ":render:core", ":render:ir", ":render:pdf", ":render:svg"
+include(":app")
+include(":convert",
+        ":core")
+include(":render:core",
+        ":render:ir",
+        ":render:pdf",
+        ":render:svg")

@@ -6,7 +6,7 @@ local.properties
 *.iml
 
 ## Gradle
-/.gradle/
+.gradle/
 build/
 out/
 

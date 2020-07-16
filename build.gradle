@@ -1,38 +1,73 @@
+import com.maltaisn.swfconvert.build.Dependencies
+
 buildscript {
     repositories {
         jcenter()
         mavenCentral()
     }
     dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
-        classpath "org.jetbrains.kotlin:kotlin-serialization:$kotlinVersion"
+        classpath(Dependencies.GRADLE_KOTLIN)
+        classpath(Dependencies.GRADLE_SERIALIZATION)
     }
 }
 
 plugins {
-    id "base"
-    id "io.gitlab.arturbosch.detekt" version "1.9.1"
+    id("base")
+    id("io.gitlab.arturbosch.detekt") version "1.10.0"
 }
 
 subprojects {
-    apply plugin: "io.gitlab.arturbosch.detekt"
+    apply(plugin: "java")
+    apply(plugin: "io.gitlab.arturbosch.detekt")
 
     repositories {
         jcenter()
         mavenCentral()
     }
 
-    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
-        kotlinOptions {
-            jvmTarget = "1.8"
-            freeCompilerArgs += [
-                    "-Xuse-experimental=kotlin.Experimental",
-                    "-Xuse-experimental=kotlin.ExperimentalStdlibApi",
-                    "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes",
-                    "-Xuse-experimental=kotlin.contracts.ExperimentalContracts",
-                    "-XXLanguage:+InlineClasses",
-                    "-XXLanguage:+NewInference"
-            ]
+    sourceSets {
+        main {
+            java.srcDir("src/main/kotlin")
+        }
+        test {
+            java.srcDir("src/test/kotlin")
+        }
+    }
+
+    configurations.create("kapt")  // kapt plugin will be applied later using plugins DSL
+    dependencies {
+        implementation(Dependencies.KOTLIN)
+        implementation(Dependencies.COROUTINES)
+
+        implementation(Dependencies.LOG4J)
+        implementation(Dependencies.LOG4J_CORE)
+        implementation(Dependencies.LOG4J_KOTLIN)
+
+        kapt(Dependencies.DAGGER_COMPILER)
+        implementation(Dependencies.DAGGER)
+
+        testImplementation(Dependencies.KOTLIN_TEST)
+        testImplementation(Dependencies.KOTLIN_TEST_JUNIT)
+    }
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    afterEvaluate {
+        tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
+            kotlinOptions {
+                jvmTarget = "1.8"
+                freeCompilerArgs += [
+                        "-Xuse-experimental=kotlin.Experimental",
+                        "-Xuse-experimental=kotlin.ExperimentalStdlibApi",
+                        "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes",
+                        "-Xuse-experimental=kotlin.contracts.ExperimentalContracts",
+                        "-XXLanguage:+InlineClasses",
+                        "-XXLanguage:+NewInference"
+                ]
+            }
         }
     }
 }
