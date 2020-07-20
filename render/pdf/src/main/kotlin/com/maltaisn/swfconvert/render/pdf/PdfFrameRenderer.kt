@@ -123,6 +123,11 @@ class PdfFrameRenderer @Inject internal constructor(
     }
 
     private fun drawTransformGroup(group: GroupObject.Transform) {
+        if (group.transform.determinant == 0.0) {
+            // Group is invisible: determinant is zero so all shear and scale components are zero.
+            return
+        }
+
         streamWrapper.withState {
             // Apply transform
             streamWrapper.transform(group.transform)

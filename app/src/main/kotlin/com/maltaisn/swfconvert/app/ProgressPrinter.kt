@@ -24,7 +24,7 @@ internal class ProgressPrinter : ProgressCallback {
 
     private val logger = logger()
 
-    private val stepStack = ArrayDeque<Step>()
+    private val stepStack = ArrayDeque<String>()
 
     private var progressShown = false
     private var total = -1
@@ -36,11 +36,11 @@ internal class ProgressPrinter : ProgressCallback {
      */
     private var actionAfterEnd = false
 
-    override fun beginStep(name: String, important: Boolean) {
-        stepStack += Step(name, important)
+    override fun beginStep(name: String) {
+        stepStack += name
         actionAfterEnd = true
         updateLine()
-        logger.info { stepStack.joinToString(": ") { it.name } }
+        logger.info { stepStack.joinToString(": ") }
     }
 
     override fun endStep() {
@@ -90,15 +90,9 @@ internal class ProgressPrinter : ProgressCallback {
     private fun updateLine() {
         // Print step name
         for ((i, step) in stepStack.withIndex()) {
-            if (step.important) {
-                print("\u001b[1m") // Enable bold
-            }
-            print(step.name)
+            print(step)
             if (i != stepStack.lastIndex) {
                 print(": ")
-            }
-            if (step.important) {
-                print("\u001b[0m") // Disable bold
             }
         }
         print(" ")
@@ -112,10 +106,8 @@ internal class ProgressPrinter : ProgressCallback {
         if (total != -1) {
             print(" ($value / $total)")
         }
-        print("\r")
+        print('\r')
     }
-
-    private data class Step(val name: String, val important: Boolean)
 
     companion object {
         private const val PROGRESS_BAR_SIZE = 30

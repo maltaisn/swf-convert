@@ -74,11 +74,11 @@ internal class FramesRasterizer @Inject constructor(
             return frameGroups
         }
 
-        progressCb.beginStep("Rasterizing frames", true)
+        progressCb.beginStep("Rasterizing frames")
 
         // Find which frames to optimize
         val framesToRasterize = mutableListOf<Int>()
-        progressCb.showStep("evaluating which frames need rasterization", false) {
+        progressCb.showStep("evaluating which frames need rasterization") {
             for ((i, frameGroup) in frameGroups.withIndex()) {
                 val complexity = evaluateShapeComplexity(frameGroup)
                 if (complexity >= config.rasterizationThreshold) {

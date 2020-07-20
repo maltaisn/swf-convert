@@ -44,7 +44,7 @@ internal class RenderPdfParams : RenderParams<PdfConfiguration> {
         names = ["--no-compress"],
         description = "Disable output PDF compression.",
         order = 1000)
-    var noCompress: Boolean = true
+    var noCompress: Boolean = false
 
     // Metadata
 

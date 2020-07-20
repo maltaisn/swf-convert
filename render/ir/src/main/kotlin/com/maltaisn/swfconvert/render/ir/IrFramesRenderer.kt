@@ -49,13 +49,13 @@ internal class IrFramesRenderer @Inject internal constructor(
         val outputDir = config.output.first().parentFile
 
         val outputImagesDir = File(outputDir, "images")
-        progressCb.showStep("Copying images to output", false) {
+        progressCb.showStep("Copying images to output") {
             val tempImagesDir = File(config.tempDir, "images")
             tempImagesDir.copyRecursively(outputImagesDir, true)
         }
 
         val outputFontsDir = File(outputDir, "fonts")
-        progressCb.showStep("Copying fonts to output", false) {
+        progressCb.showStep("Copying fonts to output") {
             val tempFontsDir = File(config.tempDir, "fonts")
             tempFontsDir.copyRecursively(outputFontsDir, true)
         }
@@ -83,7 +83,7 @@ internal class IrFramesRenderer @Inject internal constructor(
      * Returns another frames map for frames that couldn't be saved.
      */
     private suspend fun renderFrames(framesMap: FramesMap): FramesMap {
-        return progressCb.showStep("Writing JSON frames", true) {
+        return progressCb.showStep("Writing JSON frames") {
             progressCb.showProgress(framesMap.size) {
                 val failed = ConcurrentHashMap<FrameKey, FrameGroup>()
 

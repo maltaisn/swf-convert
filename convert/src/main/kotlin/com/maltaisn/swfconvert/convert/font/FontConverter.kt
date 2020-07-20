@@ -62,14 +62,14 @@ internal class FontConverter @Inject constructor(
         val allFonts = createAllFonts(context, swfs)
 
         // Merge fonts with the same name if they are compatible.
-        val groups = progressCb.showStep("merging fonts", false) {
+        val groups = progressCb.showStep("merging fonts") {
             mergeFonts(allFonts)
         }
         if (config.groupFonts) {
             val ratio = (allFonts.size - groups.size) / allFonts.size.toFloat()
             if (ratio.isFinite()) {
                 progressCb.showStep("${groups.size} font groups created from " +
-                        "${allFonts.size} fonts (-${PERCENT_FMT.format(ratio)})", false) {}
+                        "${allFonts.size} fonts (-${PERCENT_FMT.format(ratio)})") {}
             }
         }
 
@@ -83,7 +83,7 @@ internal class FontConverter @Inject constructor(
      * Create the TTF font files for a list of font groups.
      */
     fun createFontFiles(fonts: List<BaseFont>) {
-        progressCb.showStep("building TTF fonts", false) {
+        progressCb.showStep("building TTF fonts") {
             val tempDir = File(config.fontsDir, "temp")
             tempDir.mkdirs()
             for (font in fonts) {
@@ -115,7 +115,7 @@ internal class FontConverter @Inject constructor(
         unknownCharsMap.clear()
         nextUnknownCharCode = FIRST_CODE_FOR_UNKNOWN
 
-        progressCb.showStep("parsing all fonts", false) {
+        progressCb.showStep("parsing all fonts") {
             progressCb.showProgress(swfs.size) {
                 for ((i, swf) in swfs.withIndex()) {
                     val swfContext = SwfFileContext(context, config.input[i], i)

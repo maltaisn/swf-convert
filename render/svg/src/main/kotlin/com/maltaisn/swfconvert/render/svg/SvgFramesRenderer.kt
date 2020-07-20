@@ -50,7 +50,7 @@ internal class SvgFramesRenderer @Inject internal constructor(
 
         val outputImagesDir = File(outputDir, "images")
         if (!config.imagesMode.embedded) {
-            progressCb.showStep("Copying images to output", false) {
+            progressCb.showStep("Copying images to output") {
                 val tempImagesDir = File(config.tempDir, "images")
                 tempImagesDir.copyRecursively(outputImagesDir, true)
             }
@@ -58,7 +58,7 @@ internal class SvgFramesRenderer @Inject internal constructor(
 
         val outputFontsDir = File(outputDir, "fonts")
         if (!config.fontsMode.embedded) {
-            progressCb.showStep("Copying fonts to output", false) {
+            progressCb.showStep("Copying fonts to output") {
                 val tempFontsDir = File(config.tempDir, "fonts")
                 tempFontsDir.copyRecursively(outputFontsDir, true)
             }
@@ -91,7 +91,7 @@ internal class SvgFramesRenderer @Inject internal constructor(
         imagesDir: File,
         fontsDir: File
     ): FramesMap {
-        return progressCb.showStep("Writing SVG frames", true) {
+        return progressCb.showStep("Writing SVG frames") {
             progressCb.showProgress(framesMap.size) {
                 val failed = ConcurrentHashMap<FrameKey, FrameGroup>()
 

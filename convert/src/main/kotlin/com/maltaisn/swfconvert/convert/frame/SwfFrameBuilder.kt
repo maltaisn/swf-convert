@@ -77,7 +77,7 @@ internal class SwfFrameBuilder @Inject constructor() {
         height = header.frameSize.height
 
         // Create the frames
-        val frames = createSpriteFrames(swf.objects)
+        val frames = createFramesForTags(swf.objects, false)
         if (frames.size != header.frameCount) {
             logger.warn {
                 "Frames count mismatch between header and content: " +
@@ -88,11 +88,12 @@ internal class SwfFrameBuilder @Inject constructor() {
     }
 
     /**
-     * Create frames for a sprite with a list of display list [tags].
-     * If there's no [ShowFrame] tags, the returned list will be empty.
-     * @param maxFrames Maximum frames to create.
+     * Create frames for a list of display list [tags], returning a frame for each [ShowFrame].
+     * @param isSprite Whether creating a sprite. In this case, if there's at least one character
+     * on the display list, a frame will be created even if there's no [ShowFrame] tag.
+     * A maximum of one frame is also created.
      */
-    private fun createSpriteFrames(tags: Iterable<MovieTag>, maxFrames: Int = Int.MAX_VALUE): List<SwfFrame> {
+    private fun createFramesForTags(tags: List<MovieTag>, isSprite: Boolean): List<SwfFrame> {
         val frames = mutableListOf<SwfFrame>()
         val displayList = DisplayList()
         for (tag in tags) {
@@ -109,12 +110,19 @@ internal class SwfFrameBuilder @Inject constructor() {
                 tag is Remove2 -> displayList.removeCharacter(tag.layer)
                 tag is ShowFrame -> {
                     frames += displayList.createFrame()
-                    if (frames.size >= maxFrames) {
+                    if (isSprite) {
+                        // Sprite could have many frames but that wouldn't make sense in our static context.
                         return frames
                     }
                 }
             }
         }
+
+        if (isSprite && displayList.isNotEmpty()) {
+            // Non-empty sprite had no ShowFrame tag, still create a single frame for it.
+            frames += displayList.createFrame()
+        }
+
         return frames
     }
 
@@ -131,7 +139,7 @@ internal class SwfFrameBuilder @Inject constructor() {
 
         this[place.depth] = if (tag is DefineMovieClip) {
             // DefineSprite.
-            val spriteFrames = createSpriteFrames(tag.objects, 1)
+            val spriteFrames = createFramesForTags(tag.objects, true)
             if (spriteFrames.size > 1) {
                 // Multiple frames in a sprite don't really make sense in this context.
                 logger.warn { "Found ${spriteFrames.size} frames in sprite at $context, using only first." }

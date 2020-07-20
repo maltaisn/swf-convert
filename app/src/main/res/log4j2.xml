@@ -50,8 +50,8 @@
 
     <Loggers>
         <Root level="all">
-            <AppenderRef ref="stdout" level="all"/>
-            <AppenderRef ref="file" level="all"/>
+            <AppenderRef ref="stdout"/>
+            <AppenderRef ref="file"/>
         </Root>
     </Loggers>
 

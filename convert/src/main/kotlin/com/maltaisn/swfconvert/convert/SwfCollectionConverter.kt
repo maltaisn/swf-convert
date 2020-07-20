@@ -51,7 +51,7 @@ class SwfCollectionConverter @Inject internal constructor(
         val swfs = swfsDecoder.decodeFiles(context, config.input)
 
         // Create font files
-        progressCb.beginStep("Creating fonts", true)
+        progressCb.beginStep("Creating fonts")
         val fontGroups = fontConverter.createFontGroups(context, swfs)
 
         // Create font files and ungroup them.

@@ -51,7 +51,7 @@ internal class SwfsConverter @Inject constructor(
     }
 
     private suspend fun findAllFrames(context: ConvertContext, swfs: List<Movie>): List<List<SwfFrame>> =
-        progressCb.showStep("Finding SWF frames", true) {
+        progressCb.showStep("Finding SWF frames") {
             progressCb.showProgress(swfs.size) {
                 swfs.withIndex().mapInParallel(config.parallelSwfConversion) { (fileIndex, swf) ->
                     val swfContext = SwfFileContext(context, config.input[fileIndex], fileIndex)
@@ -75,7 +75,7 @@ internal class SwfsConverter @Inject constructor(
     ): List<List<FrameGroup>> {
         // Create all frame groups as a single list
         val allFrames = frames.flatten()
-        val allFrameGroups = progressCb.showStep("Converting SWF frames", true) {
+        val allFrameGroups = progressCb.showStep("Converting SWF frames") {
             progressCb.showProgress(allFrames.size) {
                 allFrames.mapInParallel(config.parallelSwfConversion) { frame ->
                     val frameGroup = swfFrameConverterProvider.get().use {

@@ -21,7 +21,7 @@ package com.maltaisn.swfconvert.core
  */
 interface ProgressCallback {
 
-    fun beginStep(name: String, important: Boolean)
+    fun beginStep(name: String)
     fun endStep()
 
     fun beginProgress(total: Int)
@@ -32,8 +32,8 @@ interface ProgressCallback {
 
 }
 
-inline fun <R> ProgressCallback.showStep(name: String, important: Boolean, block: () -> R): R {
-    this.beginStep(name, important)
+inline fun <R> ProgressCallback.showStep(name: String, block: () -> R): R {
+    this.beginStep(name)
     val result = block()
     this.endStep()
     return result

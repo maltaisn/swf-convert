@@ -35,8 +35,8 @@ task run(type: JavaExec) {
     standardInput = System.in
     setIgnoreExitValue(true)
 
-    // Get program test arguments defined in local.properties.
-    def propFile = project.rootProject.file("local.properties")
+    // Get program test arguments defined in dev.properties.
+    def propFile = project.rootProject.file("dev.properties")
     if (propFile.exists()) {
         def properties = new Properties()
         properties.load(propFile.newInputStream())
@@ -50,19 +50,20 @@ task run(type: JavaExec) {
 }
 
 task dist(type: Jar) {
-    dependsOn "updateVersionRes"
+    dependsOn("updateVersionRes")
 
     from(files(sourceSets.main.output.classesDirs))
     from(files(sourceSets.main.resources.srcDirs))
     from(configurations.runtimeClasspath.collect { if (it.directory) it else zipTree(it) })
-    archiveBaseName.set("swf-convert")
 
-    manifest {
-        attributes["Main-Class"] = mainClassName
-    }
+    manifest.attributes(
+            "Main-Class": mainClassName,
+            "Multi-Release": true
+    )
+    archiveBaseName.set("swf-convert")
 }
 
-tasks.register("updateVersionRes") {
+task updateVersionRes {
     doLast {
         def versionResFile = file("src/main/res/version.txt")
         versionResFile.write(appVersion)

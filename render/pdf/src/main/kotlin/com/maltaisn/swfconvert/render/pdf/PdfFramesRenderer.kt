@@ -94,7 +94,7 @@ internal class PdfFramesRenderer @Inject internal constructor(
         }
 
         // Export PDF
-        progressCb.showStep("Exporting PDF", true) {}
+        progressCb.showStep("Exporting PDF") {}
         withContext(Dispatchers.IO) {
             val output = config.output.first()
             trySave(output) {
@@ -111,11 +111,11 @@ internal class PdfFramesRenderer @Inject internal constructor(
         pdfDoc: PDDocument,
         frameGroups: List<FrameGroup>
     ): MutableMap<ImageData, PDImageXObject> {
-        progressCb.beginStep("Creating PDF images", true)
+        progressCb.beginStep("Creating PDF images")
 
         // Find all images in all frames.
         val allImageData = mutableSetOf<ImageData>()
-        progressCb.showStep("finding all images", false) {
+        progressCb.showStep("finding all images") {
             for (frameGroup in frameGroups) {
                 frameGroup.findAllImageDataTo(allImageData)
             }
@@ -123,7 +123,7 @@ internal class PdfFramesRenderer @Inject internal constructor(
 
         // Create PDF image for each image.
         val pdfImagesMap = ConcurrentHashMap<ImageData, PDImageXObject>()
-        progressCb.showStep("creating images", false) {
+        progressCb.showStep("creating images") {
             progressCb.showProgress(allImageData.size) {
                 for (imageData in allImageData) {
                     pdfImagesMap[imageData] = createPdfImage(pdfDoc, imageData)
@@ -149,11 +149,11 @@ internal class PdfFramesRenderer @Inject internal constructor(
     }
 
     private fun createPdfFonts(pdfDoc: PDDocument, frameGroups: List<FrameGroup>): Map<File, PDFont> {
-        progressCb.beginStep("Creating PDF fonts", true)
+        progressCb.beginStep("Creating PDF fonts")
 
         // Find all fonts in all frames.
         val allFonts = mutableSetOf<File>()
-        progressCb.showStep("finding all fonts", false) {
+        progressCb.showStep("finding all fonts") {
             for (frameGroup in frameGroups) {
                 frameGroup.findAllFontFilesTo(allFonts)
             }
@@ -161,7 +161,7 @@ internal class PdfFramesRenderer @Inject internal constructor(
 
         // Create PDF image for each image.
         val pdfFontsMap = mutableMapOf<File, PDFont>()
-        progressCb.showStep("creating fonts", false) {
+        progressCb.showStep("creating fonts") {
             progressCb.showProgress(allFonts.size) {
                 for (file in allFonts) {
                     // Load file as PDF font. Don't subset since it's already been done. Also, subsetting
@@ -181,7 +181,7 @@ internal class PdfFramesRenderer @Inject internal constructor(
         pdfImages: Map<ImageData, PDImageXObject>,
         pdfFonts: Map<File, PDFont>
     ): List<PDDocument> {
-        return progressCb.showStep("Rendering PDF frames", true) {
+        return progressCb.showStep("Rendering PDF frames") {
             progressCb.showProgress(frameGroups.size) {
                 frameGroups.mapInParallel(config.parallelFrameRendering) { frameGroup ->
                     val pdfPage = PDDocument(MemoryUsageSetting.setupTempFileOnly())

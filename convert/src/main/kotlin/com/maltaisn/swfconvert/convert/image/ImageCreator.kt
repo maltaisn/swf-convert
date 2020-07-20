@@ -43,7 +43,7 @@ internal class ImageCreator @Inject constructor(
      * data is removed to optimize output size.
      */
     suspend fun createAndOptimizeImages(frameGroups: List<FrameGroup>) {
-        progressCb.beginStep("Creating images", true)
+        progressCb.beginStep("Creating images")
 
         // Find all images in all frames
         val allImageFills = mutableListOf<PathFillStyle.Image>()
@@ -59,7 +59,7 @@ internal class ImageCreator @Inject constructor(
             // Remove duplicate images in all frames.
             val total = allImageFills.size
             val allImageData = mutableMapOf<ImageData, ImageData>()
-            progressCb.showStep("checking for duplicates", false) {
+            progressCb.showStep("checking for duplicates") {
                 progressCb.showProgress(allImageFills.size) {
                     for (imageFill in allImageFills) {
                         // Check if image already exists.
@@ -86,13 +86,13 @@ internal class ImageCreator @Inject constructor(
             if (ratio.isFinite()) {
                 step += " (-${PERCENT_FMT.format(ratio)})"
             }
-            progressCb.showStep(step, false) {}
+            progressCb.showStep(step) {}
 
             allImageData.keys
         }
 
         // Create image files
-        progressCb.showStep("writing files", false) {
+        progressCb.showStep("writing files") {
             progressCb.showProgress(allImages.size) {
                 val idCounter = AtomicInteger()
                 allImages.mapInParallel(config.parallelImageCreation) { imageData ->

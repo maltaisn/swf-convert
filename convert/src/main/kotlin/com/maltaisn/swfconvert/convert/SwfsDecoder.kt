@@ -39,7 +39,7 @@ internal class SwfsDecoder @Inject constructor(
 ) {
 
     suspend fun decodeFiles(context: ConvertContext, files: List<File>): List<Movie> {
-        return progressCb.showStep("Decoding SWFs", true) {
+        return progressCb.showStep("Decoding SWFs") {
             progressCb.showProgress(files.size) {
                 files.withIndex().mapInParallel(config.parallelSwfDecoding) { (i, file) ->
                     val swf = decodeFile(SwfFileContext(context, file, i), file)
