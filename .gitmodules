@@ -1,0 +1,3 @@
+[submodule "libsrc/transform-swf"]
+	path = libsrc/transform-swf
+	url = https://github.com/maltaisn/transform-swf
