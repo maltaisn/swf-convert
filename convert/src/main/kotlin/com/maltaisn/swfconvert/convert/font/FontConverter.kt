@@ -178,13 +178,15 @@ internal class FontConverter @Inject constructor(
             char in assignedCodes ||
                     char.isWhitespace() ||
                     char in '\u0000'..'\u001F' ||
-                    char in '\uFFF0'..'\uFFFF' -> {
+                    char in '\uFFF0'..'\uFFFF' ||
+                    char in '\u1D00'..'\u1DFF' -> {
                 // This will happen if:
                 // - Duplicate code in font, meaning code was already assigned.
                 // - Glyph should be a whitespace but it isn't. Ligatures and other unicode characters
                 //     are sometimes replaced by an extended ASCII equivalent, often a space.
-                // - Control chars: they don't get added to TTF fonts by doubletype.
-                // - Specials unicode block chars: they don't seem to work well with PDFBox.
+                // - 0x0000-0x001F (control chars): they don't get added to TTF fonts by doubletype.
+                // - 0xFFF0-0xFFFF (specials unicode block chars): they don't seem to work well with PDFBox.
+                // - 0x1D00-0x1DFF: doubletype fails for at least some of the chars in this range, unsure why exactly.
                 // So in all these cases, a new code is used.
 
                 val assigned = unknownCharsMap[data]

@@ -50,7 +50,7 @@ internal class TTFFontBuilder @Inject constructor(
      */
     fun buildFont(font: BaseFont, destination: File, tempDir: File) {
         // Make sure font name is a valid file name because doubletype uses temp files.
-        val name = validateFilename(font.name)
+        var name = validateFilename(font.name)
         if (name != font.name) {
             logger.debug { "Renamed font '${font.name}' to valid filename '$name'" }
         }
@@ -79,7 +79,7 @@ internal class TTFFontBuilder @Inject constructor(
             it.ascender = font.metrics.ascent.toDouble().coerceIn(0.0, it.em)
             it.descender = font.metrics.descent.toDouble().coerceIn(0.0, it.em)
 
-            it.fontFamilyName = name
+            it.fontFamilyName = if (name.first().isDigit()) "f$name" else name // Name can't start with digit.
             it.version = TYPEFACE_VERSION
             it.license = TYPEFACE_LICENSE
             it.author = TYPEFACE_AUTHOR
