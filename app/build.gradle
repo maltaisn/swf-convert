@@ -4,6 +4,7 @@ plugins {
     id("kotlin")
     id("kotlin-kapt")
     id("org.jetbrains.kotlin.plugin.serialization")
+    id("com.github.breadmoirai.github-release")
 }
 
 dependencies {
@@ -28,7 +29,7 @@ sourceSets {
 
 def mainClassName = "com.maltaisn.swfconvert.app.MainKt"
 task run(type: JavaExec) {
-    dependsOn "updateVersionRes"
+    dependsOn("updateVersionRes")
 
     main = mainClassName
     classpath = files(sourceSets.main.runtimeClasspath, sourceSets.main.resources)
@@ -68,4 +69,47 @@ task updateVersionRes {
         def versionResFile = file("src/main/res/version.txt")
         versionResFile.write(appVersion)
     }
+}
+
+// Publish a new release to Github, using the lastest defined appVersion property,
+// a git tag, and the release notes in CHANGELOG.md.
+githubRelease {
+    if (project.hasProperty("githubReleasePluginToken")) {
+        token(githubReleasePluginToken)
+    }
+    owner("maltaisn")
+    repo("swf-convert")
+
+    tagName("v$appVersion")
+    targetCommitish("master")
+    releaseName("v$appVersion")
+
+    body {
+        // Get release notes for version from changelog file.
+        def changelog = file("../CHANGELOG.md")
+        def lines = changelog.readLines()
+        def versionChanges = new StringBuilder()
+        def foundVersion = false
+        for (line in lines) {
+            if (foundVersion && line ==~ /^#+\s*v.+$/) {
+                break
+            } else if (line ==~ /^#+\s*v$appVersion$/) {
+                foundVersion = true
+            } else if (foundVersion) {
+                versionChanges.append(line)
+                versionChanges.append('\n')
+            }
+        }
+        if (!foundVersion) {
+            throw new GradleException("No release notes for version $appVersion")
+        }
+        return versionChanges.toString().trim()
+    }
+
+    releaseAssets("$buildDir/libs/swf-convert.jar")
+
+    overwrite(true)
+}
+tasks.githubRelease {
+    dependsOn("build", "dist")
 }

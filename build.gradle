@@ -8,6 +8,7 @@ buildscript {
     dependencies {
         classpath(Dependencies.GRADLE_KOTLIN)
         classpath(Dependencies.GRADLE_SERIALIZATION)
+        classpath(Dependencies.GRADLE_GITHUB_RELEASE)
     }
 }
 
