@@ -18,6 +18,7 @@
 package com.maltaisn.swfconvert.render.pdf.metadata
 
 import com.maltaisn.swfconvert.render.pdf.PdfConfiguration
+import org.apache.logging.log4j.kotlin.logger
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.common.PDPageLabelRange
 import org.apache.pdfbox.pdmodel.common.PDPageLabels
@@ -30,7 +31,17 @@ internal class PdfPageLabelsCreator @Inject constructor(
     private val config: PdfConfiguration
 ) {
 
+    private val logger = logger()
+
     fun createPageLabels(pdfDoc: PDDocument, pageLabels: List<String>) {
+        if (pdfDoc.numberOfPages != pageLabels.size) {
+            logger.error {
+                "PDF metadata error: document has ${pdfDoc.numberOfPages} pages " +
+                        "but found ${pageLabels.size} page labels."
+            }
+            return
+        }
+
         pdfDoc.documentCatalog.pageLabels = if (config.optimizePageLabels) {
             createOptimizedLabels(pdfDoc, pageLabels)
         } else {

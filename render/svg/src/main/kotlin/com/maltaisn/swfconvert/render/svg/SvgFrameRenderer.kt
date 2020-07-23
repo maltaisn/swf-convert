@@ -76,7 +76,7 @@ internal class SvgFrameRenderer @Inject constructor(
     private lateinit var defs: Map<FrameDef, String>
 
     fun renderFrame(frame: FrameGroup, outputFile: File, imagesDir: File, fontsDir: File) {
-        val outputDir = outputFile.parentFile
+        val outputDir = outputFile.parentFile ?: File(".")
         this.imagesDir = imagesDir.relativeToOrSelf(outputDir)
         this.fontsDir = fontsDir.relativeToOrSelf(outputDir)
 
@@ -429,7 +429,7 @@ internal class SvgFrameRenderer @Inject constructor(
 
     private fun BlendMode.toSvgMixBlendModeOrNull() = when (this) {
         // See: https://drafts.fxtf.org/compositing-1/#blendingseparable
-        BlendMode.NULL, BlendMode.NORMAL, BlendMode.LAYER -> SvgMixBlendMode.NORMAL
+        BlendMode.NORMAL, BlendMode.LAYER -> SvgMixBlendMode.NORMAL
         BlendMode.MULTIPLY -> SvgMixBlendMode.MULTIPLY
         BlendMode.SCREEN -> SvgMixBlendMode.SCREEN
         BlendMode.LIGHTEN -> SvgMixBlendMode.LIGHTEN

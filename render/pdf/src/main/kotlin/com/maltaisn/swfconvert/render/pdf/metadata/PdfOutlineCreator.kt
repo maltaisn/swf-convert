@@ -17,6 +17,7 @@
 
 package com.maltaisn.swfconvert.render.pdf.metadata
 
+import org.apache.logging.log4j.kotlin.logger
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.destination.PDPageFitHeightDestination
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.destination.PDPageFitRectangleDestination
@@ -29,18 +30,33 @@ import javax.inject.Inject
 
 internal class PdfOutlineCreator @Inject constructor() {
 
+    private val logger = logger()
+
     fun createOutline(pdfDoc: PDDocument, items: List<PdfOutlineItem>, openLevel: Int) {
         val outline = PDDocumentOutline()
         pdfDoc.documentCatalog.documentOutline = outline
         for (item in items) {
-            addItemToOutline(item, outline, 1, openLevel)
+            addItemToOutline(pdfDoc, item, outline, 1, openLevel)
         }
         if (openLevel > 0) {
             outline.openNode()
         }
     }
 
-    private fun addItemToOutline(item: PdfOutlineItem, outline: PDOutlineNode, level: Int, openLevel: Int) {
+    private fun addItemToOutline(
+        pdfDoc: PDDocument,
+        item: PdfOutlineItem,
+        outline: PDOutlineNode,
+        level: Int,
+        openLevel: Int
+    ) {
+        if (item.page >= pdfDoc.numberOfPages) {
+            logger.error {
+                "PDF metadata error: document has ${pdfDoc.numberOfPages} pages, " +
+                        "but outline item destination is page ${item.page + 1}"
+            }
+        }
+
         val pdfItem = PDOutlineItem()
         val destination = createPdfOutlineDestination(item)
         pdfItem.title = item.title
@@ -48,7 +64,7 @@ internal class PdfOutlineCreator @Inject constructor() {
         destination.pageNumber = item.page
         outline.addLast(pdfItem)
         for (child in item.children) {
-            addItemToOutline(child, pdfItem, level + 1, openLevel)
+            addItemToOutline(pdfDoc, child, pdfItem, level + 1, openLevel)
         }
         if (level <= openLevel) {
             pdfItem.openNode()
