@@ -21,6 +21,16 @@ import com.maltaisn.swfconvert.app.configError
 import com.maltaisn.swfconvert.core.image.Color
 import java.io.File
 
+internal fun inferBooleanDynamicParameters(args: Array<String>) {
+    for ((i, arg) in args.withIndex()) {
+        if (arg.startsWith("-D") && '=' !in arg) {
+            // Dynamic parameter without value, change it to a `true` value.
+            // JCommander would throw a missing value error otherwise.
+            args[i] = "$arg=true"
+        }
+    }
+}
+
 /**
  * Attempts to fix [https://github.com/cbeust/jcommander/issues/365].
  * Unknown options are not getting caught, so this must be checked for

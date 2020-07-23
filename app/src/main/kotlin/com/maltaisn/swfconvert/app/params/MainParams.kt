@@ -44,6 +44,12 @@ internal class MainParams {
         order = 1020)
     private var logLevelInt = LOG_LEVEL_WARN
 
+    @Parameter(
+        names = ["-s", "--silent"],
+        description = "Don't display conversion progress",
+        order = 20)
+    var silent: Boolean = false
+
     val logLevel: Level by lazy {
         when (logLevelInt) {
             LOG_LEVEL_OFF -> Level.OFF

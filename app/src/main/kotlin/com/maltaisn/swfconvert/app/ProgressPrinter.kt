@@ -21,7 +21,7 @@ import com.maltaisn.swfconvert.core.ProgressCallback
 import org.apache.logging.log4j.kotlin.logger
 import java.util.concurrent.atomic.AtomicInteger
 
-internal class ProgressPrinter : ProgressCallback {
+internal class ProgressPrinter(val silent: Boolean) : ProgressCallback {
 
     private val logger = logger()
 
@@ -46,7 +46,7 @@ internal class ProgressPrinter : ProgressCallback {
 
     override fun endStep() {
         stepStack.removeLast()
-        if (actionAfterEnd) {
+        if (actionAfterEnd && !silent) {
             println()
         }
         actionAfterEnd = false
@@ -89,6 +89,8 @@ internal class ProgressPrinter : ProgressCallback {
     private fun checkProgressShown() = check(progressShown) { "No progress shown." }
 
     private fun updateLine() {
+        if (silent) return
+
         // Print step name
         for ((i, step) in stepStack.withIndex()) {
             print(step)

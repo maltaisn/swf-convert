@@ -41,7 +41,7 @@ internal class SwfConvert(private val config: Configuration) {
     lateinit var framesRenderers: Map<Class<out RenderConfiguration>,
             @JvmSuppressWildcards Provider<FramesRenderer>>
 
-    private val progressCb = ProgressPrinter()
+    private val progressCb = ProgressPrinter(config.silent)
 
     init {
         // Create components

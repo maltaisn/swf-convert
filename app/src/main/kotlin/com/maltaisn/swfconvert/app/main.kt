@@ -18,6 +18,7 @@
 package com.maltaisn.swfconvert.app
 
 import com.maltaisn.swfconvert.app.params.ParamsParser
+import com.maltaisn.swfconvert.app.params.inferBooleanDynamicParameters
 import com.maltaisn.swfconvert.convert.ConversionError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -29,19 +30,24 @@ import kotlin.system.measureTimeMillis
 fun main(args: Array<String>) {
     // Parse program arguments into configurations.
     // This also prints configuration values.
+    inferBooleanDynamicParameters(args)
     val configs = ParamsParser().parse(args)
 
     // Do each conversion
     try {
         for ((i, config) in configs.withIndex()) {
-            println("Converting collection ${i + 1} / ${configs.size}")
+            if (!config.silent) {
+                println("Converting collection ${i + 1} / ${configs.size}")
+            }
             logger.info { "Started conversion of collection ${i + 1}, config: $config" }
             val duration = measureTimeMillis {
                 runBlocking(Dispatchers.Default) {
                     SwfConvert(config).convert(SwfCollectionContext(i))
                 }
             }
-            println("Done in ${DURATION_FMT.format(duration.toDouble() / MILLIS_IN_SECOND)} s\n")
+            if (!config.silent) {
+                println("Done in ${DURATION_FMT.format(duration.toDouble() / MILLIS_IN_SECOND)} s\n")
+            }
             logger.info { "Finished conversion of collection ${i + 1}" }
         }
         exitProcess(0)

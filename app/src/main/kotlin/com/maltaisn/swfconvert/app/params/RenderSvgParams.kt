@@ -43,49 +43,49 @@ internal class RenderSvgParams : RenderParams<SvgConfiguration> {
         names = ["-p", "--pretty"],
         description = "Pretty print output SVG.",
         order = 1000)
-    var prettyPrint: Boolean = false
+    private var prettyPrint: Boolean = false
 
     @Parameter(
         names = ["--svgz"],
         description = "Use SVGZ format (gzip compression).",
         order = 1010)
-    var compress: Boolean = false
+    private var compress: Boolean = false
 
     @Parameter(
         names = ["--precision"],
         description = "Precision of SVG path, position, and dimension values.",
         order = 1100)
-    var precision: Int = 1
+    private var precision: Int = 1
 
     @Parameter(
         names = ["--transform-precision"],
         description = "Precision of SVG transform values.",
         order = 1110)
-    var transformPrecision: Int = 2
+    private var transformPrecision: Int = 2
 
     @Parameter(
         names = ["--percent-precision"],
         description = "Precision of SVG percentage values.",
         order = 1120)
-    var percentPrecision: Int = 2
+    private var percentPrecision: Int = 2
 
     @Parameter(
         names = ["--no-prolog"],
         description = "Omit the XML prolog.",
         order = 1200)
-    var noProlog: Boolean = false
+    private var noProlog: Boolean = false
 
     @Parameter(
         names = ["--images-mode"],
         description = "Controls how images are included in SVG: external | base64",
         order = 1300)
-    var imagesModeName: String = MODE_EXTERNAL
+    private var imagesModeName: String = MODE_EXTERNAL
 
     @Parameter(
         names = ["--fonts-mode"],
-        description = "Controls how fonts are included in SVG: external | base64",
+        description = "Controls how fonts are included in SVG: external | base64 | none",
         order = 1310)
-    var fontsModeName: String = MODE_EXTERNAL
+    private var fontsModeName: String = MODE_EXTERNAL
 
     override val yAxisDirection: YAxisDirection
         get() = YAxisDirection.DOWN

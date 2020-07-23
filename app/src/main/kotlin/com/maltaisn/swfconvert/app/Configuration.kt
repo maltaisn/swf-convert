@@ -25,5 +25,6 @@ import com.maltaisn.swfconvert.render.core.RenderConfiguration
  */
 internal data class Configuration(
     val convert: ConvertConfiguration,
-    val render: RenderConfiguration
+    val render: RenderConfiguration,
+    val silent: Boolean
 )

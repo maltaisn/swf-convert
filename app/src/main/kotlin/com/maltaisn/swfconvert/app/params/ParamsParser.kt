@@ -67,16 +67,18 @@ internal class ParamsParser {
 
             val command = commands[jc.parsedCommand] ?: return emptyList()
 
-            // Print configuration
-            command.params.print()
-            command.print()
-            println()
+            if (!mainParams.silent) {
+                // Print configuration
+                command.params.print()
+                command.print()
+                println()
+            }
 
             // Create configuration
             val mainConfigs = command.params.createConfigurations(command.yAxisDirection)
             val formatConfigs = command.createConfigurations(mainConfigs.map { it.input })
             return mainConfigs.zip(formatConfigs) { convert, render ->
-                Configuration(convert, render)
+                Configuration(convert, render, mainParams.silent)
             }
 
         } catch (e: ConfigException) {

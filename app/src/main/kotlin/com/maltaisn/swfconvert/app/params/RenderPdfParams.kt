@@ -45,47 +45,54 @@ internal class RenderPdfParams : RenderParams<PdfConfiguration> {
         names = ["--no-compress"],
         description = "Disable output PDF compression.",
         order = 1000)
-    var noCompress: Boolean = false
+    private var noCompress: Boolean = false
 
     // Metadata
 
-    @Parameter(names = ["--metadata"],
+    @Parameter(
+        names = ["--metadata"],
         variableArity = true,
         description = "JSON files containing metadata to set on PDF files.",
         order = 1100)
-    var metadata: List<String> = emptyList()
+    private var metadata: List<String> = emptyList()
 
-    @Parameter(names = ["--dont-optimize-page-labels"],
+    @Parameter(
+        names = ["--dont-optimize-page-labels"],
         description = "Disable page labels optimization",
         order = 1110)
-    var dontOptimizePageLabels: Boolean = true
+    private var dontOptimizePageLabels: Boolean = true
 
     // Rasterization
 
-    @Parameter(names = ["--rasterization-enabled"],
-        description = "Enable rasterization of complex input files or not.",
+    @Parameter(
+        names = ["--rasterization-enabled"],
+        description = "Enable rasterization of frames with complex shapes.",
         order = 1200)
-    var rasterizationEnabled: Boolean = false
+    private var rasterizationEnabled: Boolean = false
 
-    @Parameter(names = ["--rasterization-threshold"],
+    @Parameter(
+        names = ["--rasterization-threshold"],
         description = "Minimum input file complexity required to perform rasterization, in arbitrary units.",
         order = 1210)
-    var rasterizationThreshold = 100000
+    private var rasterizationThreshold = 100000
 
-    @Parameter(names = ["--rasterization-dpi"],
-        description = "Density in DPI to use to rasterize output if rasterization is enabled.",
+    @Parameter(
+        names = ["--rasterization-dpi"],
+        description = "Density in DPI to use to rasterize frames if rasterization is enabled.",
         order = 1220)
-    var rasterizationDpi = 200f
+    private var rasterizationDpi = 200f
 
-    @Parameter(names = ["--rasterization-format"],
-        description = "Image format to use for rasterized output.",
+    @Parameter(
+        names = ["--rasterization-format"],
+        description = "Image format to use for rasterized frames.",
         order = 1230)
-    var rasterizationFormatName = ImageFormat.JPG.extension
+    private var rasterizationFormatName = ImageFormat.JPG.extension
 
-    @Parameter(names = ["--rasterization-jpeg-quality"],
+    @Parameter(
+        names = ["--rasterization-jpeg-quality"],
         description = "JPEG image quality for rasterization, between 0 and 100.",
         order = 1240)
-    var rasterizationJpegQuality = 75
+    private var rasterizationJpegQuality = 75
 
     override val yAxisDirection: YAxisDirection
         get() = YAxisDirection.UP

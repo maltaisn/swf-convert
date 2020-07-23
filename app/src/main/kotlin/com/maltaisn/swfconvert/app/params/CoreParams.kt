@@ -71,7 +71,6 @@ internal class CoreParams(
 
     // Text & font configuration
 
-    /** Whether to group fonts that can be merged into a single one. */
     @Parameter(
         names = ["-g", "--dont-group-fonts"],
         description = "Disable font grouping (merging similar fonts together)",
@@ -111,7 +110,6 @@ internal class CoreParams(
         order = 80)
     private var downsampleMinSize: Int = 10
 
-    /** If downsampling images, the maximum allowed image density. */
     @Parameter(
         names = ["--max-dpi"],
         description = "Maximum image density in DPI.",

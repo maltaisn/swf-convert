@@ -32,22 +32,22 @@ internal class RenderIrParams : RenderParams<IrConfiguration> {
     override var params = CoreParams(false) { "json" }
 
     @Parameter(
-        names = ["-y-direction"],
+        names = ["--y-direction"],
         description = "Y axis direction: up | down.",
         order = 1000)
-    var yAxisDirectionName = "up"
+    private var yAxisDirectionName = "up"
 
     @Parameter(
         names = ["-p", "--pretty"],
         description = "Pretty print output JSON.",
         order = 1010)
-    var prettyPrint: Boolean = false
+    private var prettyPrint: Boolean = false
 
     @Parameter(
         names = ["--indent-size"],
         description = "Indent size if pretty printing",
         order = 1020)
-    var indentSize: Int = 2
+    private var indentSize: Int = 2
 
     override val yAxisDirection by lazy {
         when (yAxisDirectionName.toLowerCase()) {
