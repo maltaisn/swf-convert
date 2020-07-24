@@ -85,15 +85,14 @@ internal open class ShapeConverter @Inject constructor() {
         this.context = context
         this.shape = shape
 
+        this.transform = transform
+        this.ignoreStyles = ignoreStyles
+        this.currentTransform = currentTransform
+
         this.fillStyles.clear()
         this.lineStyles.clear()
         addFillStyles(fillStyles)
         addLineStyles(lineStyles)
-
-        this.transform = transform
-        this.ignoreStyles = ignoreStyles
-
-        this.currentTransform = currentTransform
 
         fillEdgeMaps.clear()
         lineEdgeMaps.clear()
