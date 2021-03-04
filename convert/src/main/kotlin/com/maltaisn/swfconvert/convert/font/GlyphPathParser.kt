@@ -61,14 +61,16 @@ internal class GlyphPathParser @Inject constructor(
                 // record should have at least a EndShapeRecord (6 x 0 bits) according to the SWF reference.
                 // transform-swf doesn't support those shapes, so it's handled separatedly.
                 emptyList()
-            } else try {
-                // transform-swf lazily decodes glyph data with a [ShapeData] record
-                // that must be decoded later to a shape.
-                val shape = Shape.shapeFromData(shapeData)
-                parseGlyphShape(glyphContext, shape, transform)
-            } catch (e: IOException) {
-                logger.error(e) { "Could not parse glyph shape data at $glyphContext" }
-                emptyList()
+            } else {
+                try {
+                    // transform-swf lazily decodes glyph data with a [ShapeData] record
+                    // that must be decoded later to a shape.
+                    val shape = Shape.shapeFromData(shapeData)
+                    parseGlyphShape(glyphContext, shape, transform)
+                } catch (e: IOException) {
+                    logger.error(e) { "Could not parse glyph shape data at $glyphContext" }
+                    emptyList()
+                }
             }
 
             GlyphData(advance, contours)
