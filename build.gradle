@@ -42,7 +42,11 @@ subprojects {
 
         implementation(Dependencies.LOG4J)
         implementation(Dependencies.LOG4J_CORE)
-        implementation(Dependencies.LOG4J_KOTLIN)
+        implementation(Dependencies.LOG4J_KOTLIN) {
+            // see https://github.com/apache/logging-log4j-kotlin/pull/14
+            // they haven't upgraded to kotlin 1.4 yet and it's causing issues.
+            exclude group: "org.jetbrains.kotlin"
+        }
 
         kapt(Dependencies.DAGGER_COMPILER)
         implementation(Dependencies.DAGGER)
@@ -65,6 +69,7 @@ subprojects {
                         "-Xuse-experimental=kotlin.ExperimentalStdlibApi",
                         "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes",
                         "-Xuse-experimental=kotlin.contracts.ExperimentalContracts",
+                        "-Xuse-experimental=kotlinx.serialization.ExperimentalSerializationApi",
                         "-XXLanguage:+InlineClasses",
                         "-XXLanguage:+NewInference"
                 ]

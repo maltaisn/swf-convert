@@ -11,4 +11,5 @@ dependencies {
     implementation(project(":render:core"))
 
     implementation(Dependencies.SERIALIZATION)
+    implementation(Dependencies.SERIALIZATION_JSON)
 }

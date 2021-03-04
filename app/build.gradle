@@ -17,6 +17,7 @@ dependencies {
     implementation(project(":render:svg"))
 
     implementation(Dependencies.SERIALIZATION)
+    implementation(Dependencies.SERIALIZATION_JSON)
     implementation(Dependencies.JCOMMANDER)
     implementation(Dependencies.IMAGE_SCALING_LIB)
 }

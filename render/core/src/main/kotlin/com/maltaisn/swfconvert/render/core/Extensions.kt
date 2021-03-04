@@ -22,13 +22,13 @@ package com.maltaisn.swfconvert.render.core
  * Returns `true` if answer is yes, `false` if no, otherwise retries until input is valid.
  */
 fun readAffirmativeAnswer(message: String): Boolean {
-    retry@ while (true) {
+    while (true) {
         print(message)
         print(" Retry (Y/N)? ")
         return when (readLine()?.toLowerCase()) {
             "y" -> true
             "n" -> false
-            else -> continue@retry
+            else -> continue
         }
     }
 }

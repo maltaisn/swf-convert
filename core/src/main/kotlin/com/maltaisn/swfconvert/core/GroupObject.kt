@@ -33,12 +33,12 @@ sealed class GroupObject(override val id: Int) : FrameObject {
     override fun toString(): String {
         val sb = StringBuilder()
         sb.append(objects.size)
-        sb.appendln(" objects)")
+        sb.appendLine(" objects)")
         for (obj in objects) {
             val lines = obj.toString().lines()
             for (line in lines) {
                 sb.append("    ")
-                sb.appendln(line)
+                sb.appendLine(line)
             }
         }
         sb.delete(sb.length - System.lineSeparator().length, sb.length)

@@ -216,11 +216,11 @@ internal class FramesRasterizer @Inject constructor(
      */
     private fun extractTextFromGroup(obj: GroupObject): GroupObject {
         val textGroup = obj.copyWithoutObjects()
-        loop@ for (child in obj.objects) {
+        for (child in obj.objects) {
             textGroup.objects += when (child) {
                 is GroupObject -> extractTextFromGroup(child)
                 is TextObject -> child.copy(color = Color.TRANSPARENT)
-                else -> continue@loop
+                else -> continue
             }
         }
         return textGroup

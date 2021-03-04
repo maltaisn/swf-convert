@@ -337,5 +337,4 @@ Other libraries are also used:
 [reference-svg]: https://www.w3.org/TR/SVG/
 [reference-swf]: https://www.adobe.com/content/dam/acom/en/devnet/pdf/swf-file-format-spec.pdf
 [releases-latest]: https://github.com/maltaisn/swf-convert/releases/latest
-[stack-overflow-path-bug]: https://stackoverflow.com/questions/60572635
 [swf-tools]: http://www.swftools.org/

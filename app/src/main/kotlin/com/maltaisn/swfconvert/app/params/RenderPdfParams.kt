@@ -27,7 +27,6 @@ import com.maltaisn.swfconvert.render.pdf.PdfConfiguration
 import com.maltaisn.swfconvert.render.pdf.metadata.PdfMetadata
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import java.io.File
 import java.io.IOException
 import java.text.DecimalFormat
@@ -104,7 +103,7 @@ internal class RenderPdfParams : RenderParams<PdfConfiguration> {
 
         checkNoOptionsInArgs(metadata)
 
-        val json = Json(JsonConfiguration.Stable)
+        val json = Json {}
         return@lazy metadata.map { filename ->
             if (filename == "_") {
                 null
@@ -116,7 +115,7 @@ internal class RenderPdfParams : RenderParams<PdfConfiguration> {
                 }
 
                 try {
-                    json.parse(PdfMetadata.serializer(), file.readText())
+                    json.decodeFromString(PdfMetadata.serializer(), file.readText())
                 } catch (e: SerializationException) {
                     configError("Error while parsing PDF metadata file at '$filename'", e)
                 } catch (e: IOException) {

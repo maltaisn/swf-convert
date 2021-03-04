@@ -35,7 +35,6 @@ import com.maltaisn.swfconvert.render.ir.data.IrRectangle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import java.awt.geom.AffineTransform
 import java.awt.geom.Rectangle2D
 import java.io.File
@@ -47,12 +46,13 @@ internal class IrFrameRenderer @Inject constructor(
 
     suspend fun renderFrame(outputFile: File, frame: FrameGroup) {
         // Serialize the frame group to JSON.
-        val json = Json(JsonConfiguration.Stable.copy(
-            prettyPrint = config.prettyPrint,
-            indent = if (config.prettyPrint) " ".repeat(config.indentSize) else "    ",
-            encodeDefaults = false))
+        val json = Json {
+            prettyPrint = config.prettyPrint
+            prettyPrintIndent = if (config.prettyPrint) " ".repeat(config.indentSize) else "    "
+            encodeDefaults = false
+        }
         val serializableFrame = frame.toSerializable()
-        val frameJson = json.stringify(IrObject.serializer(), serializableFrame)
+        val frameJson = json.encodeToString(IrObject.serializer(), serializableFrame)
 
         // Save output to file.
         withContext(Dispatchers.IO) {
