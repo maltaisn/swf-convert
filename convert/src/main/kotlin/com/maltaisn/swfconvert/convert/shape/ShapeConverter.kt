@@ -68,7 +68,8 @@ internal open class ShapeConverter @Inject constructor() {
     private val lineEdgeMaps = mutableListOf<MutableMap<Int, MutableList<Edge>>>()
     private lateinit var currFillEdgeMap: MutableMap<Int, MutableList<Edge>>
     private lateinit var currLineEdgeMap: MutableMap<Int, MutableList<Edge>>
-    private var coordMap = mutableMapOf<Point, MutableList<Edge>>()
+    private val coordMap = mutableMapOf<Point, MutableList<Edge>>()
+    private val reverseCoordMap = mutableMapOf<Point, MutableList<Edge>>()
     private var numGroups = 0
 
     private val paths = mutableListOf<Path>()
@@ -339,6 +340,7 @@ internal open class ShapeConverter @Inject constructor() {
                 var prevEdge: Edge? = null
                 val tmpPath = mutableListOf<Edge>()
                 createCoordMap(subPath)
+                createReverseCoordMap(subPath)
                 while (subPath.size > 0) {
                     i = 0
                     while (i < subPath.size) {
@@ -346,14 +348,26 @@ internal open class ShapeConverter @Inject constructor() {
                             val edge = subPath.removeAt(i)
                             tmpPath += edge
                             removeEdgeFromCoordMap(edge)
+                            removeEdgeFromReverseCoordMap(edge)
                             prevEdge = edge
                         } else {
                             val edge = coordMap[prevEdge.end]?.firstOrNull()
                             if (edge != null) {
                                 i = subPath.indexOf(edge)
                             } else {
-                                i = 0
-                                prevEdge = null
+                                val revEdge = reverseCoordMap[prevEdge.end]?.firstOrNull()
+                                if (revEdge != null) {
+                                    i = subPath.indexOf(revEdge)
+                                    val r = revEdge.reverseWithNewFillStyle(revEdge.fillStyleIdx)
+                                    coordMap[revEdge.start]?.remove(revEdge)
+                                    coordMap.getOrPut(r.start) { mutableListOf() } += r
+                                    reverseCoordMap[revEdge.end]?.remove(revEdge)
+                                    reverseCoordMap.getOrPut(r.end) { mutableListOf() } += r
+                                    subPath[i] = r
+                                } else {
+                                    i = 0
+                                    prevEdge = null
+                                }
                             }
                         }
                     }
@@ -364,16 +378,32 @@ internal open class ShapeConverter @Inject constructor() {
     }
 
     private fun createCoordMap(path: MutableList<Edge>) {
-        coordMap = mutableMapOf()
+        coordMap.clear()
         for (edge in path) {
             coordMap.getOrPut(edge.start) { mutableListOf() } += edge
+        }
+    }
+
+    private fun createReverseCoordMap(path: MutableList<Edge>) {
+        reverseCoordMap.clear()
+        for (edge in path) {
+            reverseCoordMap.getOrPut(edge.end) { mutableListOf() } += edge
         }
     }
 
     private fun removeEdgeFromCoordMap(edge: Edge) {
         val coordMapList = coordMap[edge.start] ?: return
         if (coordMapList.size == 1) {
-            coordMap.remove(edge.start)
+            coordMap -= edge.start
+        } else {
+            coordMapList -= edge
+        }
+    }
+
+    private fun removeEdgeFromReverseCoordMap(edge: Edge) {
+        val coordMapList = reverseCoordMap[edge.end] ?: return
+        if (coordMapList.size == 1) {
+            reverseCoordMap -= edge.end
         } else {
             coordMapList -= edge
         }

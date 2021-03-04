@@ -1,3 +1,6 @@
+# v0.0.2
+- Fixed wrongly converted path, see #1. Thanks to @jindrapetrik!
+
 # v0.0.1
 - **Initial release**
 - PDF, SVG and IR (intermediate representation, as JSON) output formats.
