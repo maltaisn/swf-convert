@@ -281,6 +281,9 @@ class PdfFrameRenderer @Inject internal constructor(
 
     private fun drawImage(path: Path, imageFill: PathFillStyle.Image) {
         streamWrapper.withState {
+            // Debug clip bounds
+            //drawShape(ShapeObject(0, listOf(path.copy(fillStyle = PathFillStyle.Solid(Color.GREEN)))))
+
             if (imageFill.clip) {
                 clipPath(path)
             }

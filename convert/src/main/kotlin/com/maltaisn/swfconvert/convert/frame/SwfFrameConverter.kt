@@ -294,6 +294,16 @@ internal class SwfFrameConverter @Inject constructor(
     }
 
     private fun createClipGroup(obj: SwfFrameObject, shape: WDefineShape): Boolean {
+        // Add debug clip bounds
+        if (config.drawClipBounds) {
+            val bounds = shape.bounds
+            currentGroup.objects += ShapeObject(shape.identifier,
+                listOf(Path.rectangle(
+                    bounds.minX.toFloat(), bounds.minY.toFloat(),
+                    bounds.width.toFloat(), bounds.height.toFloat(),
+                    lineStyle = config.debugLineStyle)))
+        }
+
         if (config.disableClipping) return false
 
         val place = obj.place
