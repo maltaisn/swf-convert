@@ -82,6 +82,7 @@ internal class StyledShapeConverter @Inject constructor(
 
             val tr = fillStyle.transform.toAffineTransform()
             tr.scale(image.width.toDouble(), image.height.toDouble())
+            tr.preConcatenate(config.bitmapMatrixTransform)
 
             // Create image data
             val density = findImageDensity(image, tr)

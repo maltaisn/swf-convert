@@ -30,6 +30,7 @@ import com.maltaisn.swfconvert.core.text.FontScale
 import com.maltaisn.swfconvert.core.text.GlyphData
 import com.mortennobel.imagescaling.ResampleFilter
 import com.mortennobel.imagescaling.ResampleFilters
+import java.awt.geom.AffineTransform
 import java.io.File
 import java.text.DecimalFormat
 import kotlin.properties.ReadOnlyProperty
@@ -271,6 +272,7 @@ internal class CoreParams(
     private val debugLineColor by dynamicParam("debugLineColor", Color.GREEN, String::toColorOrNull)
     private val fontScale2 by dynamicParam("fontScale2", DEFAULT_FONTSCALE_2, String::toFontScaleOrNull)
     private val fontScale3 by dynamicParam("fontScale3", DEFAULT_FONTSCALE_3, String::toFontScaleOrNull)
+    private val bitmapMatrixOffset by dynamicParam("bitmapMatrixOffset", AffineTransform(), String::toOffsetTransformOrNull)
     private val ignoreGlyphOffsetsThreshold by dynamicParam("ignoreGlyphOffsetsThreshold",
         GlyphData.EM_SQUARE_SIZE / 32f, String::toFloatOrNull)
 
@@ -320,6 +322,7 @@ internal class CoreParams(
                 framePadding,
                 fontScale2,
                 fontScale3,
+                bitmapMatrixOffset,
                 ignoreGlyphOffsetsThreshold,
                 debugLineWidth,
                 debugLineColor)
@@ -372,4 +375,10 @@ private fun String.toFontScaleOrNull(): FontScale? {
     val vals = this.toListOrNull(String::toFloatOrNull)
         ?.takeIf { it.size == 4 } ?: return null
     return FontScale(vals[0], vals[1], vals[2], vals[3])
+}
+
+private fun String.toOffsetTransformOrNull(): AffineTransform? {
+    val vals = this.toListOrNull(String::toDoubleOrNull)
+        ?.takeIf { it.size == 2 } ?: return null
+    return AffineTransform.getTranslateInstance(vals[0], vals[1])
 }

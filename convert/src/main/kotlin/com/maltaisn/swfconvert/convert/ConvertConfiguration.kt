@@ -24,6 +24,7 @@ import com.maltaisn.swfconvert.core.shape.PathLineStyle
 import com.maltaisn.swfconvert.core.text.FontScale
 import com.mortennobel.imagescaling.ResampleFilter
 import java.awt.BasicStroke
+import java.awt.geom.AffineTransform
 import java.io.File
 
 /**
@@ -132,8 +133,11 @@ data class ConvertConfiguration(
 
     /** Font scale options for DefineFont2 tag. */
     val fontScale2: FontScale,
-    /** FOnt scale options for DefineFont3 tag. */
+    /** Font scale options for DefineFont3 tag. */
     val fontScale3: FontScale,
+
+    /** Preconcatenated transform on bitmap fill matrix, see issue #2. */
+    val bitmapMatrixTransform: AffineTransform,
 
     /**
      * If all glyph offsets are under this threshold, they are ignored.
