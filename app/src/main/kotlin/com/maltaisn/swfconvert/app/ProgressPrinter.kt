@@ -65,6 +65,9 @@ internal class ProgressPrinter(val silent: Boolean) : ProgressCallback {
     override fun endProgress() {
         checkProgressShown()
         progressShown = false
+        if (!silent) {
+            print(" ".repeat(100) + '\r')  // erase progress bar
+        }
         updateLine()
         this.total = -1
         progress.set(0)

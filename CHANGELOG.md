@@ -1,3 +1,7 @@
+# v0.0.3
+- Fixed `-DdrawClipBounds` not actually implemented.
+- Fixed NPE due to input file with null parent.
+
 # v0.0.2
 - Fixed wrongly converted path, see #1. Thanks to @jindrapetrik!
 

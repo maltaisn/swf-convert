@@ -253,7 +253,7 @@ internal class CoreParams(
     }
 
     fun getTempDirForInput(input: List<File>) =
-        File(tempDir ?: input.first().parent)
+        File(tempDir ?: input.first().parent ?: ".")
 
     private val parallelSwfDecoding by dynamicParam("parallelSwfDecoding", false, String::toBooleanOrNull)
     private val parallelSwfConversion by dynamicParam("parallelSwfConversion", false, String::toBooleanOrNull)

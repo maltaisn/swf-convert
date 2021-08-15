@@ -47,7 +47,7 @@ internal class MainParams {
     @Parameter(
         names = ["-s", "--silent"],
         description = "Don't display conversion progress",
-        order = 20)
+        order = 1030)
     var silent: Boolean = false
 
     val logLevel: Level by lazy {
