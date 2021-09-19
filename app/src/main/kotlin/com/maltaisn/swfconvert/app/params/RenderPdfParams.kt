@@ -52,6 +52,7 @@ internal class RenderPdfParams : RenderParams<PdfConfiguration> {
         names = ["--metadata"],
         variableArity = true,
         description = "JSON files containing metadata to set on PDF files.",
+        splitter = NoSplitter::class,
         order = 1100)
     private var metadata: List<String> = emptyList()
 

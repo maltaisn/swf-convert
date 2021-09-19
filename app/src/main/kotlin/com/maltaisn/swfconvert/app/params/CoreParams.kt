@@ -54,6 +54,7 @@ internal class CoreParams(
         names = ["-o", "--output"],
         variableArity = true,
         description = "Output files or directories.",
+        splitter = NoSplitter::class,
         order = 0)
     private var output: List<String> = mutableListOf()
 

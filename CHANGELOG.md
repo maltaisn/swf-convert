@@ -1,6 +1,8 @@
 # v0.0.3
+- Added `-DbitmapMatrixOffset=[x,y]` option.
 - Fixed `-DdrawClipBounds` not actually implemented.
 - Fixed NPE due to input file with null parent.
+- Fixed commas in filename counting as separate arguments for `-o` and `--metadata` options.
 
 # v0.0.2
 - Fixed wrongly converted path, see #1. Thanks to @jindrapetrik!
