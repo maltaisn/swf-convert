@@ -26,6 +26,7 @@ import com.flagstone.transform.Remove
 import com.flagstone.transform.Remove2
 import com.flagstone.transform.ShowFrame
 import com.flagstone.transform.movieclip.DefineMovieClip
+import com.maltaisn.swfconvert.convert.ConvertConfiguration
 import com.maltaisn.swfconvert.convert.context.SwfFileContext
 import com.maltaisn.swfconvert.convert.context.SwfObjectContext
 import com.maltaisn.swfconvert.convert.conversionError
@@ -35,14 +36,18 @@ import com.maltaisn.swfconvert.convert.frame.data.SwfObject
 import com.maltaisn.swfconvert.convert.frame.data.SwfSprite
 import com.maltaisn.swfconvert.convert.wrapper.WPlace
 import com.maltaisn.swfconvert.convert.wrapper.toPlaceWrapperOrNull
+import com.maltaisn.swfconvert.core.Units
 import org.apache.logging.log4j.kotlin.logger
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
 /**
  * Creates a list of [SwfFrame] from a [Movie] instance by placing and removing objects from the
  * SWF display list and creating frames when a ShowFrame tag is used.
  */
-internal class SwfFrameBuilder @Inject constructor() {
+internal class SwfFrameBuilder @Inject constructor(
+    private val config: ConvertConfiguration,
+) {
 
     private val logger = logger()
 
@@ -72,14 +77,19 @@ internal class SwfFrameBuilder @Inject constructor() {
             .filterIsInstance<DefineTag>()
             .associateBy { it.identifier }
 
-        // Find frame dimensions
         val header = swf.objects.filterIsInstance<MovieHeader>().first()
-        width = header.frameSize.width
-        height = header.frameSize.height
+        if (config.frameSize != null) {
+            width = (config.frameSize[0] / Units.TWIPS_TO_INCH).roundToInt()
+            height = (config.frameSize[1] / Units.TWIPS_TO_INCH).roundToInt()
+        } else {
+            // Find frame dimensions
+            width = header.frameSize.width
+            height = header.frameSize.height
+        }
 
         // Create the frames
         val frames = createFramesForTags(swf.objects, false)
-        if (frames.size != header.frameCount) {
+        if (frames.size != header.frameCount && !config.recursiveFrames) {
             logger.warn {
                 "Frames count mismatch between header and content: " +
                         "expected ${header.frameCount}, found ${frames.size}."
@@ -96,11 +106,24 @@ internal class SwfFrameBuilder @Inject constructor() {
      */
     private fun createFramesForTags(tags: List<MovieTag>, isSprite: Boolean): List<SwfFrame> {
         val frames = mutableListOf<SwfFrame>()
+        var hasSpriteFrames = false
         val displayList = DisplayList()
         for (tag in tags) {
             val place = tag.toPlaceWrapperOrNull()
             when {
-                place != null -> displayList.addCharacter(place)
+                place != null -> {
+                    val spriteFrames = displayList.addCharacter(place)
+                    if (spriteFrames.isNotEmpty()) {  // implies config.recursiveFrames
+                        // Create frame at this level for the sprite frames.
+                        // This involve copying the current display list and adding the sprite objects on top.
+                        for (frame in spriteFrames) {
+                            val frameDisplayList = DisplayList(displayList)
+                            frameDisplayList.putAll(frame.objects.associateBy { it.place.depth })
+                            frames += frameDisplayList.createFrame()
+                        }
+                        hasSpriteFrames = true
+                    }
+                }
                 tag is Remove -> {
                     val id = displayList.removeCharacter(tag.layer).id
                     if (id != tag.identifier) {
@@ -109,17 +132,17 @@ internal class SwfFrameBuilder @Inject constructor() {
                     }
                 }
                 tag is Remove2 -> displayList.removeCharacter(tag.layer)
-                tag is ShowFrame -> {
+                tag is ShowFrame && !hasSpriteFrames -> {
                     frames += displayList.createFrame()
-                    if (isSprite) {
-                        // Sprite could have many frames but that wouldn't make sense in our static context.
+                    if (isSprite && !config.recursiveFrames) {
+                        // Not parsing multiple frames in sprites, single frame has been produced so stop here.
                         return frames
                     }
                 }
             }
         }
 
-        if (isSprite && displayList.isNotEmpty()) {
+        if (isSprite && displayList.isNotEmpty() && frames.isEmpty()) {
             // Non-empty sprite had no ShowFrame tag, still create a single frame for it.
             frames += displayList.createFrame()
         }
@@ -127,7 +150,7 @@ internal class SwfFrameBuilder @Inject constructor() {
         return frames
     }
 
-    private fun DisplayList.addCharacter(place: WPlace) {
+    private fun DisplayList.addCharacter(place: WPlace): List<SwfFrame> {
         val id = place.identifier
         val context = SwfObjectContext(swfContext, idStack + id)
 
@@ -138,19 +161,22 @@ internal class SwfFrameBuilder @Inject constructor() {
         val tag = dictionary[place.identifier]
             ?: conversionError(context, "Unknown character ID $id")
 
-        this[place.depth] = if (tag is DefineMovieClip) {
+        return if (tag is DefineMovieClip) {
             // DefineSprite.
             val spriteFrames = createFramesForTags(tag.objects, true)
-            if (spriteFrames.size > 1) {
-                // Multiple frames in a sprite don't really make sense in this context.
-                logger.warn { "Found ${spriteFrames.size} frames in sprite at $context, using only first." }
+            if (config.recursiveFrames) {
+                // Sprite has multiple frames, bring them to parent level.
+                spriteFrames
+            } else {
+                // Single frame, or not parsing frames recursively
+                this[place.depth] = SwfSprite(context, id, place, tag, spriteFrames.first().objects)
+                emptyList()
             }
-            val spriteFrame = spriteFrames.firstOrNull() ?: return
-            SwfSprite(context, id, place, tag, spriteFrame.objects)
 
         } else {
             // Add the character to the display list.
-            SwfObject(context, id, place, tag)
+            this[place.depth] = SwfObject(context, id, place, tag)
+            emptyList()
         }
     }
 

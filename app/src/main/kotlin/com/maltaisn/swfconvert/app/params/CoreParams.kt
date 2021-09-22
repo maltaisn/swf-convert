@@ -209,12 +209,15 @@ internal class CoreParams(
         val input = inputFileCollections
         val outputFilenames = if (output.isEmpty()) {
             // Use same directory as input collections
-            input.map { it.first().parent }
+            input.mapNotNull { it.first().absoluteFile.parent }
         } else {
             configError(output.size == input.size) {
                 "Expected as many output files or directories as input."
             }
             output
+        }
+        configError(outputFilenames.isNotEmpty()) {
+            "Could not find output file path"
         }
 
         val outputExtension = outputExtensionProvider()
@@ -254,7 +257,7 @@ internal class CoreParams(
     }
 
     fun getTempDirForInput(input: List<File>) =
-        File(tempDir ?: input.first().parent ?: ".")
+        File(tempDir ?: input.first().absoluteFile.parent ?: ".")
 
     private val parallelSwfDecoding by dynamicParam("parallelSwfDecoding", false, String::toBooleanOrNull)
     private val parallelSwfConversion by dynamicParam("parallelSwfConversion", false, String::toBooleanOrNull)
@@ -273,9 +276,11 @@ internal class CoreParams(
     private val debugLineColor by dynamicParam("debugLineColor", Color.GREEN, String::toColorOrNull)
     private val fontScale2 by dynamicParam("fontScale2", DEFAULT_FONTSCALE_2, String::toFontScaleOrNull)
     private val fontScale3 by dynamicParam("fontScale3", DEFAULT_FONTSCALE_3, String::toFontScaleOrNull)
+    private val frameSize by dynamicParam("frameSize", null) { toListOrNull(String::toFloatOrNull)?.takeIf { it.size == 2 } }
     private val bitmapMatrixOffset by dynamicParam("bitmapMatrixOffset", AffineTransform(), String::toOffsetTransformOrNull)
     private val ignoreGlyphOffsetsThreshold by dynamicParam("ignoreGlyphOffsetsThreshold",
         GlyphData.EM_SQUARE_SIZE / 32f, String::toFloatOrNull)
+    private val recursiveFrames by dynamicParam("recursiveFrames", false, String::toBooleanOrNull)
 
     private fun <T> dynamicParam(
         name: String,
@@ -323,8 +328,10 @@ internal class CoreParams(
                 framePadding,
                 fontScale2,
                 fontScale3,
+                frameSize,
                 bitmapMatrixOffset,
                 ignoreGlyphOffsetsThreshold,
+                recursiveFrames,
                 debugLineWidth,
                 debugLineColor)
         }

@@ -184,8 +184,12 @@ For use in place of `[output options]` in the above command.
 enclosed in brackets.
     - `-DfontScale2=[<sx>,<sy>,<usx>,<usy>]`: for DefineFont2 tags.
     - `-DfontScale3=[<sx>,<sy>,<usx>,<usy>]`: for DefineFont3 tags.
-- `-DignoreGlyphOffsetsThreshold=<threshold>`: threshold under which custom glyph advances are ignore for DefineText 
+- `-DframeSize=[<width>,<height>]`: if set, overrides frame size defined in SWF, for all frames. Dimensions are in inches.
+- `-DbitmapMatrixOffset`: additional offset to use for bitmap fill matrix on shape tags. Default is [0, 0].
+- `-DignoreGlyphOffsetsThreshold=<threshold>`: threshold under which custom glyph advances are ignore for DefineText
 tags, in glyph space units (1 em = 1024 glyph space units). Used to reduce output file size. Default is 32.
+- `-DrecursiveFrames`: if set, frames contained in sprites become top-level frames, recursively.
+    Otherwise, only top-level frames are used (default).
 
 Keep in mind that these options are meant for advanced use or for debugging purposes. Otherwise common uses include:
 - `-DignoreGlyphOffsetsThreshold=0`: keep all original glyph advances.

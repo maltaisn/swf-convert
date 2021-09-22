@@ -136,6 +136,9 @@ data class ConvertConfiguration(
     /** Font scale options for DefineFont3 tag. */
     val fontScale3: FontScale,
 
+    /** If not null, overrides frame size defined in swf, for all frames. Dimensions in are in inches. */
+    val frameSize: List<Float>?,
+
     /** Preconcatenated transform on bitmap fill matrix, see issue #2. */
     val bitmapMatrixTransform: AffineTransform,
 
@@ -145,6 +148,13 @@ data class ConvertConfiguration(
      * Value is in glyph space units.
      */
     val ignoreGlyphOffsetsThreshold: Float,
+
+    /**
+     * Whether to create frames recursively from sprites. If false, then the place list is only parse
+     * for ShowFrame tags at the top level, not at the sprite level. If true, then frames contained
+     * in sprites will be used and brought to the top level, recursively.
+     */
+    val recursiveFrames: Boolean,
 
     // Debug line style options
     val debugLineWidth: Float,

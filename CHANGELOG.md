@@ -1,7 +1,10 @@
 # v0.0.3
 - Added `-DbitmapMatrixOffset=[x,y]` option.
+- Added `-DrecursiveFrames` option to parse multiple frames in sprites, recursively.
+- Added `-DframeSize=[w,h]` option to manually override frame dimensions.
 - Fixed `-DdrawClipBounds` not actually implemented.
 - Fixed NPE due to input file with null parent.
+- Fixed NPE when output file is not specified.
 - Fixed commas in filename counting as separate arguments for `-o` and `--metadata` options.
 
 # v0.0.2
