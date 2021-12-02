@@ -151,12 +151,14 @@ internal class CoreParams(
         checkNoOptionsInArgs(input)
 
         val collections = mutableListOf<List<File>>()
+        var onlyFiles = true
         for (filename in input) {
             val file = File(filename)
             configError(file.exists()) { "Input file '$filename' doesn't exist." }
 
             collections += if (file.isDirectory) {
                 // File is directory, create collection for its content
+                onlyFiles = false
                 val collection = file.listFiles()!!.filterTo(mutableListOf()) { it.isSwfFile() }
                 collection.sortByFileName()
                 configError(collection.isNotEmpty()) { "Input folder '$filename' has no SWF files." }
@@ -169,7 +171,13 @@ internal class CoreParams(
             }
         }
 
-        collections
+        if (onlyFiles && output.size == 1 && singleFileOutput) {
+            // Output file format creates a single file from multiple input files, and user has specify
+            // multiple SWF files but a single output. Return a single file collection.
+            listOf(collections.flatten())
+        } else {
+            collections
+        }
     }
 
     private val downsampleFilter: ResampleFilter?
