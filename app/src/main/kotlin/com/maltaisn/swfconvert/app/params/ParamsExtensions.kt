@@ -41,9 +41,9 @@ internal fun checkNoOptionsInArgs(args: List<String>) {
     configError("Unknown option '$unknown'.")
 }
 
-internal fun File.isSwfFile() = this.extension.toLowerCase() == "swf"
+internal fun File.isSwfFile() = this.extension.lowercase() == "swf"
 
-internal fun String.toBooleanOrNull() = when (this.toLowerCase()) {
+internal fun String.toBooleanOrNull() = when (this.lowercase()) {
     "true" -> true
     "false" -> false
     else -> null

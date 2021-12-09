@@ -1,8 +1,8 @@
 import com.maltaisn.swfconvert.build.Dependencies
 
 plugins {
-    id("kotlin")
-    id("kotlin-kapt")
+    id("org.jetbrains.kotlin.jvm")
+    id("org.jetbrains.kotlin.kapt")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 

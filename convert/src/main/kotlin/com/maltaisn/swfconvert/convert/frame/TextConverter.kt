@@ -169,7 +169,7 @@ internal class TextConverter @Inject constructor(
 
         // Although not very clear from SWF specification, drawing text actually changes the
         // X offset. So change the X offset by the sum of all glyph advances.
-        offsetX += glyphIndices.sumBy { it.advance } / fontScale.unscaleX
+        offsetX += glyphIndices.sumOf { it.advance } / fontScale.unscaleX
 
         // Fold and trim whitespace in text
         foldRepeatedWhitespaceInGlyphIndices(glyphIndices)

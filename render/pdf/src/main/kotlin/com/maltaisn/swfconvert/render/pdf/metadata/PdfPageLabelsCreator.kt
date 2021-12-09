@@ -134,8 +134,8 @@ internal class PdfPageLabelsCreator @Inject constructor(
     private fun String.romanNumberToIntOrNull(): Int? {
         var n = 0
         for ((i, c) in this.withIndex()) {
-            val v = ROMAN_VALUES[c.toUpperCase()] ?: return null
-            if (i == this.length - 1 || v >= ROMAN_VALUES[this[i + 1].toUpperCase()] ?: return null) {
+            val v = ROMAN_VALUES[c.uppercaseChar()] ?: return null
+            if (i == this.length - 1 || v >= (ROMAN_VALUES[this[i + 1].uppercaseChar()] ?: return null)) {
                 n += v
             } else {
                 n -= v
@@ -146,13 +146,13 @@ internal class PdfPageLabelsCreator @Inject constructor(
 
     private fun String.lettersNumberToIntOrNull(): Int? {
         val c = this[0]
-        if (c.toUpperCase() !in 'A'..'Z' && !this.all { it == c }) {
+        if (c.uppercaseChar() !in 'A'..'Z' && !this.all { it == c }) {
             return null
         }
-        return (c.toUpperCase() - 'A' + 1) * this.length
+        return (c.uppercaseChar() - 'A' + 1) * this.length
     }
 
-    private fun String.isUppercase() = (this.toUpperCase() == this)
+    private fun String.isUppercase() = (this.uppercase() == this)
 
     companion object {
         private val ROMAN_VALUES = mapOf('I' to 1, 'V' to 5, 'X' to 10, 'L' to 50, 'C' to 100, 'D' to 500, 'M' to 1000)

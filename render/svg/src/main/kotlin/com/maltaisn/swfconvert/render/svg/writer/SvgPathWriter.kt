@@ -146,8 +146,8 @@ internal class SvgPathWriter(
             return
         }
 
-        val absCommand = command.toUpperCase()
-        val relCommand = command.toLowerCase()
+        val absCommand = command.uppercaseChar()
+        val relCommand = command.lowercaseChar()
 
         absoluteSb.clear()
         absoluteSb.appendOptimizedCommand(absCommand, absoluteValues)

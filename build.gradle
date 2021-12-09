@@ -2,8 +2,8 @@ import com.maltaisn.swfconvert.build.Dependencies
 
 buildscript {
     repositories {
-        jcenter()
         mavenCentral()
+        gradlePluginPortal()
     }
     dependencies {
         classpath(Dependencies.GRADLE_KOTLIN)
@@ -14,15 +14,15 @@ buildscript {
 
 plugins {
     id("base")
-    id("io.gitlab.arturbosch.detekt") version "1.16.0-RC3"
+    id("io.gitlab.arturbosch.detekt") version "1.19.0"
 }
 
 subprojects {
     apply(plugin: "java")
     apply(plugin: "io.gitlab.arturbosch.detekt")
+    apply plugin: "org.jetbrains.kotlin.plugin.serialization"
 
     repositories {
-        jcenter()
         mavenCentral()
     }
 
@@ -65,12 +65,10 @@ subprojects {
             kotlinOptions {
                 jvmTarget = "1.8"
                 freeCompilerArgs += [
-                        "-Xuse-experimental=kotlin.Experimental",
-                        "-Xuse-experimental=kotlin.ExperimentalStdlibApi",
-                        "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes",
-                        "-Xuse-experimental=kotlin.contracts.ExperimentalContracts",
-                        "-Xuse-experimental=kotlinx.serialization.ExperimentalSerializationApi",
-                        "-XXLanguage:+InlineClasses",
+                        "-opt-in=kotlin.Experimental",
+                        "-opt-in=kotlin.ExperimentalUnsignedTypes",
+                        "-opt-in=kotlin.contracts.ExperimentalContracts",
+                        "-opt-in=kotlinx.serialization.ExperimentalSerializationApi",
                         "-XXLanguage:+NewInference"
                 ]
             }
@@ -83,7 +81,6 @@ tasks.clean {
 }
 
 detekt {
-    failFast = true
     buildUponDefaultConfig = true
     parallel = true
     config = rootProject.files("config/detekt/detekt.yml")

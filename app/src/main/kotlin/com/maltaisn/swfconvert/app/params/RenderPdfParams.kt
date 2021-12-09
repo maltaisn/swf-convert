@@ -111,7 +111,7 @@ internal class RenderPdfParams : RenderParams<PdfConfiguration> {
             } else {
                 val file = File(filename)
                 configError(file.exists()) { "PDF metadata file '$filename' doesn't exist." }
-                configError(file.extension.toLowerCase() == "json") {
+                configError(file.extension.lowercase() == "json") {
                     "PDF metadata file '$filename' is not a JSON file."
                 }
 
@@ -175,7 +175,7 @@ internal class RenderPdfParams : RenderParams<PdfConfiguration> {
                 |  Rasterization threshold : ${NUMBER_FMT.format(rasterizationThreshold)}
                 |  Rasterization DPI : ${NUMBER_FMT.format(rasterizationDpi)}
                 |  Rasterization JPEG quality: $rasterizationJpegQuality %
-                |  Rasterization format : ${rasterizationFormat.name.toLowerCase()}
+                |  Rasterization format : ${rasterizationFormat.name.lowercase()}
             """.trimMargin())
         }
     }

@@ -105,7 +105,7 @@ internal class SvgFrameDefsCreator @Inject constructor(
 
     private fun createPathDefs(path: Path) {
         when (val fill = path.fillStyle) {
-            is PathFillStyle.Solid -> Unit
+            is PathFillStyle.Solid, null -> Unit
             is PathFillStyle.Image -> createImageDefs(path, fill)
             is PathFillStyle.Gradient -> createDef(FrameDef.GradientDef(fill))
         }

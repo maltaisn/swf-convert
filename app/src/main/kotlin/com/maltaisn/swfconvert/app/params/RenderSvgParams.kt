@@ -91,14 +91,14 @@ internal class RenderSvgParams : RenderParams<SvgConfiguration> {
         get() = YAxisDirection.DOWN
 
     private val imagesMode: SvgImagesMode
-        get() = when (imagesModeName.toLowerCase()) {
+        get() = when (imagesModeName.lowercase()) {
             MODE_EXTERNAL -> SvgImagesMode.EXTERNAL
             MODE_BASE64 -> SvgImagesMode.BASE64
             else -> configError("Unknown images mode '$imagesModeName'.")
         }
 
     private val fontsMode: SvgFontsMode
-        get() = when (fontsModeName.toLowerCase()) {
+        get() = when (fontsModeName.lowercase()) {
             MODE_EXTERNAL -> SvgFontsMode.EXTERNAL
             MODE_BASE64 -> SvgFontsMode.BASE64
             MODE_NONE -> SvgFontsMode.NONE
@@ -143,8 +143,8 @@ internal class RenderSvgParams : RenderParams<SvgConfiguration> {
             |  Transform precision: $transformPrecision
             |  Percent precision: $percentPrecision
             |Output prolog: ${!noProlog}
-            |Images mode: ${imagesModeName.toLowerCase()}
-            |Fonts mode: ${fontsModeName.toLowerCase()}
+            |Images mode: ${imagesModeName.lowercase()}
+            |Fonts mode: ${fontsModeName.lowercase()}
         """.trimMargin())
     }
 

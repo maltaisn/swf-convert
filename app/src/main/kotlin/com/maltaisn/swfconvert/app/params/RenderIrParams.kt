@@ -50,7 +50,7 @@ internal class RenderIrParams : RenderParams<IrConfiguration> {
     private var indentSize: Int = 2
 
     override val yAxisDirection by lazy {
-        when (yAxisDirectionName.toLowerCase()) {
+        when (yAxisDirectionName.lowercase()) {
             "up" -> YAxisDirection.UP
             "down" -> YAxisDirection.DOWN
             else -> configError("Invalid Y axis direction '$yAxisDirectionName'.")
@@ -72,7 +72,7 @@ internal class RenderIrParams : RenderParams<IrConfiguration> {
 
     override fun print() {
         println("""
-            |Y axis direction: ${yAxisDirection.name.toLowerCase()}
+            |Y axis direction: ${yAxisDirection.name.lowercase()}
             |Pretty print JSON: $prettyPrint
         """.trimMargin())
     }

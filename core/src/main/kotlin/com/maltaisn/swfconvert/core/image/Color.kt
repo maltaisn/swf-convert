@@ -22,7 +22,8 @@ import com.maltaisn.swfconvert.core.toHexString
 /**
  * Inline color class, stored in ARGB format.
  */
-inline class Color(val value: Int) {
+@JvmInline
+value class Color(val value: Int) {
 
     /**
      * Create a color from [red][r], [green][g], [blue][b] and optionally [alpha][a] component values.

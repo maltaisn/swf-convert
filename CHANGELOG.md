@@ -2,6 +2,7 @@
 - Added `-DbitmapMatrixOffset=[x,y]` option.
 - Added `-DrecursiveFrames` option to parse multiple frames in sprites, recursively.
 - Added `-DframeSize=[w,h]` option to manually override frame dimensions.
+- Allow single output file when multiple input files are provided with PDF format (#5).
 - Fixed `-DdrawClipBounds` not actually implemented.
 - Fixed NPE due to input file with null parent.
 - Fixed NPE when output file is not specified.

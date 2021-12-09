@@ -246,7 +246,7 @@ class PdfFrameRenderer @Inject internal constructor(
 
             // Draw fill if needed
             when (fill) {
-                is PathFillStyle.Solid -> Unit
+                is PathFillStyle.Solid, null -> Unit
                 is PathFillStyle.Image -> drawImage(path, fill)
                 is PathFillStyle.Gradient -> drawGradient(path, fill)
             }
@@ -422,7 +422,7 @@ class PdfFrameRenderer @Inject internal constructor(
      * as a single object. Masked and other blend groups count as 1 since they use a
      * transparency group already.
      */
-    private fun countGroupBlendableChildren(group: GroupObject): Int = group.objects.sumBy {
+    private fun countGroupBlendableChildren(group: GroupObject): Int = group.objects.sumOf {
         when (it) {
             is GroupObject.Masked, is GroupObject.Blend -> 1
             is GroupObject -> countGroupBlendableChildren(it)

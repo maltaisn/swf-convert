@@ -324,7 +324,7 @@ internal class SvgFrameRenderer @Inject constructor(
 
         // Draw fill if needed
         when (fill) {
-            is PathFillStyle.Solid -> Unit
+            is PathFillStyle.Solid, null -> Unit
             is PathFillStyle.Image -> drawImage(path, fill)
             is PathFillStyle.Gradient -> drawGradient(path, fill)
         }

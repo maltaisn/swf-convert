@@ -1,8 +1,8 @@
 import com.maltaisn.swfconvert.build.Dependencies
 
 plugins {
-    id("kotlin")
-    id("kotlin-kapt")
+    id("org.jetbrains.kotlin.jvm")
+    id("org.jetbrains.kotlin.kapt")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("com.github.breadmoirai.github-release")
 }
@@ -17,7 +17,6 @@ dependencies {
     implementation(project(":render:svg"))
 
     implementation(Dependencies.SERIALIZATION)
-    implementation(Dependencies.SERIALIZATION_JSON)
     implementation(Dependencies.JCOMMANDER)
     implementation(Dependencies.IMAGE_SCALING_LIB)
 }

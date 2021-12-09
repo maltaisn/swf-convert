@@ -215,7 +215,7 @@ internal class FontConverter @Inject constructor(
             nextUnknownCharCode++
             logger.debug {
                 "Duplicate or invalid char code 0x${code.toCharHex()}, " +
-                        "reassigned to 0x${char.toInt().toCharHex()} (for $data)"
+                        "reassigned to 0x${char.code.toCharHex()} (for $data)"
             }
         }
 
@@ -287,7 +287,7 @@ internal class FontConverter @Inject constructor(
 
     private fun getUniqueFontName(font: BaseFont, index: Int, assigned: Set<String>) = if (config.keepFontNames) {
         // Derive font name from name used in SWF.
-        var name = font.name.replace(' ', '-').toLowerCase().ifEmpty {
+        var name = font.name.replace(' ', '-').lowercase().ifEmpty {
             // No font name assigned, use index.
             index.toString()
         }

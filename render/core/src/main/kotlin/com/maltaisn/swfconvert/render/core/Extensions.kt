@@ -25,7 +25,7 @@ fun readAffirmativeAnswer(message: String): Boolean {
     while (true) {
         print(message)
         print(" Retry (Y/N)? ")
-        return when (readLine()?.toLowerCase()) {
+        return when (readLine()?.lowercase()) {
             "y" -> true
             "n" -> false
             else -> continue

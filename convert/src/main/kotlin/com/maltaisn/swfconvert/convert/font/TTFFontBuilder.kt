@@ -92,7 +92,7 @@ internal class TTFFontBuilder @Inject constructor(
     private fun createFontGlyphs(font: BaseFont) {
         // Add glyphs to typeface
         for (glyph in font.glyphs) {
-            val code = glyph.char.toLong()
+            val code = glyph.char.code.toLong()
             val data = glyph.data
             doubletypeEngine.checkUnicodeBlock(code)
             val glyphFile = doubletypeEngine.addNewGlyph(code)

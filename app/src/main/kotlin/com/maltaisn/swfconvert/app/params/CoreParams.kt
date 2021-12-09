@@ -181,7 +181,7 @@ internal class CoreParams(
     }
 
     private val downsampleFilter: ResampleFilter?
-        get() = when (downsampleFilterName.toLowerCase()) {
+        get() = when (downsampleFilterName.lowercase()) {
             "fast" -> null
             "bell" -> ResampleFilters.getBellFilter()
             "bicubic" -> ResampleFilters.getBiCubicFilter()
@@ -355,14 +355,14 @@ internal class CoreParams(
             """.trimMargin())
         if (downsampleImages) {
             println("""
-                |  Downsample filter: ${downsampleFilterName.toLowerCase()}
+                |  Downsample filter: ${downsampleFilterName.lowercase()}
                 |  Downsample min size: ${NUMBER_FMT.format(downsampleMinSize)} px
             """.trimMargin())
         }
         println("""
             |Max DPI: ${NUMBER_FMT.format(maxDpi)}
             |JPEG quality: $jpegQuality %
-            |Image format: ${imageFormatName.toLowerCase()}
+            |Image format: ${imageFormatName.lowercase()}
         """.trimMargin())
     }
 

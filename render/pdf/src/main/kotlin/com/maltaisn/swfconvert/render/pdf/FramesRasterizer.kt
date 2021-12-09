@@ -112,16 +112,16 @@ internal class FramesRasterizer @Inject constructor(
      * Method to evaluate arbitrary shape complexity of a frame [obj].
      */
     private fun evaluateShapeComplexity(obj: FrameObject): Int = when (obj) {
-        is GroupObject -> obj.objects.sumBy { evaluateShapeComplexity(it) }
+        is GroupObject -> obj.objects.sumOf { evaluateShapeComplexity(it) }
         is TextObject -> {
             // Text will still be drawn no matter what so it has no influence.
             0
         }
-        is ShapeObject -> obj.paths.sumBy {
+        is ShapeObject -> obj.paths.sumOf {
             when (it.fillStyle) {
                 null -> 0
                 is PathFillStyle.Image -> IMAGE_COMPLEXITY
-                else -> it.elements.sumBy { element ->
+                else -> it.elements.sumOf { element ->
                     when (element) {
                         is MoveTo -> MOVE_TO_COMPLEXITY
                         is LineTo -> LINE_TO_COMPLEXITY
