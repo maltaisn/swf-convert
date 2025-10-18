@@ -104,6 +104,7 @@ internal class SwfFrameBuilder @Inject constructor(
      * on the display list, a frame will be created even if there's no [ShowFrame] tag.
      * A maximum of one frame is also created.
      */
+    @Suppress("ComplexMethod", "NestedBlockDepth")
     private fun createFramesForTags(tags: List<MovieTag>, isSprite: Boolean): List<SwfFrame> {
         val frames = mutableListOf<SwfFrame>()
         var hasSpriteFrames = false

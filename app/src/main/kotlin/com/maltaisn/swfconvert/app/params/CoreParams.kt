@@ -284,8 +284,14 @@ internal class CoreParams(
     private val debugLineColor by dynamicParam("debugLineColor", Color.GREEN, String::toColorOrNull)
     private val fontScale2 by dynamicParam("fontScale2", DEFAULT_FONTSCALE_2, String::toFontScaleOrNull)
     private val fontScale3 by dynamicParam("fontScale3", DEFAULT_FONTSCALE_3, String::toFontScaleOrNull)
-    private val frameSize by dynamicParam("frameSize", null) { toListOrNull(String::toFloatOrNull)?.takeIf { it.size == 2 } }
-    private val bitmapMatrixOffset by dynamicParam("bitmapMatrixOffset", AffineTransform(), String::toOffsetTransformOrNull)
+    private val frameSize by dynamicParam("frameSize", null) {
+        toListOrNull(String::toFloatOrNull)?.takeIf { it.size == 2 }
+    }
+    private val bitmapMatrixOffset by dynamicParam(
+        "bitmapMatrixOffset",
+        AffineTransform(),
+        String::toOffsetTransformOrNull
+    )
     private val ignoreGlyphOffsetsThreshold by dynamicParam("ignoreGlyphOffsetsThreshold",
         GlyphData.EM_SQUARE_SIZE / 32f, String::toFloatOrNull)
     private val recursiveFrames by dynamicParam("recursiveFrames", false, String::toBooleanOrNull)

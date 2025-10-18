@@ -66,7 +66,7 @@ internal class ProgressPrinter(val silent: Boolean) : ProgressCallback {
         checkProgressShown()
         progressShown = false
         if (!silent) {
-            print(" ".repeat(100) + '\r')  // erase progress bar
+            print(" ".repeat(ERASE_LENGTH) + '\r')
         }
         updateLine()
         this.total = -1
@@ -117,6 +117,7 @@ internal class ProgressPrinter(val silent: Boolean) : ProgressCallback {
 
     companion object {
         private const val PROGRESS_BAR_SIZE = 30
+        private const val ERASE_LENGTH = 100
     }
 
 }
