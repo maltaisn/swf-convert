@@ -177,9 +177,25 @@ internal class SvgFrameRenderer @Inject constructor(
     }
 
     private fun writeGradientDef(def: FrameDef.GradientDef) {
-        val stops = def.gradient.colors.map {
-            SvgGradientStop(it.ratio, it.color.opaque, it.color.floatA)
+        val colors = def.gradient.colors
+        require(colors.isNotEmpty()) { "Gradient must have at least one color" }
+
+        val firstRatio = colors.first().ratio
+        val lastRatio = colors.last().ratio
+        val ratioRange = lastRatio - firstRatio
+
+        val stops = if (ratioRange > 0f) {
+            colors.map {
+                val normalizedRatio = (it.ratio - firstRatio) / ratioRange
+                SvgGradientStop(normalizedRatio, it.color.opaque, it.color.floatA)
+            }
+        } else {
+            listOf(
+                SvgGradientStop(0f, colors.first().color.opaque, colors.first().color.floatA),
+                SvgGradientStop(1f, colors.last().color.opaque, colors.last().color.floatA)
+            )
         }
+
         svg.linearGradient(stops, SvgGradientUnits.USER_SPACE_ON_USE,
             def.gradient.transform.toSvgTransformList(), x1 = -16384f, x2 = 16384f)
     }
