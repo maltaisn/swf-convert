@@ -1,10 +1,18 @@
-import com.maltaisn.swfconvert.build.Dependencies
-
 plugins {
-    id("org.jetbrains.kotlin.jvm")
-    id("org.jetbrains.kotlin.kapt")
-    id("org.jetbrains.kotlin.plugin.serialization")
-    id("com.github.breadmoirai.github-release")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.githubRelease)
+}
+
+sourceSets {
+    main {
+        java.srcDir("src/main/kotlin")
+        resources.srcDir("src/main/res")
+    }
+    test {
+        java.srcDir("src/test/kotlin")
+    }
 }
 
 dependencies {
@@ -16,22 +24,35 @@ dependencies {
     implementation(project(":render:pdf"))
     implementation(project(":render:svg"))
 
-    implementation(Dependencies.SERIALIZATION)
-    implementation(Dependencies.JCOMMANDER)
-    implementation(Dependencies.IMAGE_SCALING_LIB)
+    implementation(libs.kotlin.stdlib)
+    implementation(libs.kotlin.coroutines)
+    implementation(libs.kotlin.serialization)
+
+    implementation(libs.log4j.api)
+    implementation(libs.log4j.core)
+    implementation(libs.log4j.kotlin)
+
+    ksp(libs.dagger.compiler)
+    implementation(libs.dagger.lib)
+
+    testImplementation(libs.kotlin.test.junit)
+
+    implementation(libs.jcommander)
+    implementation(libs.imageScalingLib)
 }
 
-sourceSets {
-    main {
-        resources.srcDir("src/main/res")
+kotlin {
+    compilerOptions {
+        optIn.add("kotlin.ExperimentalUnsignedTypes")
+        optIn.add("kotlin.contracts.ExperimentalContracts")
     }
 }
 
 def mainClassName = "com.maltaisn.swfconvert.app.MainKt"
-task run(type: JavaExec) {
+tasks.register("run", JavaExec) {
     dependsOn("updateVersionRes")
 
-    main = mainClassName
+    mainClass = mainClassName
     classpath = files(sourceSets.main.runtimeClasspath, sourceSets.main.resources)
     standardInput = System.in
     setIgnoreExitValue(true)
@@ -46,11 +67,11 @@ task run(type: JavaExec) {
     }
 
     if ("mac" in System.getProperty("os.name").toLowerCase()) {
-        jvmArgs("-XstartOnFirstThread")
+        jvmArgs = "-XstartOnFirstThread"
     }
 }
 
-task dist(type: Jar) {
+tasks.register("dist", Jar) {
     dependsOn("updateVersionRes")
 
     from(files(sourceSets.main.output.classesDirs))
@@ -62,9 +83,10 @@ task dist(type: Jar) {
             "Multi-Release": true
     )
     archiveBaseName.set("swf-convert")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
-task updateVersionRes {
+tasks.register("updateVersionRes") {
     doLast {
         def versionResFile = file("src/main/res/version.txt")
         versionResFile.write(appVersion)
@@ -75,16 +97,16 @@ task updateVersionRes {
 // a git tag, and the release notes in CHANGELOG.md.
 githubRelease {
     if (project.hasProperty("githubReleasePluginToken")) {
-        token(githubReleasePluginToken)
+        token = githubReleasePluginToken
     }
-    owner("maltaisn")
-    repo("swf-convert")
+    owner = "maltaisn"
+    repo = "swf-convert"
 
-    tagName("v$appVersion")
-    targetCommitish("master")
-    releaseName("v$appVersion")
+    tagName = "v$appVersion"
+    targetCommitish = "master"
+    releaseName = "v$appVersion"
 
-    body {
+    body = provider {
         // Get release notes for version from changelog file.
         def changelog = file("../CHANGELOG.md")
         def lines = changelog.readLines()
@@ -106,9 +128,9 @@ githubRelease {
         return versionChanges.toString().trim()
     }
 
-    releaseAssets("$buildDir/libs/swf-convert.jar")
+    releaseAssets = "${layout.buildDirectory}/libs/swf-convert.jar"
 
-    overwrite(true)
+    overwrite = true
 }
 tasks.githubRelease {
     dependsOn("build", "dist")

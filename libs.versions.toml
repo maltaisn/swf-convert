@@ -1,0 +1,44 @@
+[versions]
+
+kotlin = "2.2.20"
+coroutines = "1.10.2"
+serialization = "1.9.0"
+ksp = "2.2.20-2.0.4"
+
+dagger = "2.57.2"
+scalingLib = "0.8.6"
+pdfBox = "2.0.24"
+jcommander = "1.82"
+
+log4j = "2.25.2"
+log4jKotlin = "1.5.0"
+
+githubRelease = "2.5.2"
+
+[libraries]
+
+kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
+kotlin-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlin-serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
+
+kotlin-test-junit = { group = "org.jetbrains.kotlin", name = "kotlin-test-junit", version.ref = "kotlin" }
+
+log4j-api = { group = "org.apache.logging.log4j", name = "log4j-api", version.ref = "log4j" }
+log4j-core = { group = "org.apache.logging.log4j", name = "log4j-core", version.ref = "log4j" }
+log4j-kotlin = { group = "org.apache.logging.log4j", name = "log4j-api-kotlin", version.ref = "log4jKotlin" }
+
+dagger-lib = { group = "com.google.dagger", name = "dagger", version.ref = "dagger" }
+dagger-compiler = { group = "com.google.dagger", name = "dagger-compiler", version.ref = "dagger" }
+
+imageScalingLib = { group = "com.mortennobel", name = "java-image-scaling", version.ref = "scalingLib" }
+
+jcommander = { group = "com.beust", name = "jcommander", version.ref = "jcommander" }
+
+pdfBox = { group = "org.apache.pdfbox", name = "pdfbox", version.ref = "pdfBox" }
+
+[plugins]
+
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "serialization" }
+githubRelease = { id = "com.github.breadmoirai.github-release", version.ref = "githubRelease" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

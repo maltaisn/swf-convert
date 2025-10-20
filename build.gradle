@@ -1,90 +1,13 @@
-import com.maltaisn.swfconvert.build.Dependencies
-
-buildscript {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-    }
-    dependencies {
-        classpath(Dependencies.GRADLE_KOTLIN)
-        classpath(Dependencies.GRADLE_SERIALIZATION)
-        classpath(Dependencies.GRADLE_GITHUB_RELEASE)
-    }
-}
-
 plugins {
-    id("base")
-    id("io.gitlab.arturbosch.detekt") version "1.19.0"
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.serialization) apply false
+    alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.githubRelease) apply false
 }
 
-subprojects {
-    apply(plugin: "java")
-    apply(plugin: "io.gitlab.arturbosch.detekt")
-    apply plugin: "org.jetbrains.kotlin.plugin.serialization"
-
+allprojects {
     repositories {
         mavenCentral()
-        maven { url 'https://jitpack.io' }
-    }
-
-    sourceSets {
-        main {
-            java.srcDir("src/main/kotlin")
-        }
-        test {
-            java.srcDir("src/test/kotlin")
-        }
-    }
-
-    configurations.create("kapt")  // kapt plugin will be applied later using plugins DSL
-    dependencies {
-        implementation(Dependencies.KOTLIN)
-        implementation(Dependencies.COROUTINES)
-
-        implementation(Dependencies.LOG4J)
-        implementation(Dependencies.LOG4J_CORE)
-        implementation(Dependencies.LOG4J_KOTLIN) {
-            // see https://github.com/apache/logging-log4j-kotlin/pull/14
-            // they haven't upgraded to kotlin 1.4 yet and it's causing issues.
-            exclude group: "org.jetbrains.kotlin"
-        }
-
-        kapt(Dependencies.DAGGER_COMPILER)
-        implementation(Dependencies.DAGGER)
-
-        testImplementation(Dependencies.KOTLIN_TEST)
-        testImplementation(Dependencies.KOTLIN_TEST_JUNIT)
-    }
-
-    java {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
-
-    afterEvaluate {
-        tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
-            kotlinOptions {
-                jvmTarget = "1.8"
-                freeCompilerArgs += [
-                        "-Xopt-in=kotlin.Experimental",
-                        "-Xopt-in=kotlin.ExperimentalUnsignedTypes",
-                        "-Xopt-in=kotlin.contracts.ExperimentalContracts",
-                        "-Xopt-in=kotlinx.serialization.ExperimentalSerializationApi",
-                        "-XXLanguage:+NewInference"
-                ]
-            }
-        }
+        maven { url = "https://jitpack.io" }
     }
 }
-
-tasks.clean {
-    delete(buildDir)
-}
-
-detekt {
-    buildUponDefaultConfig = true
-    parallel = true
-    config = rootProject.files("config/detekt/detekt.yml")
-}
-
-tasks.detekt.jvmTarget = "1.8"

@@ -1,22 +1,42 @@
-import com.maltaisn.swfconvert.build.Dependencies
-
 plugins {
-    id("org.jetbrains.kotlin.jvm")
-    id("org.jetbrains.kotlin.kapt")
-    id("org.jetbrains.kotlin.plugin.serialization")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
+}
+
+sourceSets {
+    main {
+        java.srcDir("src/main/kotlin")
+    }
+    test {
+        java.srcDir("src/test/kotlin")
+    }
 }
 
 dependencies {
     implementation(project(":core"))
 
-    // api instead of implementation is needed to fix https://github.com/google/dagger/issues/970.
     api(fileTree("src/main/libs") { include("*.jar") })
 
-    implementation(Dependencies.IMAGE_SCALING_LIB)
+    implementation(libs.kotlin.stdlib)
+    implementation(libs.kotlin.coroutines)
+    implementation(libs.kotlin.serialization)
+
+    implementation(libs.log4j.api)
+    implementation(libs.log4j.core)
+    implementation(libs.log4j.kotlin)
+
+    implementation(libs.imageScalingLib)
+
+    ksp(libs.dagger.compiler)
+    implementation(libs.dagger.lib)
+
+    testImplementation(libs.kotlin.test.junit)
 }
 
-sourceSets {
-    main {
-        resources.srcDir("src/main/res")
+kotlin {
+    compilerOptions {
+        optIn.add("kotlin.ExperimentalUnsignedTypes")
+        optIn.add("kotlin.contracts.ExperimentalContracts")
     }
 }

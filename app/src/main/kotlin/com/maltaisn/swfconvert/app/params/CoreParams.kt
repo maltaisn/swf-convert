@@ -34,7 +34,6 @@ import java.awt.geom.AffineTransform
 import java.io.File
 import java.text.DecimalFormat
 import kotlin.properties.ReadOnlyProperty
-import kotlin.reflect.KProperty
 
 /**
  * Params for the 'convert' module and common params for the render modules.
@@ -301,11 +300,7 @@ internal class CoreParams(
         defaultValue: T,
         transform: String.() -> T?
     ): ReadOnlyProperty<CoreParams, T> =
-        object : ReadOnlyProperty<CoreParams, T> {
-            override fun getValue(thisRef: CoreParams, property: KProperty<*>): T {
-                return thisRef.params[name]?.transform() ?: defaultValue
-            }
-        }
+        ReadOnlyProperty<CoreParams, T> { thisRef, property -> thisRef.params[name]?.transform() ?: defaultValue }
 
     fun createConfigurations(yAxisDirection: YAxisDirection): List<ConvertConfiguration> {
         configError(downsampleMinSize >= 3) { "Minimum downsampling size must be at least 3 px." }

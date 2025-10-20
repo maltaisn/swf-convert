@@ -120,7 +120,7 @@ internal class PdfPageLabelsCreator @Inject constructor(
             start <= 0 -> null
             else -> {
                 val prefixLength = pageName.length - pageNumber.length
-                range.prefix = if (prefixLength == 0) null else pageName.substring(0, prefixLength)
+                range.prefix = if (prefixLength == 0) null else pageName.take(prefixLength)
                 PDPageLabelRange.STYLE_DECIMAL
             }
         }

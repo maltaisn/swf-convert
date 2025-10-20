@@ -1,4 +1,18 @@
-rootProject.name = "swf-convert"
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+// This shouldn't be necessary, it's supposed to be the default?
+dependencyResolutionManagement {
+    versionCatalogs {
+        create("libs") {
+            from(files("libs.versions.toml"))
+        }
+    }
+}
 
 include(":app")
 include(":convert",

@@ -30,8 +30,8 @@ import dagger.multibindings.IntoMap
 @Module
 abstract class RenderSvgModule {
 
-    @get:[Binds IntoMap FramesRendererKey(SvgConfiguration::class)]
-    internal abstract val SvgFramesRenderer.bindsPdfFramesRenderer: FramesRenderer
+    @[Binds IntoMap FramesRendererKey(SvgConfiguration::class)]
+    internal abstract fun bindsPdfFramesRenderer(renderer: SvgFramesRenderer): FramesRenderer
 
     companion object {
         @Provides

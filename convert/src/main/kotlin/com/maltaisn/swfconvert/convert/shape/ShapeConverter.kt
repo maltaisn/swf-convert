@@ -33,10 +33,7 @@ import com.maltaisn.swfconvert.convert.wrapper.toShapeStyleWrapperOrNull
 import com.maltaisn.swfconvert.core.image.Color
 import com.maltaisn.swfconvert.core.shape.Path
 import com.maltaisn.swfconvert.core.shape.PathElement
-import com.maltaisn.swfconvert.core.shape.PathElement.ClosePath
-import com.maltaisn.swfconvert.core.shape.PathElement.LineTo
-import com.maltaisn.swfconvert.core.shape.PathElement.MoveTo
-import com.maltaisn.swfconvert.core.shape.PathElement.QuadTo
+import com.maltaisn.swfconvert.core.shape.PathElement.*
 import com.maltaisn.swfconvert.core.shape.PathFillStyle
 import com.maltaisn.swfconvert.core.shape.PathLineStyle
 import java.awt.geom.AffineTransform
@@ -341,7 +338,7 @@ internal open class ShapeConverter @Inject constructor() {
                 val tmpPath = mutableListOf<Edge>()
                 createCoordMap(subPath)
                 createReverseCoordMap(subPath)
-                while (subPath.size > 0) {
+                while (subPath.isNotEmpty()) {
                     i = 0
                     while (i < subPath.size) {
                         if (prevEdge == null || prevEdge.end == subPath[i].start) {

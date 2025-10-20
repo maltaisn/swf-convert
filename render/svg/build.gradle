@@ -1,9 +1,37 @@
 plugins {
-    id("org.jetbrains.kotlin.jvm")
-    id("org.jetbrains.kotlin.kapt")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.ksp)
+}
+
+sourceSets {
+    main {
+        java.srcDir("src/main/kotlin")
+    }
+    test {
+        java.srcDir("src/test/kotlin")
+    }
 }
 
 dependencies {
     implementation(project(":core"))
     implementation(project(":render:core"))
+
+    implementation(libs.kotlin.stdlib)
+    implementation(libs.kotlin.coroutines)
+
+    implementation(libs.log4j.api)
+    implementation(libs.log4j.core)
+    implementation(libs.log4j.kotlin)
+
+    ksp(libs.dagger.compiler)
+    implementation(libs.dagger.lib)
+
+    testImplementation(libs.kotlin.test.junit)
+}
+
+kotlin {
+    compilerOptions {
+        optIn.add("kotlin.ExperimentalUnsignedTypes")
+        optIn.add("kotlin.contracts.ExperimentalContracts")
+    }
 }

@@ -104,7 +104,6 @@ internal class RenderPdfParams : RenderParams<PdfConfiguration> {
 
         checkNoOptionsInArgs(metadata)
 
-        val json = Json {}
         return@lazy metadata.map { filename ->
             if (filename == "_") {
                 null
@@ -116,7 +115,7 @@ internal class RenderPdfParams : RenderParams<PdfConfiguration> {
                 }
 
                 try {
-                    json.decodeFromString(PdfMetadata.serializer(), file.readText())
+                    Json.decodeFromString(PdfMetadata.serializer(), file.readText())
                 } catch (e: SerializationException) {
                     configError("Error while parsing PDF metadata file at '$filename'", e)
                 } catch (e: IOException) {
