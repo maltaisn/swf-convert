@@ -1,3 +1,6 @@
+# v0.0.4
+- Fixed incompatible gradient error if first stop was not 0 (#8).
+
 # v0.0.3
 - Added `-DbitmapMatrixOffset=[x,y]` option.
 - Added `-DrecursiveFrames` option to parse multiple frames in sprites, recursively.
